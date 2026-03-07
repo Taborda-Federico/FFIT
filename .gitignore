@@ -1,0 +1,4 @@
+node_modules/
+el-gym-front/node_modules/
+el-gym-back/node_modules/
+.env

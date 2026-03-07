@@ -1,0 +1,65 @@
+/* Ajuste para que el modal no sea tan gigante en PC pero cómodo en móvil */
+.register-modal-card {
+    background: #0f0f0f;
+    padding: 30px;
+    border-radius: 20px;
+    border: 1px solid #333;
+    width: 95%;
+    max-width: 480px;
+    max-height: 90vh; /* Permite scroll interno si la pantalla es muy chica */
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+}
+
+.modal-header-pro h2 { font-family: 'Oswald'; font-size: 1.8rem; margin-bottom: 5px; }
+.modal-header-pro p { color: #555; font-size: 0.85rem; margin-bottom: 25px; }
+
+.register-form { display: flex; flex-direction: column; gap: 12px; }
+
+/* Corrección de alineación de iconos e inputs */
+.input-glass-group {
+    background: #1a1a1a;
+    border: 1px solid #282828;
+    padding: 10px 15px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.input-icon { 
+    color: var(--color-accent, #d4f039); 
+    font-size: 1rem;
+    min-width: 20px; /* Evita que el icono se mueva */
+    text-align: center;
+}
+
+.input-glass-group input {
+    background: transparent;
+    border: none;
+    color: white;
+    width: 100%;
+    outline: none;
+    font-size: 0.95rem;
+}
+
+/* Chrome, Safari, Edge, Opera: Quitar flechitas de los números */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input-grid-dual {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.modal-footer-actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+.modal-footer-actions .btn { flex: 1; }

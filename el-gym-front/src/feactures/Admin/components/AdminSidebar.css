@@ -1,0 +1,152 @@
+/* --- VARIABLES LOCALES (Deben coincidir con Layout.css) --- */
+:root {
+    --sidebar-w: 260px;
+    --sidebar-c: 85px;
+    --neon: #d4f039;
+    --bg-sidebar: #0a0a0a;
+    --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-sidebar {
+    width: var(--sidebar-w);
+    height: 100vh;
+    background: var(--bg-sidebar);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    transition: var(--transition);
+    overflow: hidden;
+}
+
+/* --- HEADER Y LOGO --- */
+.sidebar-header {
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 25px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.sidebar-logo {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 1px;
+}
+
+.text-neon { color: var(--neon); }
+
+.close-sidebar-btn {
+    display: none; /* Se activa solo en móvil */
+    background: none; border: none;
+    color: #fff; font-size: 1.2rem; cursor: pointer;
+}
+
+/* --- NAVEGACIÓN --- */
+.sidebar-navigation {
+    flex: 1;
+    padding: 20px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    overflow-y: auto;
+}
+
+.nav-section { display: flex; flex-direction: column; gap: 5px; }
+
+.nav-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #444;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    padding-left: 15px;
+}
+
+/* Items de menú */
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px 15px;
+    color: #888;
+    text-decoration: none;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: none; background: none;
+    width: 100%; text-align: left;
+    cursor: pointer;
+}
+
+.nav-icon { font-size: 1.2rem; min-width: 24px; display: flex; justify-content: center; }
+
+/* Estados Hover y Active */
+.nav-item:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.nav-item.active {
+    color: var(--neon);
+    background: rgba(212, 240, 57, 0.08);
+    box-shadow: inset 0 0 0 1px rgba(212, 240, 57, 0.1);
+}
+
+.sidebar-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.03);
+    margin: 0 10px;
+}
+
+.sidebar-spacer { flex-grow: 1; }
+
+.logout-btn {
+    color: #ff4444;
+    margin-top: auto;
+    border-top: 1px solid rgba(255, 255, 255, 0.03);
+    border-radius: 0;
+}
+
+.logout-btn:hover { background: rgba(255, 68, 68, 0.05); color: #ff6666; }
+
+/* --- RESPONSIVIDAD --- */
+
+/* 1. TABLET (Colapsado a iconos) */
+@media (max-width: 1100px) {
+    .admin-sidebar { width: var(--sidebar-c); }
+    .nav-text, .nav-label, .sidebar-logo span { display: none; }
+    .sidebar-header { justify-content: center; padding: 0; }
+    .nav-item { justify-content: center; padding: 15px 0; }
+    .nav-icon { font-size: 1.4rem; }
+}
+
+/* 2. MÓVIL (Menú Deslizante) */
+@media (max-width: 768px) {
+    .admin-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 280px !important;
+        transform: translateX(-100%); /* Escondido */
+        z-index: 4000;
+        box-shadow: none;
+    }
+
+    .admin-sidebar.open {
+        transform: translateX(0); /* Desliza al abrir */
+        box-shadow: 20px 0 60px rgba(0, 0, 0, 0.8);
+    }
+
+    .nav-text, .nav-label, .sidebar-logo span { display: block; }
+    .sidebar-header { justify-content: space-between; padding: 0 25px; }
+    .close-sidebar-btn { display: block; }
+    .nav-item { justify-content: flex-start; padding: 12px 15px; }
+}

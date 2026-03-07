@@ -1,0 +1,371 @@
+/* MainPrincipal.css */
+
+/* --- CONFIGURACIÓN DE FUENTES Y BASE --- */
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+
+:root {
+    --brand-primary: #1a472a;  /* Verde Oscuro */
+    --brand-neon: #d4f039;     /* Verde Lima */
+    --bg-dark: #121212;        /* Fondo oscuro */
+    --text-white: #ffffff;
+}
+
+/* Evita el scroll horizontal fantasma */
+html, body {
+    overflow-x: hidden;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.main-wrapper {
+    background-color: var(--bg-dark);
+    width: 100%;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* =========================================
+   1. NAVBAR FLOTANTE
+   ========================================= */
+.navbar-floating {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 1.5rem 5%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 1000;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 100%);
+    transition: all 0.3s ease;
+}
+
+.logo-container {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    z-index: 10001; /* Siempre por encima */
+}
+.logo-plus {
+    color: var(--brand-neon);
+    margin-left: 2px;
+}
+
+.navbar-floating {
+    position: fixed; 
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 80px; /* Altura fija para control total */
+    z-index: 9999; 
+    background: rgba(0, 0, 0, 0.6); 
+    backdrop-filter: blur(15px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.4s ease;
+}
+/* Contenedor interno para alinear logo y menu */
+.nav-container-wrapper {
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 5%;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 2.5rem;
+}
+.nav-mobile-actions {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+/* Alineamos el botón de contacto a la derecha */
+.nav-cta {
+    background: var(--brand-neon);
+    color: #000 !important;
+    padding: 0.5rem 1.2rem;
+    border-radius: 4px;
+    font-weight: 700;
+}
+
+.nav-item {
+    color: var(--text-white);
+    text-decoration: none;
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 1.5px;
+    transition: all 0.3s ease;
+    cursor: pointer !important;
+    opacity: 0.8;
+}
+.nav-cta:hover {
+    box-shadow: 0 0 20px rgba(212, 240, 57, 0.4);
+    transform: translateY(-2px);
+}
+
+.nav-item:hover {
+    color: var(--brand-neon) !important;
+    opacity: 1;
+    text-shadow: 0 0 10px rgba(212, 240, 57, 0.3);
+}
+
+/* Botón de Acceso (Admin/Alumno) estilizado para transparencia */
+.nav-login-btn {
+    border: 1px solid rgba(212, 240, 57, 0.5) !important;
+    color: var(--brand-neon) !important;
+    background: rgba(212, 240, 57, 0.05) !important;
+    padding: 0.4rem 1rem !important;
+    font-size: 0.8rem !important;
+    border-radius: 4px !important;
+    font-family: 'Oswald';
+}
+
+.nav-login-btn:hover {
+    background: var(--brand-neon) !important;
+    color: #000 !important;
+}
+
+.mobile-menu-btn {
+    display: none; /* Oculto en PC */
+    background: none;
+    border: none;
+    color: var(--brand-neon);
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+@media (max-width: 900px) {
+    .mobile-menu-btn {
+        display: block; /* Aparece en móvil */
+        z-index: 10001;
+    }
+
+    .nav-links {
+        position: fixed;
+        top: -100vh; /* Escondido arriba */
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        background: #000000; /* OLED Black */
+        flex-direction: column;
+        justify-content: center;
+        gap: 2.5rem;
+        transition: all 0.5s cubic-bezier(0.77, 0, 0.175, 1);
+        z-index: 10000;
+        padding: 2rem;
+    }
+
+    /* Cuando el menú está activo */
+    .nav-links.active {
+        top: 0;
+    }
+
+    .nav-item {
+        font-size: 1.5rem; /* Links más grandes para touch */
+        width: 100%;
+        text-align: center;
+    }
+
+    .nav-mobile-actions {
+        flex-direction: column;
+        width: 100%;
+        margin-top: 1rem;
+    }
+
+    .nav-login-btn {
+        width: 100%;
+        padding: 1rem !important;
+        font-size: 1.1rem !important;
+    }
+
+    /* Ajuste del Hero para que no se pegue al nav */
+    .hero-fullscreen {
+        padding-top: 80px;
+    }
+
+    .hero-title {
+        margin-top: 1rem;
+    }
+}
+/* =========================================
+   2. HERO SECTION
+   ========================================= */
+.hero-fullscreen {
+    position: relative;
+    height: 100vh;
+    min-height: 600px; /* Evita que se colapse en pantallas apaisadas */
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    transition: background-image 1s ease-in-out;
+    padding: 0 1rem; /* Padding lateral de seguridad */
+}
+
+/* Overlay para mejorar lectura */
+.hero-fullscreen::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* Oscurece la foto */
+    z-index: 0;
+}
+
+.hero-content {
+    z-index: 2;
+    max-width: 900px;
+    width: 100%;
+    margin-top: 60px; /* Compensa el espacio del navbar */
+}
+
+.hero-title {
+    font-family: 'Oswald', sans-serif;
+    /* CLAVE: clamp hace que la fuente escale fluidamente entre 2.5rem y 5rem */
+    font-size: clamp(2.5rem, 8vw, 5rem); 
+    line-height: 1;
+    color: var(--text-white);
+    text-transform: uppercase;
+    font-style: italic;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 4px 10px rgba(0,0,0,0.8);
+}
+
+.highlight-neon {
+    color: var(--brand-neon);
+    display: block; /* En móvil a veces queda mejor en otra línea */
+}
+@media (max-width: 900px) {
+    .navbar-floating {
+        /* En móvil, lo dejamos fijo arriba para que siempre puedan navegar */
+        position: fixed !important; 
+        top: 0;
+        background-color: rgba(0, 0, 0, 0.95) !important;
+        box-shadow: 0 2px 20px rgba(0,0,0,0.5);
+    }
+    
+    .hero-fullscreen {
+        /* Agregamos un margen para que el primer texto no quede tapado por el nav fijo */
+        padding-top: 140px !important;
+    }
+}
+
+.hero-subtitle {
+    font-family: 'Roboto', sans-serif;
+    color: #e0e0e0;
+    font-size: clamp(1rem, 4vw, 1.3rem);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 2.5rem;
+    padding: 0 10px;
+}
+
+.hero-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    flex-wrap: wrap; /* Permite que los botones bajen si no entran */
+}
+
+/* =========================================
+   SECCIONES GENÉRICAS
+   ========================================= */
+.dark-section {
+    background-color: var(--bg-dark);
+    padding: 4rem 1rem; /* Padding lateral importante para móvil */
+    border-top: 1px solid #222;
+}
+
+.section-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.section-header h2 {
+    font-family: 'Oswald', sans-serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    color: var(--text-white);
+    text-transform: uppercase;
+}
+
+.section-header span {
+    display: block;
+    width: 60px;
+    height: 4px;
+    background-color: var(--brand-neon);
+    margin: 10px auto 0;
+}
+
+/* =========================================
+   MEDIA QUERIES (RESPONSIVE EXTREMO)
+   ========================================= */
+
+@media (max-width: 900px) {
+    /* Ajustes Navbar Móvil */
+    .navbar-floating {
+        position: relative; /* En móvil deja de flotar sobre la foto para no taparla */
+        background-color: #000; /* Fondo negro sólido */
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 1.5rem;
+    }
+
+    .nav-links {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap; /* Permite varias líneas si es necesario */
+        gap: 1.5rem;
+    }
+
+    .nav-item {
+        font-size: 0.9rem;
+    }
+
+    /* El botón Asociate en móvil se destaca más */
+    .nav-cta {
+        background-color: transparent;
+        margin-top: 0.5rem;
+    }
+
+    /* Ajustes Hero Móvil */
+    .hero-fullscreen {
+        height: auto; /* Altura flexible */
+        min-height: 85vh; /* Casi pantalla completa */
+        padding-bottom: 3rem;
+    }
+
+    .hero-content {
+        margin-top: 2rem;
+    }
+
+    .hero-buttons {
+        flex-direction: column; /* Botones uno abajo del otro */
+        width: 100%;
+        max-width: 300px; /* Ancho máximo para que no se vean gigantes */
+        margin: 0 auto;
+    }
+    
+    .hero-buttons button {
+        width: 100%; /* Botones ocupan todo el ancho disponible */
+    }
+}

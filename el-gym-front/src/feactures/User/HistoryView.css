@@ -1,0 +1,247 @@
+:root {
+    --neon: #d4f039;
+    --black: #000000;
+    --dark-grey: #0a0a0a; /* Fondo sutil para tarjetas */
+    --black-elevated: #0f0f0f; /* Un tono ligeramente superior al negro absoluto */
+    --text-grey: #444444;
+    --text-dim: #222222;
+}
+
+/* --- CONTENEDOR PRINCIPAL --- */
+.history-oled-container {
+    background-color: var(--black);
+    min-height: 100vh;
+    padding: 40px 25px;
+    animation: fadeIn 0.4s ease;
+    position: relative;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* --- HEADER PRINCIPAL --- */
+.h-oled-header { margin-bottom: 40px; }
+.h-subtitle { font-size: 0.65rem; letter-spacing: 4px; color: var(--text-grey); font-weight: 900; margin-bottom: 5px; text-transform: uppercase; }
+.h-oled-header h1 { font-family: 'Oswald', sans-serif; font-size: 2.5rem; margin: 0; color: #fff; line-height: 1; }
+.text-neon { color: var(--neon); }
+
+/* --- INSIGHTS GRID (Resumen arriba) --- */
+.h-insights-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 50px;
+}
+
+.h-insight-item {
+    background: var(--dark-grey);
+    padding: 20px;
+    border-radius: 25px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.h-icon-box {
+    width: 40px; height: 40px; background: rgba(212, 240, 57, 0.1);
+    color: var(--neon); border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; font-size: 1rem;
+}
+
+.h-data label { display: block; font-size: 0.6rem; color: var(--text-grey); text-transform: uppercase; font-weight: 800; }
+.h-val { font-size: 1.5rem; font-weight: 900; color: #fff; font-family: 'Oswald'; }
+
+/* --- LISTADO DE RUTINAS --- */
+.h-list-title { font-size: 0.7rem; font-weight: 900; color: var(--text-dim); letter-spacing: 2px; margin-bottom: 20px; }
+.h-items-stack { display: flex; flex-direction: column; gap: 15px; }
+
+.h-log-card {
+    background: var(--dark-grey);
+    padding: 20px;
+    border-radius: 28px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+.h-log-card:active { transform: scale(0.97); background: #0e0e0e; }
+
+.h-log-date {
+    background: var(--black);
+    min-width: 60px; height: 60px;
+    border-radius: 18px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+}
+
+.h-day { font-size: 1.3rem; font-weight: 900; color: var(--neon); line-height: 1; }
+.h-month { font-size: 0.55rem; color: var(--text-grey); font-weight: 800; margin-top: 2px; }
+
+.h-log-content { flex: 1; display: flex; justify-content: space-between; align-items: center; }
+.h-log-info h3 { font-size: 1.1rem; color: #eee; margin: 0 0 5px; font-weight: 600; }
+.h-log-meta { display: flex; gap: 15px; }
+.h-log-meta span { font-size: 0.75rem; color: var(--text-grey); display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.h-log-meta svg { font-size: 0.7rem; color: var(--text-dim); }
+
+.h-arrow { color: var(--text-dim); font-size: 0.9rem; }
+
+/* 
+=========================================
+  ESTILOS DE LA CAPA DE DETALLE
+=========================================
+*/
+
+.history-detail-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--black);
+    z-index: 10000; /* Siempre por encima */
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+.detail-card-full {
+    padding: 40px 25px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+/* Header del Detalle */
+.detail-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.btn-close-detail {
+    background: var(--dark-grey);
+    border: none;
+    color: white;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-close-detail:active { transform: scale(0.9); background: #1a1a1a; }
+
+.detail-title-group { display: flex; flex-direction: column; }
+.detail-date { font-size: 0.7rem; font-weight: 800; color: var(--neon); letter-spacing: 2px; text-transform: uppercase; }
+.detail-header h2 { font-family: 'Oswald', sans-serif; font-size: 2rem; margin: 5px 0 0; color: #fff; }
+
+/* Stats rápidas del detalle */
+.detail-stats-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 40px;
+}
+
+.d-stat {
+    flex: 1;
+    background: var(--dark-grey);
+    padding: 15px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.8rem;
+    color: var(--text-grey);
+    font-weight: 600;
+}
+
+.d-stat svg { color: var(--neon); font-size: 0.9rem; }
+.d-stat span { color: #888; }
+
+/* Lista de ejercicios dentro del detalle */
+.section-label { 
+    font-size: 0.65rem; 
+    font-weight: 900; 
+    color: var(--text-dim); 
+    letter-spacing: 2px; 
+    margin-bottom: 20px; 
+    display: block; 
+    text-transform: uppercase;
+}
+
+.detail-exercises-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.detail-ex-item {
+    background: var(--dark-grey);
+    padding: 20px;
+    border-radius: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: 0.3s;
+}
+
+.detail-ex-item:hover { background: #0d0d0d; }
+
+.detail-ex-item h4 { margin: 0; font-size: 1rem; color: #fff; font-weight: 600; }
+.detail-ex-item p { margin: 5px 0 0; font-size: 0.75rem; color: var(--text-grey); font-weight: 600; }
+
+.ex-final-weight {
+    background: var(--black);
+    padding: 10px 15px;
+    border-radius: 14px;
+    border: 1px solid var(--text-dim);
+    min-width: 70px;
+    text-align: center;
+}
+
+.ex-final-weight span { color: var(--neon); font-weight: 900; font-size: 1rem; }
+
+/* Footer del detalle */
+.detail-footer {
+    margin-top: auto;
+    padding: 30px 0;
+    border-top: 1px solid var(--text-dim);
+}
+
+.congrats-msg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--text-grey);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.congrats-msg svg { font-size: 1.2rem; }
+
+/* --- OTROS --- */
+.h-spacer { height: 120px; }
+.h-empty { text-align: center; padding: 80px 0; color: var(--text-dim); font-weight: 800; }
+
+/* --- RESPONSIVIDAD --- */
+@media (max-width: 480px) {
+    .history-oled-container { padding: 30px 20px; }
+    .h-oled-header h1 { font-size: 2.2rem; }
+    .h-log-card { padding: 15px; gap: 15px; }
+    
+    .detail-card-full { padding: 30px 20px; }
+    .detail-header h2 { font-size: 1.8rem; }
+    .d-stat { padding: 12px; font-size: 0.75rem; }
+    .detail-ex-item { padding: 15px; }
+}

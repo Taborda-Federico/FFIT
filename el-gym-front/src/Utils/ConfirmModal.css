@@ -1,0 +1,215 @@
+/* --- OVERLAY CON DESENFOQUE --- */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(12px);
+    display: flex;
+    justify-content: center; /* Centrado perfecto sin transform */
+    align-items: center;     
+    z-index: 9999; /* Máxima prioridad */
+    padding: 20px;
+    animation: fadeInModal 0.3s ease-out;
+}
+
+@keyframes fadeInModal {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* --- TARJETA DEL MODAL --- */
+.modal-confirm-card {
+    background: #0f0f0f;
+    width: 100%;
+    max-width: 420px; 
+    border-radius: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 35px 25px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Resplandor neón de fondo sutil */
+.modal-confirm-card::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle, rgba(212, 240, 57, 0.03) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+/* --- CABECERA --- */
+.modal-header-pro {
+    text-align: center;
+    margin-bottom: 25px;
+    position: relative;
+    z-index: 1;
+}
+
+.icon-circle-confirm {
+    width: 64px;
+    height: 64px;
+    background: rgba(212, 240, 57, 0.1);
+    color: #d4f039;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    margin: 0 auto 15px;
+    box-shadow: 0 0 20px rgba(212, 240, 57, 0.1);
+}
+
+.modal-header-pro h2 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.8rem;
+    color: #fff;
+    margin-bottom: 5px;
+}
+
+.modal-header-pro p {
+    color: #666;
+    font-size: 0.85rem;
+}
+
+/* --- CAJA DE RESUMEN --- */
+.summary-box-pro {
+    background: #161616;
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.summary-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.item-icon { color: #d4f039; font-size: 1rem; opacity: 0.8; }
+
+.item-text { display: flex; flex-direction: column; }
+
+.item-text label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #444;
+}
+
+.item-text span {
+    font-weight: 600;
+    color: #eee;
+    font-size: 0.95rem;
+}
+
+/* --- SELECTOR DE DURACIÓN --- */
+.duration-selector-wrapper {
+    margin-top: 5px;
+    border-top: 1px solid #222;
+    padding-top: 15px;
+}
+
+.selector-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #888;
+    font-size: 0.8rem;
+    margin-bottom: 10px;
+}
+
+.minimal-select {
+    width: 100%;
+    background-color: #000 !important;
+    border: 1.5px solid #222 !important;
+    color: #fff !important;
+    padding: 12px 15px !important;
+    border-radius: 12px !important;
+    font-size: 0.95rem !important;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23d4f039' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 18px;
+    transition: all 0.2s ease;
+}
+
+.minimal-select:focus {
+    border-color: #d4f039 !important;
+    box-shadow: 0 0 15px rgba(212, 240, 57, 0.15);
+}
+
+.minimal-select option {
+    background-color: #1a1a1a;
+    color: white;
+}
+
+/* --- FOOTER Y BOTONES --- */
+.modal-footer-pro {
+    display: flex;
+    flex-direction: column; /* Apilado para móviles/universal */
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.btn-modal-primary {
+    background: #d4f039;
+    color: #000;
+    border: none;
+    padding: 16px;
+    border-radius: 16px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-modal-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(212, 240, 57, 0.3);
+}
+
+.btn-modal-secondary {
+    background: transparent;
+    color: #666;
+    border: 1px solid #222;
+    padding: 12px;
+    border-radius: 14px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-modal-secondary:hover {
+    color: #fff;
+    border-color: #444;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* --- RESPONSIVIDAD --- */
+@media (max-width: 480px) {
+    .modal-confirm-card {
+        padding: 30px 20px;
+    }
+
+    .modal-header-pro h2 {
+        font-size: 1.6rem;
+    }
+
+    .modal-footer-pro {
+        flex-direction: column-reverse; /* El botón de Publicar queda arriba al invertir el flujo lógico si es necesario */
+    }
+}

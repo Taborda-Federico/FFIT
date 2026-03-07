@@ -1,0 +1,138 @@
+:root {
+    --neon: #d4f039;
+    --black-pure: #000000;
+    --black-card: #080808;
+    --border: #121212;
+    --text-dim: #555;
+}
+
+.home-hub-container {
+    padding: 20px 20px 0;
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* --- HEADER --- */
+.hub-user-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 35px;
+}
+
+.user-profile-meta { display: flex; align-items: center; gap: 15px; }
+
+.avatar-neon-glow {
+    width: 55px; height: 55px;
+    background: var(--neon);
+    border-radius: 18px; /* Square rounded style */
+    display: flex; align-items: center; justify-content: center;
+    color: #000; font-weight: 900; font-size: 1.4rem;
+    box-shadow: 0 0 20px rgba(212, 240, 57, 0.2);
+}
+
+.welcome-texts .sub { font-size: 0.6rem; letter-spacing: 2px; color: var(--text-dim); margin-bottom: 4px; font-weight: 800; }
+.welcome-texts h1 { font-size: 1.6rem; margin: 0; font-weight: 700; }
+
+.qr-shortcut-btn {
+    background: #111; border: 1px solid var(--border);
+    color: white; width: 45px; height: 45px; border-radius: 12px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; transition: 0.3s;
+}
+
+/* --- MEMBERSHIP CARD --- */
+.membership-status-card {
+    background: linear-gradient(145deg, #0a0a0a 0%, #000 100%);
+    border: 1px solid var(--border);
+    padding: 30px;
+    border-radius: 30px;
+    margin-bottom: 25px;
+}
+
+.status-main { display: flex; justify-content: space-between; align-items: center; }
+
+.status-info label { font-size: 0.65rem; color: var(--text-dim); letter-spacing: 1.5px; font-weight: 900; }
+
+.status-badge-active {
+    background: rgba(212, 240, 57, 0.1);
+    color: var(--neon);
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 900;
+    margin: 10px 0;
+}
+
+.expiry-text { color: #444; font-size: 0.8rem; margin: 0; font-weight: 600; }
+
+.neon-progress-circle {
+    width: 75px; height: 75px;
+    border: 3px solid var(--neon);
+    border-radius: 50%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    box-shadow: inset 0 0 15px rgba(212, 240, 57, 0.1);
+}
+
+.days-big { font-size: 1.8rem; font-weight: 900; line-height: 1; }
+.days-lab { font-size: 0.5rem; font-weight: 800; color: var(--neon); }
+
+/* --- QUICK STATS --- */
+.quick-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 40px;
+}
+
+.q-stat-box {
+    background: #050505;
+    border: 1px solid var(--border);
+    padding: 20px;
+    border-radius: 20px;
+    display: flex; align-items: center; gap: 15px;
+}
+
+.q-data span { display: block; font-size: 1.1rem; font-weight: 800; }
+.q-data label { font-size: 0.7rem; color: #444; font-weight: 700; }
+
+/* --- SESSION STACK --- */
+.section-header-hub { margin-bottom: 25px; }
+.section-header-hub h2 { font-family: 'Oswald', sans-serif; font-size: 1.8rem; margin: 0; }
+.plan-name-indicator { font-size: 0.7rem; color: #222; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
+
+.sessions-vertical-stack { display: flex; flex-direction: column; gap: 15px; }
+
+.hub-session-card {
+    background: #080808;
+    border: 1px solid var(--border);
+    border-radius: 25px;
+    padding: 20px 25px;
+    cursor: pointer;
+    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hub-session-card:active { transform: scale(0.97); border-color: var(--neon); }
+
+.s-card-content { display: flex; justify-content: space-between; align-items: center; }
+
+.s-card-info h3 { font-size: 1.1rem; margin: 0 0 10px; color: #eee; }
+
+.s-card-tags { display: flex; gap: 8px; }
+.tag-pill {
+    background: #111; color: #555;
+    font-size: 0.65rem; padding: 4px 10px; border-radius: 6px; font-weight: 800;
+}
+.tag-pill.accent { border: 1px solid #1a1a1a; color: #888; }
+
+.play-btn-neon {
+    width: 45px; height: 45px; background: rgba(212, 240, 57, 0.05);
+    color: var(--neon); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem; border: 1px solid rgba(212, 240, 57, 0.1);
+}
+
+.hub-footer-spacer { height: 120px; }

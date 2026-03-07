@@ -1,0 +1,22 @@
+/* src/styles/variables.css */
+:root {
+    /* Paleta de Colores - "Dark Mode Athletic" */
+    --bg-black: #080808;
+    --bg-card: #141414;
+    --accent: #d4f039; /* Verde Neón Gym */
+    --text-main: #ffffff;
+    --text-dim: #a0a0a0;
+    --border: rgba(255, 255, 255, 0.08);
+    
+    /* Dimensiones */
+    --sidebar-w: 260px;
+    --top-nav-h: 70px;
+    
+    /* Tipografías */
+    --font-heading: 'Oswald', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    
+    /* Elevación y Efectos */
+    --shadow-lg: 0 10px 30px rgba(0,0,0,0.5);
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}

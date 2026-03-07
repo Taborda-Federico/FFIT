@@ -1,0 +1,37 @@
+.workout-active-layer {
+    background: #000;
+    min-height: 100vh;
+    padding: 30px 20px 100px;
+}
+
+.rest-overlay-fullscreen {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.98);
+    z-index: 10000; display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(15px);
+}
+
+.timer-display { text-align: center; }
+.timer-display .seconds { font-size: 6rem; font-family: 'Oswald'; color: var(--neon); font-weight: 900; }
+
+.workout-block {
+    background: #050505;
+    border: 1px solid #111;
+    border-radius: 30px;
+    padding: 25px;
+    margin-bottom: 20px;
+}
+
+.workout-block.superset {
+    border-left: 4px solid var(--neon);
+}
+
+.exercise-row-active {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 15px 0; border-bottom: 1px solid #111;
+}
+
+.weight-input-active input {
+    background: #000; border: 1.5px solid #1a1a1a;
+    width: 75px; padding: 12px; border-radius: 14px;
+    color: var(--neon); font-weight: 900; text-align: center; outline: none;
+}

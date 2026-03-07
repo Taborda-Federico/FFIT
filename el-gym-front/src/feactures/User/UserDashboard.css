@@ -1,0 +1,82 @@
+.user-main-shell {
+    background-color: #000;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.main-content-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 100px; /* Espacio para que la nav no tape el contenido */
+}
+
+/* --- BOTTOM NAV OLED --- */
+.bottom-nav-oled {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 500px;
+    height: 80px;
+    background: rgba(8, 8, 8, 0.85);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid #111;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 1000;
+    padding: 0 10px;
+}
+
+.nav-tab {
+    background: transparent;
+    border: none;
+    color: #444;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+    flex: 1;
+}
+
+.nav-tab svg { font-size: 1.2rem; }
+.nav-tab span { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.nav-tab.active {
+    color: var(--neon, #d4f039);
+}
+
+/* --- BOTÓN QR CENTRAL (FAB) --- */
+.nav-tab-center {
+    position: relative;
+    top: -20px; /* Lo eleva sobre la barra */
+}
+
+.qr-fab {
+    width: 60px;
+    height: 60px;
+    background: var(--neon, #d4f039);
+    border: 5px solid #000;
+    border-radius: 50%;
+    color: #000;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.qr-fab:active { transform: scale(0.9) translateY(5px); }
+
+/* --- RESPONSIVIDAD --- */
+@media (max-width: 480px) {
+    .bottom-nav-oled {
+        max-width: 100%;
+    }
+}

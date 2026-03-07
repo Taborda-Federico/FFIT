@@ -1,0 +1,63 @@
+/* components/Button.css */
+
+.btn {
+    /* Base: Estructura compartida por todos los botones */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid transparent;
+    border-radius: 4px; /* Bordes sutilmente redondeados */
+    font-family: var(--font-primary, sans-serif);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    text-decoration: none;
+}
+
+/* --- TAMAÑOS --- */
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+}
+
+.btn-md {
+    padding: 0.8rem 2rem;
+    font-size: 1rem;
+}
+
+.btn-lg {
+    padding: 1rem 3rem;
+    font-size: 1.2rem;
+}
+
+.btn-full {
+    width: 100%;
+}
+
+/* --- VARIANTES (COLORES) --- */
+
+/* Primary: El clásico Neon sobre Verde (Llamada a la acción principal) */
+.btn-primary {
+    background-color: var(--color-accent, #d4f039); /* Verde Neon */
+    color: var(--color-primary, #1a472a);           /* Verde Oscuro */
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(212, 240, 57, 0.4);
+    background-color: #ffffff; /* Efecto hover blanco */
+}
+
+/* Secondary: Fondo oscuro, texto claro (Para acciones secundarias) */
+.btn-secondary {
+    background-color: var(--color-primary, #1a472a);
+    color: var(--text-on-dark, #ffffff);
+}
+
+.btn-secondary:hover {
+    background-color: var(--color-secondary, #0f2b19);
+    border-color: var(--color-accent, #d4f039);

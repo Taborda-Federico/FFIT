@@ -1,0 +1,186 @@
+/* --- FONDO DINÁMICO --- */
+.admin-register-page {
+    min-height: 100vh;
+    background: #080808;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    padding: 20px;
+}
+
+.register-overlay-glow {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(26, 71, 42, 0.4) 0%, transparent 70%);
+    filter: blur(80px);
+    z-index: 1;
+}
+
+/* --- TARJETA GLASS --- */
+.register-content {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 440px;
+    animation: slideUpFade 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUpFade {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.register-glass-card {
+    background: rgba(15, 15, 15, 0.7);
+    backdrop-filter: blur(25px) saturate(150%);
+    -webkit-backdrop-filter: blur(25px) saturate(150%);
+    padding: 50px 40px;
+    border-radius: 40px;
+    border: 1px solid rgba(212, 240, 57, 0.15);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+    text-align: center;
+}
+
+/* --- CABECERA --- */
+.shield-wrapper {
+    width: 70px;
+    height: 70px;
+    background: rgba(212, 240, 57, 0.1);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 25px;
+    border: 1px solid rgba(212, 240, 57, 0.2);
+}
+
+.shield-icon {
+    font-size: 2.2rem;
+    color: #d4f039;
+    filter: drop-shadow(0 0 10px rgba(212, 240, 57, 0.3));
+}
+
+.register-glass-card h2 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 2.2rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    color: #fff;
+}
+
+.register-glass-card p {
+    color: #666;
+    font-size: 0.95rem;
+    margin-bottom: 35px;
+}
+
+/* --- FORMULARIO E INPUTS --- */
+.register-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.input-field-group {
+    text-align: left;
+}
+
+.input-field-group label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #444;
+    margin-bottom: 8px;
+    padding-left: 15px;
+    letter-spacing: 1px;
+}
+
+.input-glass-wrapper {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.3s ease;
+}
+
+.input-glass-wrapper:focus-within {
+    border-color: #d4f039;
+    background: rgba(212, 240, 57, 0.05);
+    box-shadow: 0 0 20px rgba(212, 240, 57, 0.1);
+}
+
+.input-icon {
+    color: #d4f039;
+    opacity: 0.6;
+    font-size: 1rem;
+}
+
+.input-glass-wrapper input {
+    background: transparent;
+    border: none;
+    color: #fff;
+    width: 100%;
+    outline: none;
+    font-size: 1rem;
+}
+
+.security-notice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #333;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 5px 0;
+}
+
+/* --- BOTÓN Y FOOTER --- */
+.btn-activate {
+    padding: 16px !important;
+    border-radius: 18px !important;
+    font-weight: 800 !important;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.register-footer {
+    margin-top: 40px;
+    padding-top: 25px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.register-footer p {
+    font-size: 0.7rem;
+    color: #333;
+    letter-spacing: 1px;
+    margin-bottom: 0;
+}
+
+/* --- RESPONSIVIDAD --- */
+@media (max-width: 480px) {
+    .register-glass-card {
+        padding: 40px 25px;
+        border-radius: 30px;
+    }
+
+    .register-glass-card h2 {
+        font-size: 1.8rem;
+    }
+
+    .input-glass-wrapper {
+        padding: 12px 15px;
+    }
+}

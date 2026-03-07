@@ -1,0 +1,364 @@
+/* Horarios.css */
+
+/* --- VARIABLES & TOKENS DE DISEÑO --- */
+:root {
+    --color-neon: #d4f039;
+    --color-dark-green: #1a472a;
+    --color-bg-dark: #1a1a1a;
+    --color-bg-card: #252525;
+    --color-chip-inactive: #2a2a2a;
+    --color-text-muted: #aaa;
+    --border-color: #333;
+    
+    /* Espaciados consistentes */
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 32px;
+}
+
+/* --- RESET BÁSICO --- */
+.finder-container * {
+    box-sizing: border-box; 
+}
+
+/* --- CONTENEDOR PRINCIPAL --- */
+.finder-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 5%;
+    min-height: 80vh;
+}
+
+/* HEADER SECCIÓN */
+.finder-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.finder-header .section-title {
+    font-family: 'Oswald', sans-serif;
+    color: #ffffff;
+    font-size: 3rem;
+    text-transform: uppercase;
+    line-height: 1.1;
+    margin: 0;
+}
+
+.section-subtitle {
+    color: var(--color-text-muted);
+    margin-top: 10px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 1.1rem;
+}
+
+/* --- FORMULARIO DE FILTROS --- */
+.finder-form {
+    background-color: var(--color-bg-dark);
+    padding: 2rem;
+    border-radius: 12px; /* Bordes un poco más suaves */
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.full-width {
+    width: 100%;
+}
+
+.form-group label {
+    color: var(--color-neon);
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1rem;
+}
+
+/* --- CHIPS / BOTONES (MEJORADO CON GRID) --- */
+.days-grid {
+    display: grid;
+    /* Esto crea columnas automáticas que no bajan de 140px pero se estiran */
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+}
+
+.day-chip {
+    background-color: var(--color-chip-inactive);
+    color: var(--color-text-muted);
+    border: 1px solid #444;
+    padding: 12px;
+    border-radius: 8px; /* Menos redondeado para verse más moderno y estructurado */
+    cursor: pointer;
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+    line-height: 1.2;
+}
+
+.day-chip:hover {
+    border-color: var(--color-neon);
+    color: #fff;
+    background-color: #333;
+    transform: translateY(-2px);
+}
+
+.day-chip.active {
+    background-color: var(--color-neon);
+    color: var(--color-dark-green); 
+    border-color: var(--color-neon);
+    font-weight: bold;
+    box-shadow: 0 0 15px rgba(212, 240, 57, 0.2);
+}
+
+/* Botón especial "TODOS" */
+.day-chip.all-days {
+    background-color: var(--color-dark-green);
+    color: #fff;
+    border-color: var(--color-dark-green);
+    /* Hacemos que ocupe 2 columnas si hay espacio, o toda la fila */
+    grid-column: 1 / -1; 
+}
+.day-chip.all-days.active {
+    background-color: var(--color-neon);
+    color: var(--color-dark-green);
+}
+
+/* --- BOTONES DE ACCIÓN --- */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
+.btn-clear {
+    background: transparent;
+    color: #ff5e5e;
+    border: 1px solid #ff5e5e;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+    transition: all 0.2s;
+}
+
+.btn-clear:hover {
+    background: #ff5e5e;
+    color: #fff;
+}
+
+/* --- RESULTADOS: GRILLA DE HORARIOS --- */
+.schedule-container {
+    margin-top: 4rem;
+    animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.schedule-title {
+    text-align: center;
+    color: #fff;
+    font-family: 'Oswald', sans-serif;
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+    text-transform: uppercase;
+}
+
+/* Layout Desktop: Columnas verticales */
+.schedule-columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.day-column {
+    background-color: #121212;
+    border: 1px solid #333;
+    border-radius: 8px;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.day-header {
+    background-color: var(--color-dark-green); 
+    color: #fff;
+    text-align: center;
+    padding: 15px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.3rem;
+    border-bottom: 3px solid var(--color-neon);
+    letter-spacing: 1px;
+}
+
+.day-body {
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-grow: 1; /* Ocupa el espacio restante */
+}
+
+/* TARJETAS DE CLASE (Desktop) */
+.schedule-card {
+    background-color: var(--color-bg-card);
+    padding: 12px 15px;
+    border-radius: 6px;
+    border-left: 5px solid #666;
+    transition: transform 0.2s;
+}
+
+.schedule-card:hover {
+    transform: translateX(5px);
+    background-color: #303030;
+}
+
+/* Colores por tipo (Lógica de negocio visual) */
+.schedule-card.type-funcional { border-left-color: #4a7c59; }
+.schedule-card.type-hibrido { border-left-color: var(--color-neon); }
+.schedule-card.type-cross { border-left-color: #ff5e5e; }
+.schedule-card.type-avanzado { border-left-color: var(--color-dark-green); border-right: 1px solid var(--color-neon); }
+.schedule-card.type-salud { border-left-color: #88d498; }
+.schedule-card.type-libre { border-left-color: #ccc; }
+
+.sc-time {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--color-neon);
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.sc-name {
+    display: block;
+    color: #fff;
+    font-size: 1rem;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.empty-day {
+    color: #666;
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 1rem 0;
+    font-style: italic;
+}
+
+/* =========================================
+   MEDIA QUERIES (RESPONSIVE AVANZADO)
+   ========================================= */
+
+/* Tablets y Móviles (< 900px) */
+@media (max-width: 900px) { 
+    
+    .finder-container {
+        padding: 1rem;
+        width: 100%;
+        overflow-x: hidden;
+    }
+
+    .finder-header .section-title {
+        font-size: 2rem;
+    }
+
+    .finder-form {
+        padding: 1.5rem;
+        gap: 1.5rem;
+    }
+
+    /* Ajuste de Grilla de Botones para Móvil */
+    .days-grid {
+        grid-template-columns: repeat(2, 1fr); /* 2 botones por fila fijos */
+        gap: 8px;
+    }
+    
+    .day-chip {
+        font-size: 0.85rem;
+        padding: 10px;
+    }
+
+    /* Transformación del Calendario a Lista Vertical */
+    .schedule-columns {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem; /* Más espacio entre días */
+    }
+
+    .day-column {
+        background: transparent;
+        border: none;
+        overflow: visible; /* Necesario para el sticky header */
+    }
+
+    /* MAGIA STICKY: El título del día se queda pegado arriba al scrollear */
+    .day-header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        padding: 10px;
+        text-align: left;
+        padding-left: 20px;
+        font-size: 1.2rem;
+    }
+
+    .day-body {
+        padding: 10px 0 0 0;
+    }
+
+    /* Tarjeta Móvil: Layout Horizontal (Flex row) */
+    .schedule-card {
+        display: flex;
+        flex-direction: row; /* Horizontal */
+        align-items: center;
+        justify-content: space-between;
+        padding: 15px;
+        margin-bottom: 5px;
+    }
+
+    .sc-time {
+        margin-bottom: 0;
+        font-size: 1.1rem; /* Hora más grande para lectura rápida */
+        min-width: 80px;
+    }
+
+    .sc-name {
+        text-align: right;
+        font-size: 0.95rem;
+    }
+}
+
+/* Móviles Muy Pequeños (Ej. iPhone SE, Galaxy Fold cerrado) */
+@media (max-width: 380px) {
+    .days-grid {
+        grid-template-columns: 1fr; /* 1 columna, botones anchos */
+    }
+    
+    .finder-header .section-title {
+        font-size: 1.8rem;
+    }
+}

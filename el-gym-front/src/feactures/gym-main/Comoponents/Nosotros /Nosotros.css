@@ -1,0 +1,245 @@
+/* Nosotros.css - Versión Final Corregida */
+
+/* --- CONFIGURACIÓN GENERAL --- */
+.nosotros-container {
+    padding: 4rem 5%; /* Un poco más de aire arriba */
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.section-header {
+    text-align: center; /* Asegura que el título H2 se centre */
+    margin-bottom: 3rem;
+}
+
+.section-header h2 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 3rem;
+    text-transform: uppercase;
+    color: #fff;
+    margin: 0;
+}
+
+/* --- SOLUCIÓN CENTRADO DE TEXTO --- */
+.team-intro {
+    color: #cccccc;
+    font-family: 'Roboto', sans-serif;
+    margin-top: 1rem;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    
+    /* Centrado perfecto */
+    text-align: center; 
+    max-width: 800px; 
+    margin-left: auto;
+    margin-right: auto;
+    display: block; /* Asegura que ocupe el ancho para centrarse */
+}
+
+.text-neon {
+    color: var(--brand-neon, #d4f039); /* Fallback por si la variable falla */
+    font-weight: bold;
+    display: inline; 
+}
+
+/* --- GRID RESPONSIVO (MOBILE FIRST) --- */
+.team-grid {
+    display: grid;
+    /* 280px es clave para celulares: si usas 300px, en un iPhone se corta */
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+    justify-content: center; /* Si sobra espacio, centra las tarjetas */
+}
+
+/* --- DISEÑO DE TARJETA --- */
+.team-card {
+    position: relative;
+    height: 500px; /* Altura desktop */
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid #333;
+    background-color: #1a1a1a; /* Fondo base por si la imagen tarda en cargar */
+}
+
+.team-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 30px rgba(212, 240, 57, 0.15);
+    border-color: var(--brand-neon, #d4f039);
+}
+
+.team-card-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center top; /* Enfoca las caras */
+    transition: transform 0.5s ease;
+    z-index: 1;
+}
+
+.team-card:hover .team-card-bg {
+    transform: scale(1.1);
+}
+
+/* Overlay para legibilidad */
+.team-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to bottom, 
+        rgba(0,0,0,0) 0%, 
+        rgba(18, 18, 18, 0.3) 40%, 
+        rgba(18, 18, 18, 0.98) 90%
+    );
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 1.5rem;
+}
+
+/* --- TIPOGRAFÍA TARJETA --- */
+.team-content {
+    color: #fff;
+    position: relative;
+    z-index: 3;
+}
+
+.coach-name {
+    font-family: 'Oswald', sans-serif;
+    font-size: 2rem;
+    text-transform: uppercase;
+    margin: 0;
+    line-height: 1;
+    color: var(--brand-neon, #d4f039);
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+}
+
+.coach-role {
+    font-family: 'Roboto', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.9;
+}
+
+.coach-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.tag {
+    background: rgba(0, 0, 0, 0.6);
+    padding: 0.2rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-family: 'Roboto', sans-serif;
+    border: 1px solid rgba(212, 240, 57, 0.4);
+    color: #fff;
+}
+
+.coach-bio {
+    font-family: 'Roboto', sans-serif;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: #d1d1d1;
+    margin-bottom: 1.2rem;
+    /* Limita el texto a 3 líneas para que no rompa el diseño */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* --- SOLUCIÓN BOTONES Y REDES (BLOQUES BLANCOS) --- */
+.coach-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(255,255,255,0.15);
+    padding-top: 1rem;
+    margin-top: auto;
+}
+
+/* Forzamos transparencia en el botón para quitar el fondo blanco */
+.coach-actions button,
+.coach-actions .btn {
+    background-color: transparent !important; 
+    border: 1px solid var(--brand-neon, #d4f039) !important;
+    color: var(--brand-neon, #d4f039) !important;
+    font-family: 'Oswald', sans-serif !important;
+    text-transform: uppercase;
+    padding: 5px 15px; /* Ajuste seguro */
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.coach-actions button:hover {
+    background-color: var(--brand-neon, #d4f039) !important;
+    color: #000 !important;
+}
+
+/* Solución para el link de Instagram */
+.social-link {
+    color: #ffffff !important; /* Blanco forzado */
+    text-decoration: none;
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: color 0.3s ease;
+    background: transparent !important;
+}
+
+.social-link:hover {
+    color: var(--brand-neon, #d4f039) !important;
+    text-decoration: underline;
+}
+
+/* --- MEDIA QUERIES (MÓVIL) --- */
+@media (max-width: 768px) {
+    .nosotros-container {
+        padding: 2rem 1.5rem;
+    }
+
+    .section-header h2 {
+        font-size: 2.2rem;
+    }
+    
+    .team-intro {
+        font-size: 1rem;
+    }
+
+    /* En móvil las tarjetas son un poco más bajas para facilitar el scroll */
+    .team-card {
+        height: 420px; 
+    }
+
+    .coach-name {
+        font-size: 1.6rem;
+    }
+    
+    /* Ajuste del overlay en móvil para asegurar legibilidad */
+    .team-overlay {
+        background: linear-gradient(
+            to bottom, 
+            rgba(0,0,0,0) 0%, 
+            rgba(18, 18, 18, 0.4) 30%, 
+            rgba(18, 18, 18, 0.98) 85%
+        );
+        padding: 1.2rem;
+    }
+}

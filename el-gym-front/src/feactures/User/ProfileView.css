@@ -1,0 +1,153 @@
+.profile-page-container {
+    padding: 40px 25px 0;
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* --- HERO SECTION --- */
+.profile-hero {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.avatar-huge {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 20px;
+    position: relative;
+    background: #111;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 5rem;
+    color: #222;
+    border: 3px solid #000;
+    box-shadow: 0 0 25px rgba(212, 240, 57, 0.1);
+}
+
+.avatar-huge img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+.status-badge-online {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 18px;
+    height: 18px;
+    background: var(--neon);
+    border: 3px solid #000;
+    border-radius: 50%;
+}
+
+.hero-info h1 { font-family: 'Oswald', sans-serif; font-size: 2rem; margin: 0; }
+
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 6px 15px;
+    border-radius: 50px;
+    margin-top: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.rank-badge span { font-size: 0.65rem; font-weight: 900; letter-spacing: 1px; color: #888; }
+.rank-badge svg { color: var(--neon); font-size: 0.8rem; }
+
+/* --- MEMBERSHIP CARD --- */
+.membership-profile-card {
+    background: linear-gradient(145deg, #0a0a0a 0%, #000 100%);
+    border: 1px solid #111;
+    padding: 25px;
+    border-radius: 28px;
+    margin-bottom: 35px;
+}
+
+.m-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.m-card-header h3 { font-size: 0.9rem; font-weight: 700; color: #fff; margin: 0; }
+
+.m-card-body { display: flex; justify-content: space-between; }
+.m-item label { display: block; font-size: 0.6rem; color: #444; font-weight: 800; letter-spacing: 1px; margin-bottom: 5px; }
+.m-item span { font-size: 1.1rem; font-weight: 900; }
+
+/* --- PERSONAL INFO --- */
+.section-label-profile {
+    font-size: 0.65rem;
+    font-weight: 900;
+    color: #222;
+    letter-spacing: 3px;
+    display: block;
+    margin-bottom: 15px;
+    padding-left: 10px;
+}
+
+.info-list-glass {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 24px;
+    padding: 10px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    margin-bottom: 35px;
+}
+
+.info-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 0;
+    border-bottom: 1px solid #050505;
+}
+
+.info-row:last-child { border: none; }
+.info-row svg { color: #333; font-size: 1.1rem; }
+
+.info-text label { display: block; font-size: 0.7rem; color: #555; font-weight: 700; }
+.info-text span { font-size: 0.95rem; color: #ddd; font-weight: 500; }
+
+/* --- ACTIONS --- */
+.profile-actions-area {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.btn-action-outline {
+    background: transparent;
+    border: 1px solid #222;
+    color: #888;
+    padding: 15px;
+    border-radius: 16px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.btn-logout-pro {
+    background: rgba(255, 68, 68, 0.05);
+    border: 1px solid rgba(255, 68, 68, 0.1);
+    color: #ff4444;
+    padding: 16px;
+    border-radius: 16px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    letter-spacing: 1px;
+}
+
+.btn-logout-pro:active { background: #ff4444; color: white; }
+
+.profile-footer-branding {
+    text-align: center;
+    margin-top: 50px;
+    color: #1a1a1a;
+    font-size: 0.65rem;
+    font-weight: 900;
+    letter-spacing: 1px;
+}

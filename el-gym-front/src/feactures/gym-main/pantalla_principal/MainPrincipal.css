@@ -45,15 +45,21 @@ html, body {
 
 .logo-container {
     font-family: 'Oswald', sans-serif;
-    font-size: 1.8rem;
+    font-size: 2rem; /* Un poco más chico para evitar colisiones */
     font-weight: 700;
-    color: #fff;
+    color: var(--text-white);
+    font-style: italic;
     cursor: pointer;
-    z-index: 10001; /* Siempre por encima */
+    text-transform: uppercase;
+    letter-spacing: -1px;
+    z-index: 1001;
 }
+
 .logo-plus {
     color: var(--brand-neon);
-    margin-left: 2px;
+    font-size: 2.5rem;
+    line-height: 0;
+    vertical-align: middle;
 }
 
 .navbar-floating {
@@ -92,12 +98,9 @@ html, body {
 }
 
 /* Alineamos el botón de contacto a la derecha */
-.nav-cta {
-    background: var(--brand-neon);
-    color: #000 !important;
-    padding: 0.5rem 1.2rem;
-    border-radius: 4px;
-    font-weight: 700;
+.nav-cta-wrapper {
+    display: flex;
+    justify-content: flex-end;
 }
 
 .nav-item {
@@ -110,10 +113,6 @@ html, body {
     transition: all 0.3s ease;
     cursor: pointer !important;
     opacity: 0.8;
-}
-.nav-cta:hover {
-    box-shadow: 0 0 20px rgba(212, 240, 57, 0.4);
-    transform: translateY(-2px);
 }
 
 .nav-item:hover {

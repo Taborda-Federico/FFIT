@@ -1,0 +1,11 @@
+# Dependencias (Nunca se suben)
+node_modules/
+
+# Variables de entorno (Contraseñas privadas)
+.env
+
+# Logs y archivos temporales
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store

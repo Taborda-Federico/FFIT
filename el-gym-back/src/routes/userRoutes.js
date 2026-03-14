@@ -3,7 +3,6 @@ const router = express.Router();
 const { createStudent, getStudents, renewSubscription, deleteStudent } = require('../controllers/userController');
 const { protect, admin } = require('../middlewares/authMiddleware');
 
-// Ruta para crear alumno. Fíjate cómo usamos "protect" y "admin" como filtros antes de crear al estudiante
 router.post('/', protect, admin, createStudent);
 router.get('/', protect, admin, getStudents);
 router.put('/:id/renew', protect, admin, renewSubscription);

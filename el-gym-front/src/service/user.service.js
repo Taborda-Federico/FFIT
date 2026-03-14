@@ -39,5 +39,23 @@ export const UserService = {
         } catch (error) {
             throw error;
         }
+    },
+    renewMembership: async (alumnoId, token) => {
+        const response = await fetch(`${API_URL}/users/${alumnoId}/renew`, {
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) throw new Error("Error al registrar el pago");
+        return await response.json();
+    },
+
+    // Eliminar Alumno
+    deleteUser: async (alumnoId, token) => {
+        const response = await fetch(`${API_URL}/users/${alumnoId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) throw new Error("Error al eliminar el alumno");
+        return await response.json();
     }
 };

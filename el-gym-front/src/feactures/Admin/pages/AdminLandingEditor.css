@@ -1,9 +1,4 @@
-:root {
-    --accent: #d4f039;
-    --bg-card: rgba(20, 20, 20, 0.7);
-    --border: rgba(255, 255, 255, 0.08);
-    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
+/* AdminLandingEditor.css — Los tokens se definen en styles/variables.css */
 
 .admin-editor-layout {
     animation: fadeIn 0.5s ease;
@@ -273,22 +268,11 @@
 
 /* --- RESPONSIVIDAD --- */
 @media (max-width: 768px) {
-    .editor-grid { grid-template-columns: 1fr; }
-    .editor-header-view { flex-direction: column; align-items: flex-start; }
-    .editor-header-view button { width: 100%; }
-}
-
-/* --- RESPONSIVIDAD --- */
-@media (max-width: 768px) {
     .editor-header-view {
         flex-direction: column;
         align-items: flex-start;
     }
     .editor-header-view button { width: 100%; }
-
     .editor-section-card { padding: 20px; border-radius: 20px; }
-    
-    .editor-grid {
-        grid-template-columns: 1fr; /* Una sola columna en móvil */
-    }
+    .editor-grid { grid-template-columns: 1fr; }
 }

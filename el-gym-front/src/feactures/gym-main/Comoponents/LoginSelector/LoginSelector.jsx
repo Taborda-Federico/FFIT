@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import './LoginSelector.css';
 import { useAuth } from '../../../../contex/AuthContext';
 import { AuthService } from '../../../../service/auth.service'; // Importamos nuestro mensajero
+import { Button } from '../../../../Utils/Button';
+import { Toast } from '../../../../Utils/Toast';
 
 export function LoginSelector({ onClose }) {
     const navigate = useNavigate();
@@ -96,7 +98,7 @@ export function LoginSelector({ onClose }) {
                         
                         <div className="form-body">
                             {/* Mostrar alerta de error si falla el login */}
-                            {errorMsg && <div className="error-alert" style={{color: '#ff4444', background: 'rgba(255,0,0,0.1)', padding: '10px', borderRadius: '8px', marginBottom: '15px', textAlign: 'center', fontSize: '0.9rem'}}>{errorMsg}</div>}
+                            {errorMsg && <Toast message={errorMsg} type="error" onClose={() => setErrorMsg('')} />}
 
                             <div className="glass-input-wrapper">
                                 <FaUserAlt className="input-icon" />
@@ -120,9 +122,9 @@ export function LoginSelector({ onClose }) {
                                 />
                             </div>
 
-                            <button type="submit" className="btn-login-submit" disabled={isLoading}>
+                            <Button type="submit" variant="primary" fullWidth disabled={isLoading} className="btn-login-submit">
                                 {isLoading ? <div className="spinner">Cargando...</div> : 'INICIAR SESIÓN'}
-                            </button>
+                            </Button>
                         </div>
                         
                         <footer className="login-footer-info">

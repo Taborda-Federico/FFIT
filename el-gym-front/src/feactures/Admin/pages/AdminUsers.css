@@ -1,11 +1,4 @@
-:root {
-    --neon: #d4f039;
-    --black-pure: #000000;
-    --black-card: #080808;
-    --border-dark: #121212;
-    --text-muted: #555555;
-    --text-dim: #222222;
-}
+/* AdminUsers.css — Los tokens se definen en styles/variables.css */
 
 /* --- CONTENEDOR MAESTRO --- */
 .admin-users-view {
@@ -147,7 +140,7 @@
     .users-header-main button { width: 100%; padding: 15px !important; }
 
     .users-list-wrapper { background: transparent; border: none; overflow: visible; }
-    .users-table-pro thead { display: none; } /* Ocultamos los títulos de columna */
+    .users-table-pro thead { display: none; }
     
     .users-table-pro, .users-table-pro tbody, .user-row-pro, .users-table-pro td {
         display: block; width: 100%;
@@ -157,53 +150,89 @@
         background: var(--black-card);
         border: 1px solid var(--border-dark);
         border-radius: 24px;
-        padding: 15px 20px;
+        padding: 18px 20px;
         margin-bottom: 15px;
     }
 
     .users-table-pro td {
         display: flex; 
-        justify-content: space-between; /* Esto empuja el valor a la derecha */
+        flex-wrap: wrap;
+        justify-content: space-between;
         align-items: center;
-        padding: 12px 0; 
+        padding: 10px 0; 
         border-bottom: 1px solid #0f0f0f;
+        gap: 6px;
+        min-height: 40px;
     }
 
+    .users-table-pro td:first-child { padding-top: 5px; }
     .users-table-pro td:last-child { border: none; padding-bottom: 5px; }
 
-    /* Inyección de títulos dinámicos */
     .users-table-pro td::before {
         content: attr(data-label);
-        font-size: 0.65rem; 
+        font-size: 0.6rem; 
         font-weight: 900; 
         color: var(--text-dim); 
         text-transform: uppercase;
         letter-spacing: 1px;
+        flex-shrink: 0;
+        width: auto;
     }
 
-    /* Ajuste de avatar y nombre en móvil */
     .user-profile-cell { 
-        flex-direction: row-reverse; /* Avatar a la derecha para consistencia visual */
-        text-align: right;
+        flex-direction: row;
+        gap: 10px;
+        width: 100%;
     }
-    
-    .user-details { display: flex; flex-direction: column; align-items: flex-end; }
 
-    /* Ajuste de Acciones en móvil */
+    .user-details { 
+        display: flex; 
+        flex-direction: column; 
+        align-items: flex-start;
+        min-width: 0;
+        flex: 1;
+    }
+
+    .u-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
+    }
+
+    .avatar-mini { flex-shrink: 0; }
+
+    .status-badge-pro { 
+        transform: scale(1);
+        max-width: 100%;
+        white-space: nowrap;
+    }
+
+    .vencimiento-cell { align-items: flex-end; }
+
+    .plan-pill {
+        max-width: 140px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
     .actions-flex { 
         width: 100%; 
-        justify-content: space-between; /* Botones distribuidos */
+        justify-content: space-between;
         gap: 10px;
-        margin-top: 5px;
+        margin-top: 8px;
     }
 
     .btn-action-pro { 
         flex: 1; 
-        height: 48px; /* Botones más altos para touch */
+        height: 44px;
+        min-width: 44px;
         background: #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
-
-    .status-badge-pro { transform: scale(1); } /* Asegura que no se corte */
 }
 
 /* CARGA Y VACÍO */

@@ -5,23 +5,32 @@
     background: rgba(0, 0, 0, 0.85);
     backdrop-filter: blur(12px);
     display: flex;
-    justify-content: center; /* Centrado perfecto sin transform */
-    align-items: center;     
-    z-index: 9999; /* Máxima prioridad */
+    justify-content: center;
+    /* Centrado perfecto sin transform */
+    align-items: center;
+    z-index: 9999;
+    /* Máxima prioridad */
     padding: 20px;
     animation: fadeInModal 0.3s ease-out;
 }
 
 @keyframes fadeInModal {
-    from { opacity: 0; transform: scale(0.98); }
-    to { opacity: 1; transform: scale(1); }
+    from {
+        opacity: 0;
+        transform: scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 /* --- TARJETA DEL MODAL --- */
 .modal-confirm-card {
     background: #0f0f0f;
     width: 100%;
-    max-width: 420px; 
+    max-width: 420px;
     border-radius: 28px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 35px 25px;
@@ -30,17 +39,17 @@
     overflow: hidden;
 }
 
-/* Resplandor neón de fondo sutil */
 .modal-confirm-card::before {
     content: '';
     position: absolute;
-    top: -50%; left: -50%;
-    width: 200%; height: 200%;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
     background: radial-gradient(circle, rgba(212, 240, 57, 0.03) 0%, transparent 70%);
     pointer-events: none;
 }
 
-/* --- CABECERA --- */
 .modal-header-pro {
     text-align: center;
     margin-bottom: 25px;
@@ -74,7 +83,6 @@
     font-size: 0.85rem;
 }
 
-/* --- CAJA DE RESUMEN --- */
 .summary-box-pro {
     background: #161616;
     border-radius: 20px;
@@ -92,9 +100,16 @@
     gap: 12px;
 }
 
-.item-icon { color: #d4f039; font-size: 1rem; opacity: 0.8; }
+.item-icon {
+    color: #d4f039;
+    font-size: 1rem;
+    opacity: 0.8;
+}
 
-.item-text { display: flex; flex-direction: column; }
+.item-text {
+    display: flex;
+    flex-direction: column;
+}
 
 .item-text label {
     font-size: 0.65rem;
@@ -157,7 +172,8 @@
 /* --- FOOTER Y BOTONES --- */
 .modal-footer-pro {
     display: flex;
-    flex-direction: column; /* Apilado para móviles/universal */
+    flex-direction: column;
+    /* Apilado para móviles/universal */
     gap: 12px;
     margin-top: 10px;
 }
@@ -210,6 +226,7 @@
     }
 
     .modal-footer-pro {
-        flex-direction: column-reverse; /* El botón de Publicar queda arriba al invertir el flujo lógico si es necesario */
+        flex-direction: column-reverse;
+        /* El botón de Publicar queda arriba al invertir el flujo lógico si es necesario */
     }
 }

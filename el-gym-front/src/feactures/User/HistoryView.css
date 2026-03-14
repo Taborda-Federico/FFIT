@@ -1,11 +1,4 @@
-:root {
-    --neon: #d4f039;
-    --black: #000000;
-    --dark-grey: #0a0a0a; /* Fondo sutil para tarjetas */
-    --black-elevated: #0f0f0f; /* Un tono ligeramente superior al negro absoluto */
-    --text-grey: #444444;
-    --text-dim: #222222;
-}
+/* HistoryView.css — Los tokens se definen en styles/variables.css */
 
 /* --- CONTENEDOR PRINCIPAL --- */
 .history-oled-container {

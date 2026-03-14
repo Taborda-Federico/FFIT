@@ -1,29 +1,43 @@
 const Plan = require('../models/Plan');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
+const transporter = require('../config/mailer');
 
-// @desc    Publicar un plan a un Alumno (asignación real)
-// @route   POST /api/planes/publicar
-// @access  Privado (Solo Admin)
 const publicarPlan = async (req, res) => {
     try {
         const { alumnoId, titulo, notasGlobales, vencimiento, sesiones } = req.body;
 
-        // 1. Validamos que el alumno exista
         const alumno = await User.findById(alumnoId);
         if (!alumno) {
             return res.status(404).json({ message: 'Alumno no encontrado en la base de datos.' });
         }
-
-        // 2. Creamos el plan asignado
         const nuevoPlan = await Plan.create({
             titulo,
             notasGlobales,
             vencimiento,
             alumnoId: alumno._id,
-            adminId: req.user._id, // Viene seguro desde el Token JWT
-            esPlantilla: false,    // No es plantilla, es un plan activo
+            adminId: req.user._id,
+            esPlantilla: false,
             sesiones
         });
+        try {
+            if (alumno && alumno.email) {
+                await transporter.sendMail({
+                    from: `"Tu Coach en FFIT+" <${process.env.EMAIL_USER}>`,
+                    to: alumno.email,
+                    subject: '¡Nueva Rutina Asignada! 🏋️‍♂️',
+                    html: `
+                        <h3>¡Hola ${alumno.nombre}!</h3>
+                        <p>Tu entrenador te acaba de asignar un nuevo plan de entrenamiento:</p>
+                        <h2 style="color: #d4f039; background: #111; padding: 10px; display: inline-block;">${req.body.titulo}</h2>
+                        <p>Entra a la aplicación ahora mismo para ver los bloques y ejercicios de esta semana.</p>
+                        <p>¡A romperla!</p>
+                    `
+                });
+            }
+        } catch (error) {
+            console.error("Error al enviar email de nueva rutina:", error);
+        }
 
         res.status(201).json({ message: '¡Plan publicado y asignado con éxito!', plan: nuevoPlan });
     } catch (error) {
@@ -31,9 +45,6 @@ const publicarPlan = async (req, res) => {
     }
 };
 
-// @desc    Guardar la estructura actual como Plantilla reutilizable
-// @route   POST /api/planes/plantilla
-// @access  Privado (Solo Admin)
 const guardarPlantilla = async (req, res) => {
     try {
         const { titulo, notasGlobales, sesiones } = req.body;
@@ -42,7 +53,7 @@ const guardarPlantilla = async (req, res) => {
             titulo,
             notasGlobales,
             adminId: req.user._id,
-            esPlantilla: true, // ¡Interruptor activado!
+            esPlantilla: true,
             sesiones
         });
 
@@ -52,12 +63,8 @@ const guardarPlantilla = async (req, res) => {
     }
 };
 
-// @desc    Obtener lista de todas las plantillas creadas por el Staff
-// @route   GET /api/planes/plantillas
-// @access  Privado (Solo Admin)
 const getPlantillas = async (req, res) => {
     try {
-        // Buscamos solo los que tienen esPlantilla: true
         const plantillas = await Plan.find({ esPlantilla: true }).sort({ createdAt: -1 });
         res.json(plantillas);
     } catch (error) {

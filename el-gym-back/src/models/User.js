@@ -4,27 +4,25 @@ const bcrypt = require('bcryptjs');
 const userSchema = new mongoose.Schema({
     nombre: { type: String, required: true },
     email: { type: String, required: true, unique: true },
+    telefono: { type: String },
     password: { type: String, required: true },
     role: { type: String, enum: ['admin', 'user'], default: 'user' },
     adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    // Datos específicos si el usuario es un "Alumno"
     dni: { type: String },
     peso: { type: Number },
     altura: { type: Number },
     estado: { type: String, enum: ['Al día', 'Pendiente'], default: 'Pendiente' },
     fechaVencimiento: { type: Date }
-}, { timestamps: true }); // Guarda automáticamente la fecha de creación
+}, { timestamps: true });
 
-// MAGIA: Antes de guardar en la BD, encriptamos la contraseña por seguridad
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function (next) {
     if (!this.isModified('password')) return next();
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
     next();
 });
 
-// Método para comparar la contraseña cuando intenten hacer Login
-userSchema.methods.matchPassword = async function(enteredPassword) {
+userSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
 

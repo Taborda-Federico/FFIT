@@ -8,7 +8,7 @@ const getMiLanding = async (req, res) => {
         
         // Si no existe, devolvemos arrays vacíos para que React no explote
         if (!landing) {
-            return res.json({ clases: [], coaches: [] });
+            return res.json({ heroBackgrounds: [], clases: [], coaches: [] });
         }
         res.json(landing);
     } catch (error) {
@@ -20,12 +20,12 @@ const getMiLanding = async (req, res) => {
 // @route   PUT /api/landing/my-site
 const updateMiLanding = async (req, res) => {
     try {
-        const { clases, coaches } = req.body;
+        const { heroBackgrounds, clases, coaches } = req.body;
 
         // findOneAndUpdate con upsert: true significa "Si existe, actualízalo. Si no existe, créalo".
         const landingActualizada = await Landing.findOneAndUpdate(
             { adminId: req.user._id },
-            { clases, coaches },
+            { heroBackgrounds, clases, coaches },
             { new: true, upsert: true }
         );
 
@@ -43,7 +43,7 @@ const getPublicLanding = async (req, res) => {
         const landing = await Landing.findOne();
         
         if (!landing) {
-            return res.json({ clases: [], coaches: [] });
+            return res.json({ heroBackgrounds: [], clases: [], coaches: [] });
         }
         res.json(landing);
     } catch (error) {

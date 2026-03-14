@@ -1,19 +1,14 @@
-// src/server.js
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config(); // Carga las variables del .env
+require('dotenv').config();
 const connectDB = require('./config/db');
 
-// Conectar a la base de datos
 connectDB();
 
 const app = express();
+app.use(cors());
+app.use(express.json());
 
-// Middlewares globales
-app.use(cors()); // Permite peticiones desde React
-app.use(express.json()); // Permite al servidor entender datos en formato JSON
-
-// Ruta de prueba básica
 app.get('/', (req, res) => {
     res.send('API de FFIT+ funcionando al 100% 🚀');
 });

@@ -1,13 +1,10 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
-// Función auxiliar para generar el Pase VIP (Token)
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
 
-// @desc    Registrar al Administrador (Primer uso)
-// @route   POST /api/auth/register-admin
 exports.registerAdmin = async (req, res) => {
     const { nombre, email, password } = req.body;
 
@@ -30,8 +27,6 @@ exports.registerAdmin = async (req, res) => {
     }
 };
 
-// @desc    Iniciar Sesión (Admin o Alumno)
-// @route   POST /api/auth/login
 exports.login = async (req, res) => {
     const { email, password } = req.body;
 

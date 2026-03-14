@@ -46,5 +46,23 @@ export const StudentService = {
         } catch (error) {
             throw error;
         }
+
+    },
+    // Traer notificaciones
+    getNotifications: async (token) => {
+        const response = await fetch(`${API_URL}/student/notifications`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) throw new Error("Error al cargar notificaciones");
+        return await response.json();
+    },
+
+    // Marcar como leída
+    markNotificationRead: async (notifId, token) => {
+        await fetch(`${API_URL}/student/notifications/${notifId}/read`, {
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
     }
+
 };

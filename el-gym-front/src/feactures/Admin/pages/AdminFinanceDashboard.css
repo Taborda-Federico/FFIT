@@ -129,22 +129,11 @@
 @media (max-width: 768px) {
     .finance-header { flex-direction: column; align-items: flex-start; }
     .finance-header button { width: 100%; }
-    
-    /* Convertir tabla en tarjetas en móvil */
-    .finance-table thead { display: none; }
-    .transaction-row {
-        display: block;
-        padding: 20px 0;
-        border-bottom: 1px solid #222;
-    }
-    .transaction-row td {
-        display: flex;
-        justify-content: space-between;
-        padding: 5px 0;
-    }
-    .transaction-row td::before {
-        content: attr(data-label);
-        font-weight: bold;
-        color: #444;
-    }
+    .stats-grid { grid-template-columns: 1fr; }
+    .content-card { padding: 20px 15px; }
+    .search-mini { max-width: 100%; }
+
+    /* Tabla scrollable horizontalmente en mobile */
+    .content-card { overflow-x: auto; }
+    .finance-table { min-width: 500px; }
 }

@@ -1,15 +1,8 @@
-/* MainPrincipal.css */
+/* MainPrincipal.css — Los tokens se definen en styles/variables.css */
 
 /* --- CONFIGURACIÓN DE FUENTES Y BASE --- */
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
-
-:root {
-    --brand-primary: #1a472a;  /* Verde Oscuro */
-    --brand-neon: #d4f039;     /* Verde Lima */
-    --bg-dark: #121212;        /* Fondo oscuro */
-    --text-white: #ffffff;
-}
 
 /* Evita el scroll horizontal fantasma */
 html, body {
@@ -30,51 +23,24 @@ html, body {
    1. NAVBAR FLOTANTE
    ========================================= */
 .navbar-floating {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
-    padding: 1.5rem 5%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    z-index: 1000;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 100%);
-    transition: all 0.3s ease;
+    height: 70px;
+    z-index: 9999;
+    background: rgba(10, 10, 10, 0.65);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-bottom: 1px solid rgba(212, 240, 57, 0.08);
+    transition: background 0.4s ease, box-shadow 0.4s ease;
 }
 
-.logo-container {
-    font-family: 'Oswald', sans-serif;
-    font-size: 2rem; /* Un poco más chico para evitar colisiones */
-    font-weight: 700;
-    color: var(--text-white);
-    font-style: italic;
-    cursor: pointer;
-    text-transform: uppercase;
-    letter-spacing: -1px;
-    z-index: 1001;
+.navbar-floating.menu-open {
+    background: rgba(10, 10, 10, 0.98);
 }
 
-.logo-plus {
-    color: var(--brand-neon);
-    font-size: 2.5rem;
-    line-height: 0;
-    vertical-align: middle;
-}
-
-.navbar-floating {
-    position: fixed; 
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 80px; /* Altura fija para control total */
-    z-index: 9999; 
-    background: rgba(0, 0, 0, 0.6); 
-    backdrop-filter: blur(15px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    transition: all 0.4s ease;
-}
-/* Contenedor interno para alinear logo y menu */
+/* Contenedor interno */
 .nav-container-wrapper {
     max-width: 1400px;
     margin: 0 auto;
@@ -84,23 +50,46 @@ html, body {
     justify-content: space-between;
     align-items: center;
     padding: 0 5%;
+    box-sizing: border-box;
 }
 
+/* LOGO */
+.logo-container {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text-white);
+    font-style: italic;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: -1px;
+    z-index: 10001;
+    flex-shrink: 0;
+    transition: opacity 0.2s ease;
+}
+
+.logo-container:hover {
+    opacity: 0.85;
+}
+
+.logo-plus {
+    color: var(--brand-neon);
+    font-size: 2.2rem;
+    line-height: 0;
+    vertical-align: middle;
+}
+
+/* LINKS DE NAVEGACIÓN (desktop) */
 .nav-links {
     display: flex;
     align-items: center;
     gap: 2.5rem;
 }
+
 .nav-mobile-actions {
     display: flex;
     align-items: center;
-    gap: 2rem;
-}
-
-/* Alineamos el botón de contacto a la derecha */
-.nav-cta-wrapper {
-    display: flex;
-    justify-content: flex-end;
+    gap: 1.5rem;
 }
 
 .nav-item {
@@ -108,20 +97,55 @@ html, body {
     text-decoration: none;
     font-family: 'Oswald', sans-serif;
     text-transform: uppercase;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     letter-spacing: 1.5px;
-    transition: all 0.3s ease;
-    cursor: pointer !important;
+    transition: color 0.25s ease, text-shadow 0.25s ease;
+    cursor: pointer;
     opacity: 0.8;
+    position: relative;
+}
+
+.nav-item::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--brand-neon);
+    transition: width 0.3s ease;
+    box-shadow: 0 0 8px rgba(212, 240, 57, 0.6);
 }
 
 .nav-item:hover {
     color: var(--brand-neon) !important;
     opacity: 1;
-    text-shadow: 0 0 10px rgba(212, 240, 57, 0.3);
 }
 
-/* Botón de Acceso (Admin/Alumno) estilizado para transparencia */
+.nav-item:hover::after {
+    width: 100%;
+}
+
+/* Botón CTA especial */
+.nav-cta {
+    color: var(--brand-neon) !important;
+    border: 1px solid rgba(212, 240, 57, 0.4);
+    padding: 0.35rem 1rem;
+    border-radius: 4px;
+    opacity: 1 !important;
+    background: rgba(212, 240, 57, 0.05);
+    transition: background 0.25s ease, color 0.25s ease !important;
+}
+
+.nav-cta:hover {
+    background: var(--brand-neon) !important;
+    color: #000 !important;
+    box-shadow: 0 0 14px rgba(212, 240, 57, 0.35);
+}
+
+.nav-cta::after { display: none; }
+
+/* Botón de Acceso (Admin/Alumno) */
 .nav-login-btn {
     border: 1px solid rgba(212, 240, 57, 0.5) !important;
     color: var(--brand-neon) !important;
@@ -129,74 +153,116 @@ html, body {
     padding: 0.4rem 1rem !important;
     font-size: 0.8rem !important;
     border-radius: 4px !important;
-    font-family: 'Oswald';
+    font-family: 'Oswald', sans-serif;
+    transition: background 0.25s ease, color 0.25s ease !important;
 }
 
 .nav-login-btn:hover {
     background: var(--brand-neon) !important;
     color: #000 !important;
+    box-shadow: 0 0 14px rgba(212, 240, 57, 0.35);
 }
 
+/* BOTÓN HAMBURGUESA — oculto en desktop */
 .mobile-menu-btn {
-    display: none; /* Oculto en PC */
+    display: none;
     background: none;
-    border: none;
+    border: 1px solid rgba(212, 240, 57, 0.3);
+    border-radius: 6px;
     color: var(--brand-neon);
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     cursor: pointer;
+    padding: 0.4rem 0.6rem;
+    z-index: 10001;
+    transition: background 0.2s ease;
+    flex-shrink: 0;
 }
 
-@media (max-width: 900px) {
-    .mobile-menu-btn {
-        display: block; /* Aparece en móvil */
-        z-index: 10001;
+.mobile-menu-btn:hover {
+    background: rgba(212, 240, 57, 0.1);
+}
+
+/* =========================================
+   RESPONSIVE — MOBILE (max 768px)
+   ========================================= */
+@media (max-width: 768px) {
+    .navbar-floating {
+        height: 60px;
     }
 
+    .mobile-menu-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Menú full-screen que baja desde arriba */
     .nav-links {
         position: fixed;
-        top: -100vh; /* Escondido arriba */
+        top: 0;
         left: 0;
         width: 100%;
-        height: 100vh;
-        background: #000000; /* OLED Black */
+        height: 100dvh; /* usa dvh para evitar el problema de la barra del navegador móvil */
+        background: rgba(8, 8, 8, 0.97);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
         flex-direction: column;
         justify-content: center;
-        gap: 2.5rem;
-        transition: all 0.5s cubic-bezier(0.77, 0, 0.175, 1);
+        align-items: center;
+        gap: 0;
+        padding: 80px 2rem 2rem;
+        box-sizing: border-box;
+        /* Transformación vertical para animación suave */
+        transform: translateY(-100%);
+        opacity: 0;
+        transition: transform 0.45s cubic-bezier(0.77, 0, 0.175, 1),
+                    opacity 0.35s ease;
         z-index: 10000;
-        padding: 2rem;
+        pointer-events: none;
     }
 
-    /* Cuando el menú está activo */
     .nav-links.active {
-        top: 0;
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: all;
     }
 
-    .nav-item {
-        font-size: 1.5rem; /* Links más grandes para touch */
+    /* Línea separadora entre cada link */
+    .nav-links .nav-item {
+        font-size: 1.8rem;
+        letter-spacing: 3px;
         width: 100%;
         text-align: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        opacity: 0.9;
     }
 
+    .nav-links .nav-item::after {
+        display: none; /* Sin subrayado hover en mobile */
+    }
+
+    .nav-links .nav-item:last-child {
+        border-bottom: none;
+    }
+
+    /* Acciones al final del menú mobile */
     .nav-mobile-actions {
         flex-direction: column;
         width: 100%;
-        margin-top: 1rem;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(212, 240, 57, 0.15);
     }
 
+    .nav-mobile-actions .nav-cta,
     .nav-login-btn {
-        width: 100%;
-        padding: 1rem !important;
-        font-size: 1.1rem !important;
-    }
-
-    /* Ajuste del Hero para que no se pegue al nav */
-    .hero-fullscreen {
-        padding-top: 80px;
-    }
-
-    .hero-title {
-        margin-top: 1rem;
+        width: 100% !important;
+        text-align: center;
+        padding: 0.9rem 1rem !important;
+        font-size: 1rem !important;
+        border-radius: 6px !important;
     }
 }
 /* =========================================
@@ -254,18 +320,10 @@ html, body {
     color: var(--brand-neon);
     display: block; /* En móvil a veces queda mejor en otra línea */
 }
-@media (max-width: 900px) {
-    .navbar-floating {
-        /* En móvil, lo dejamos fijo arriba para que siempre puedan navegar */
-        position: fixed !important; 
-        top: 0;
-        background-color: rgba(0, 0, 0, 0.95) !important;
-        box-shadow: 0 2px 20px rgba(0,0,0,0.5);
-    }
-    
+/* El hero tiene padding-top para no quedar tapado por el navbar fijo */
+@media (max-width: 768px) {
     .hero-fullscreen {
-        /* Agregamos un margen para que el primer texto no quede tapado por el nav fijo */
-        padding-top: 140px !important;
+        padding-top: 60px;
     }
 }
 
@@ -319,37 +377,11 @@ html, body {
    MEDIA QUERIES (RESPONSIVE EXTREMO)
    ========================================= */
 
-@media (max-width: 900px) {
-    /* Ajustes Navbar Móvil */
-    .navbar-floating {
-        position: relative; /* En móvil deja de flotar sobre la foto para no taparla */
-        background-color: #000; /* Fondo negro sólido */
-        flex-direction: column;
-        gap: 1.5rem;
-        padding: 1.5rem;
-    }
-
-    .nav-links {
-        width: 100%;
-        justify-content: center;
-        flex-wrap: wrap; /* Permite varias líneas si es necesario */
-        gap: 1.5rem;
-    }
-
-    .nav-item {
-        font-size: 0.9rem;
-    }
-
-    /* El botón Asociate en móvil se destaca más */
-    .nav-cta {
-        background-color: transparent;
-        margin-top: 0.5rem;
-    }
-
+@media (max-width: 768px) {
     /* Ajustes Hero Móvil */
     .hero-fullscreen {
-        height: auto; /* Altura flexible */
-        min-height: 85vh; /* Casi pantalla completa */
+        height: auto;
+        min-height: 85vh;
         padding-bottom: 3rem;
     }
 
@@ -358,13 +390,13 @@ html, body {
     }
 
     .hero-buttons {
-        flex-direction: column; /* Botones uno abajo del otro */
+        flex-direction: column;
         width: 100%;
-        max-width: 300px; /* Ancho máximo para que no se vean gigantes */
+        max-width: 300px;
         margin: 0 auto;
     }
-    
+
     .hero-buttons button {
-        width: 100%; /* Botones ocupan todo el ancho disponible */
+        width: 100%;
     }
 }

@@ -1,10 +1,4 @@
-:root {
-    --neon: #d4f039;
-    --black-pure: #000000;
-    --black-soft: #080808;
-    --border: #121212;
-    --text-muted: #555;
-}
+/* StudentProgressView.css — Los tokens se definen en styles/variables.css */
 
 .progress-view-wrapper {
     padding: 0 10px 100px;
@@ -153,7 +147,11 @@
     display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin: 0 auto 20px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 768px) {
     .analytics-dashboard, .detailed-data-split { grid-template-columns: 1fr; }
-    .quick-metrics-stack { flex-direction: row; gap: 15px; }
+    .quick-metrics-stack { flex-direction: column; gap: 15px; }
+    .progress-header-oled { flex-direction: column; align-items: flex-start; gap: 20px; }
+    .identity-texts h1 { font-size: 1.6rem; }
+    .search-bar-floating-container { margin-bottom: 25px; }
+    .progress-view-wrapper { padding: 0 5px 100px; }
 }

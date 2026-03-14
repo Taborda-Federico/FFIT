@@ -1,11 +1,4 @@
-/* --- VARIABLES LOCALES (Deben coincidir con Layout.css) --- */
-:root {
-    --sidebar-w: 260px;
-    --sidebar-c: 85px;
-    --neon: #d4f039;
-    --bg-sidebar: #0a0a0a;
-    --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
+/* AdminSidebar.css — Los tokens se definen en styles/variables.css */
 
 .admin-sidebar {
     width: var(--sidebar-w);

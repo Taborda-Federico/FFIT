@@ -1,10 +1,4 @@
-:root {
-    --neon: #d4f039;
-    --black-pure: #000000;
-    --black-soft: #080808;
-    --card-bg: #0c0c0c;
-    --border: #1a1a1a;
-}
+/* WorkoutView.css — Los tokens se definen en styles/variables.css */
 
 .workout-active-layer {
     background-color: var(--black-pure);

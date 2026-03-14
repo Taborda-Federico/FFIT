@@ -1,22 +1,160 @@
-/* src/styles/variables.css */
+/* ============================================================
+   FFIT — Design Tokens (Fuente Única de Verdad)
+   ============================================================
+   Todos los colores, tipografías y efectos de la app se definen
+   aquí. Para cambiar el aspecto general, solo edita este archivo.
+   ============================================================ */
+
 :root {
-    /* Paleta de Colores - "Dark Mode Athletic" */
-    --bg-black: #080808;
-    --bg-card: #141414;
-    --accent: #d4f039; /* Verde Neón Gym */
-    --text-main: #ffffff;
-    --text-dim: #a0a0a0;
-    --border: rgba(255, 255, 255, 0.08);
-    
-    /* Dimensiones */
-    --sidebar-w: 260px;
-    --top-nav-h: 70px;
-    
-    /* Tipografías */
-    --font-heading: 'Oswald', sans-serif;
-    --font-body: 'Inter', sans-serif;
-    
-    /* Elevación y Efectos */
-    --shadow-lg: 0 10px 30px rgba(0,0,0,0.5);
-    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* ── MARCA ───────────────────────────────────────────────── */
+    --color-accent:        #d4f039;   /* Verde Neón (marca FFIT)           */
+    --color-primary:       #1a472a;   /* Verde Oscuro institucional        */
+    --color-primary-dark:  #0f2b19;   /* Verde Oscuro profundo (hovers)    */
+
+    /* ── FONDOS (escala de oscuros) ──────────────────────────── */
+    --bg-pure-black:       #000000;   /* Negro puro                        */
+    --bg-deepest:          #050505;   /* Bloques internos                  */
+    --bg-black:            #080808;   /* Fondo de secciones                */
+    --bg-sidebar:          #0a0a0a;   /* Sidebar lateral                   */
+    --bg-surface:          #0f0f0f;   /* Superficie de modales             */
+    --bg-card:             #111111;   /* Tarjetas y dropdowns              */
+    --bg-card-alt:         #121212;   /* Inputs con icono                  */
+    --bg-elevated:         #141414;   /* Cards elevadas                    */
+    --bg-raised:           #161616;   /* Summary box                       */
+    --bg-input:            #181818;   /* Fondo de ejercicios               */
+    --bg-muted:            #1a1a1a;   /* Selects, summary, bordes suaves   */
+
+    /* ── BORDES ──────────────────────────────────────────────── */
+    --border-subtle:       #111111;   /* Separador casi invisible          */
+    --border-soft:         #151515;   /* Bordes suaves (action buttons)    */
+    --border-default:      #222222;   /* Borde estándar                    */
+    --border-medium:       #333333;   /* Inputs y selects                  */
+    --border-strong:       #444444;   /* Bordes enfatizados                */
+    --border-transparent:  rgba(255, 255, 255, 0.05); /* Borders glass    */
+    --border-glass:        rgba(255, 255, 255, 0.08); /* Borders glass 2  */
+    --border-glass-light:  rgba(255, 255, 255, 0.10); /* Border modales   */
+
+    /* ── TEXTO ───────────────────────────────────────────────── */
+    --text-white:          #ffffff;   /* Texto principal                   */
+    --text-light:          #eeeeee;   /* Texto claro secundario            */
+    --text-muted:          #aaaaaa;   /* Texto apagado                     */
+    --text-dim:            #888888;   /* Texto tenue                       */
+    --text-subtle:         #666666;   /* Texto muy tenue                   */
+    --text-faint:          #555555;   /* Labels y metadata                 */
+    --text-ghost:          #444444;   /* Placeholders, hints               */
+    --text-dark:           #333333;   /* Texto sobre fondo claro           */
+    --text-darkest:        #222222;   /* Mínima visibilidad               */
+
+    /* ── ESTADOS / SEMÁNTICOS ────────────────────────────────── */
+    --color-error:         #ff4444;   /* Error / Eliminar / Peligro        */
+    --color-error-hover:   #ff6666;   /* Error hover                       */
+    --color-error-bg:      rgba(255, 68, 68, 0.05);  /* Fondo error       */
+    --color-warning:       #ff9800;   /* Advertencia / Por vencer          */
+    --color-warning-bg:    rgba(255, 152, 0, 0.05);  /* Fondo warning     */
+    --color-success:       #88d498;   /* Estado OK / Al día                */
+    --color-success-bg:    rgba(136, 212, 152, 0.05); /* Fondo success    */
+    --color-info:          #0096ff;   /* Circuitos / Info                  */
+    --color-info-bg:       rgba(0, 150, 255, 0.03);  /* Fondo info        */
+    --color-whatsapp:      #25D366;   /* WhatsApp                          */
+
+    /* ── TOAST ───────────────────────────────────────────────── */
+    --toast-success-bg:    #1a472a;   /* Fondo toast éxito                 */
+    --toast-error-bg:      #471a1a;   /* Fondo toast error                 */
+
+    /* ── ACCENT TRANSPARENCIAS (glows, shadows, badges) ──────── */
+    --accent-dim:          rgba(212, 240, 57, 0.03);
+    --accent-faint:        rgba(212, 240, 57, 0.05);
+    --accent-ghost:        rgba(212, 240, 57, 0.08);
+    --accent-subtle:       rgba(212, 240, 57, 0.10);
+    --accent-light:        rgba(212, 240, 57, 0.15);
+    --accent-glow:         rgba(212, 240, 57, 0.20);
+    --accent-medium:       rgba(212, 240, 57, 0.30);
+    --accent-strong:       rgba(212, 240, 57, 0.40);
+    --accent-glow-strong:  rgba(212, 240, 57, 0.60);
+
+    /* ── OVERLAYS ────────────────────────────────────────────── */
+    --overlay-dark:        rgba(0, 0, 0, 0.50);
+    --overlay-heavy:       rgba(0, 0, 0, 0.80);
+    --overlay-modal:       rgba(0, 0, 0, 0.85);
+    --overlay-full:        rgba(0, 0, 0, 0.95);
+
+    /* ── DIMENSIONES ─────────────────────────────────────────── */
+    --sidebar-w:           260px;
+    --sidebar-collapsed:   85px;
+    --top-nav-h:           70px;
+
+    /* ── TIPOGRAFÍAS ─────────────────────────────────────────── */
+    --font-heading:        'Oswald', sans-serif;
+    --font-body:           'Inter', 'Helvetica Neue', sans-serif;
+
+    /* ── EFECTOS ──────────────────────────────────────────────── */
+    --shadow-sm:           0 4px 6px rgba(0, 0, 0, 0.10);
+    --shadow-md:           0 5px 15px rgba(0, 0, 0, 0.30);
+    --shadow-lg:           0 10px 30px rgba(0, 0, 0, 0.50);
+    --shadow-xl:           0 20px 40px rgba(0, 0, 0, 0.60);
+    --shadow-modal:        0 25px 50px -12px rgba(0, 0, 0, 0.80);
+    --shadow-accent:       0 6px 15px rgba(212, 240, 57, 0.40);
+    --radius-sm:           6px;
+    --radius-md:           10px;
+    --radius-lg:           15px;
+    --radius-xl:           24px;
+    --radius-pill:         100px;
+    --transition:          all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast:     all 0.2s ease;
+
+    /* ── ALIASES RETROCOMPATIBLES ─────────────────────────────
+       Para que los CSS existentes sigan funcionando sin tocar
+       cada archivo. Cuando migres un archivo, usá los tokens
+       principales de arriba. ─────────────────────────────── */
+    --neon:                var(--color-accent);
+    --accent:              var(--color-accent);
+    --accent-color:        var(--color-accent);
+    --primary-color:       var(--color-primary);
+    --color-secondary:     var(--color-primary-dark);
+    --text-on-dark:        var(--text-white);
+    --bg-light:            #f4f4f4;
+    --black-pure:          var(--bg-pure-black);
+    --black-card:          var(--bg-black);
+    --black-soft:          var(--bg-black);
+    --bg-sidebar-legacy:   var(--bg-sidebar);
+    --border-dark:         var(--bg-card-alt);
+    --border:              var(--bg-muted);
+    --gray-deep:           var(--bg-card-alt);
+    --sidebar-c:           var(--sidebar-collapsed);
+    --font-main:           var(--font-body);
+
+    /* Aliases de HistoryView */
+    --black:               var(--bg-pure-black);
+    --dark-grey:           var(--bg-sidebar);
+    --black-elevated:      var(--bg-surface);
+    --text-grey:           var(--text-ghost);
+    --text-dim:            var(--text-darkest);
+    --text-muted:          var(--text-faint);
+
+    /* Aliases de MainPrincipal */
+    --brand-primary:       var(--color-primary);
+    --brand-neon:          var(--color-accent);
+    --bg-dark:             var(--bg-card-alt);
+    --bg-main:             var(--bg-black);
+
+    /* Aliases de Horarios */
+    --color-neon:          var(--color-accent);
+    --color-dark-green:    var(--color-primary);
+    --color-bg-dark:       var(--bg-muted);
+    --color-bg-card:       #252525;
+    --color-chip-inactive: #2a2a2a;
+    --color-text-muted:    var(--text-muted);
+    --border-color:        var(--border-medium);
+    --spacing-sm:          8px;
+    --spacing-md:          16px;
+    --spacing-lg:          32px;
+
+    /* Aliases de LoginSelector */
+    --glass:               rgba(255, 255, 255, 0.03);
+
+    /* Aliases de WorkoutView */
+    --card-bg:             #0c0c0c;
+
+    /* ── COLOR ACCENT (nombre usado por Button.css) ────────── */
+    --color-accent:        #d4f039;
 }

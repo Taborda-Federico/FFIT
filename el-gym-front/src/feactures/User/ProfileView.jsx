@@ -87,12 +87,12 @@ export function ProfileView({ userData }) {
                     </div>
 
                     <div className="info-row">
-                        <div style={{ display: 'flex', gap: '20px', width: '100%' }}>
-                            <div className="info-text" style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', width: '100%' }}>
+                            <div className="info-text" style={{ flex: 1, minWidth: '120px' }}>
                                 <label><FaWeight style={{marginRight: '5px', color: '#BFFF00'}}/> Peso Inicial</label>
                                 <span>{user.peso ? `${user.peso} kg` : '---'}</span>
                             </div>
-                            <div className="info-text" style={{ flex: 1 }}>
+                            <div className="info-text" style={{ flex: 1, minWidth: '120px' }}>
                                 <label><FaRulerVertical style={{marginRight: '5px', color: '#BFFF00'}}/> Altura</label>
                                 <span>{user.altura ? `${user.altura} cm` : '---'}</span>
                             </div>

@@ -1,11 +1,4 @@
-:root {
-    --sidebar-w: 260px;
-    --sidebar-c: 80px; /* Colapsado */
-    --top-nav-h: 70px;
-    --accent: #d4f039;
-    --bg-main: #080808;
-    --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
+/* AdminLayout.css — Los tokens se definen en styles/variables.css */
 
 .admin-master-wrapper {
     display: flex;
@@ -113,9 +106,10 @@
 /* 2. Móvil (Oculto totalmente) */
 @media (max-width: 768px) {
     .admin-main-content { margin-left: 0 !important; }
-    .admin-top-nav { left: 0 !important; }
+    .admin-top-nav { left: 0 !important; padding: 0 15px; }
+    .admin-page-container { padding: calc(var(--top-nav-h) + 15px) 15px 100px; }
     .menu-toggle { display: block; }
-    
+
     .sidebar-open .sidebar-overlay {
         opacity: 1;
         visibility: visible;

@@ -1,20 +1,8 @@
-/* index.css o App.css */
+/* index.css — Estilos globales base.
+   Los colores se definen en styles/variables.css */
 
-:root {
-  /* Paleta de Colores FFIT (Basada en el PDF) */
-  --primary-color: #1a472a; /* Verde Oscuro FFIT */
-  --accent-color: #d4f039;  /* Verde Lima/Neon (Sugerido para el signo + y botones) */
-  --text-light: #ffffff;    /* Texto sobre fondo oscuro */
-  --text-dark: #333333;     /* Texto sobre fondo claro */
-  --bg-light: #f4f4f4;      /* Fondo general suave */
-  
-  /* Tipografias */
-  --font-main: 'Helvetica Neue', sans-serif; /* Limpia y moderna */
-  --font-logo: 'Arial', sans-serif; /* Simulando la fuerza del logo */
-  
-  /* Espaciado */
-  --spacing-md: 1rem;
-  --spacing-lg: 2rem;
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
 body {
@@ -23,6 +11,8 @@ body {
   font-family: var(--font-main);
   background-color: var(--bg-light);
   color: var(--text-dark);
+  overflow-x: hidden;
+  width: 100%;
 }
 
 /* Clases utilitarias para botones escalables */

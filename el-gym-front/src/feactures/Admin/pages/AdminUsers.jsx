@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-    FaUserPlus, FaSearch, FaCheckCircle, FaExclamationCircle, 
-    FaClipboardList, FaUserFriends, FaIdCard, FaSpinner, FaEllipsisV 
+import {
+    FaUserPlus, FaSearch, FaCheckCircle, FaExclamationCircle,
+    FaClipboardList, FaUserFriends, FaIdCard, FaSpinner, FaTrash
 } from 'react-icons/fa';
 import { Button } from '../../../Utils/Button';
 import { RegisterUserModal } from './RegisterUserModal';
 import { Toast } from '../../../Utils/Toast';
+import { ConfirmModal } from '../../../Utils/ConfirmModal';
 import { UserService } from '../../../service/user.service';
 import { useAuth } from '../../../contex/AuthContext';
 import './AdminUsers.css';
@@ -14,6 +15,7 @@ export function AdminUsers() {
     const { user } = useAuth();
     const [busqueda, setBusqueda] = useState("");
     const [showModal, setShowModal] = useState(false);
+    const [modalConfig, setModalConfig] = useState(null);
     const [toast, setToast] = useState(null);
     const [alumnos, setAlumnos] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -26,6 +28,7 @@ export function AdminUsers() {
             setAlumnos(data);
         } catch (error) {
             console.error("Error:", error);
+            setToast({ msg: "Error al cargar alumnos", type: "error" });
         } finally {
             setLoading(false);
         }
@@ -41,16 +44,76 @@ export function AdminUsers() {
         fetchAlumnos(); // Recargar lista
     };
 
+    // --- ACCIÓN: COBRAR Y RENOVAR ---
+    const handleCobrar = (alumno) => {
+        setModalConfig({
+            action: 'cobrar',
+            alumno,
+            title: 'Registrar Pago',
+            type: 'info',
+            confirmText: 'Aceptar Pago',
+            message: `¿Confirmas que recibiste el pago de ${alumno.nombre}? Se le sumarán 30 días a su membresía.`
+        });
+    };
+
+    // --- ACCIÓN: ELIMINAR ---
+    const handleEliminar = (alumno) => {
+        setModalConfig({
+            action: 'eliminar',
+            alumno,
+            title: 'Eliminar Alumno',
+            type: 'warning',
+            confirmText: 'Sí, Eliminar',
+            message: `⚠️ ADVERTENCIA: ¿Estás seguro de eliminar a ${alumno.nombre} del sistema? Esto no se puede deshacer.`
+        });
+    };
+
+    // --- ACCIÓN: VER FICHA ---
+    const handleVerFicha = (alumno) => {
+        setModalConfig({
+            action: 'info',
+            alumno: null,
+            isAlert: true,
+            title: 'Ver Ficha Técnica',
+            type: 'info',
+            message: `Para ver la Ficha Técnica y Gráficos de ${alumno.nombre}, ve a la pestaña "Seguimiento" en tu menú lateral y búscalo por su nombre.`
+        });
+    };
+
+    const handleConfirmAction = async () => {
+        if (!modalConfig) return;
+        const { action, alumno } = modalConfig;
+
+        if (action === 'cobrar') {
+            try {
+                await UserService.renewMembership(alumno._id, user.token);
+                setToast({ msg: `Pago de ${alumno.nombre} registrado. Membresía renovada.`, type: 'success' });
+                fetchAlumnos();
+            } catch (error) {
+                setToast({ msg: "Error al registrar el pago", type: "error" });
+            }
+        } else if (action === 'eliminar') {
+            try {
+                await UserService.deleteUser(alumno._id, user.token);
+                setToast({ msg: `Alumno ${alumno.nombre} eliminado del sistema`, type: 'success' });
+                setAlumnos(alumnos.filter(a => a._id !== alumno._id));
+            } catch (error) {
+                setToast({ msg: "Error al eliminar alumno", type: "error" });
+            }
+        }
+        setModalConfig(null);
+    };
+
     // Filtro inteligente por Nombre o DNI
-    const filtrados = alumnos.filter(a => 
-        a.nombre.toLowerCase().includes(busqueda.toLowerCase()) || 
+    const filtrados = alumnos.filter(a =>
+        a.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
         a.dni.toString().includes(busqueda)
     );
 
     // --- LÓGICA DE VENCIMIENTOS ---
     const getStatusInfo = (fechaVencimiento) => {
         if (!fechaVencimiento) return { label: 'Sin Datos', class: 'debt', icon: <FaExclamationCircle />, sub: '-' };
-        
+
         const hoy = new Date();
         const vencimiento = new Date(fechaVencimiento);
         const diffDays = Math.ceil((vencimiento - hoy) / (1000 * 60 * 60 * 24));
@@ -64,6 +127,17 @@ export function AdminUsers() {
         <div className="admin-users-view">
             {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
             {showModal && <RegisterUserModal onClose={() => setShowModal(false)} onSave={handleSaveUser} />}
+            {modalConfig && (
+                <ConfirmModal 
+                    title={modalConfig.title}
+                    message={modalConfig.message}
+                    type={modalConfig.type}
+                    isAlert={modalConfig.isAlert}
+                    confirmText={modalConfig.confirmText}
+                    onConfirm={handleConfirmAction}
+                    onClose={() => setModalConfig(null)}
+                />
+            )}
 
             {/* HEADER */}
             <header className="users-header-main">
@@ -80,8 +154,8 @@ export function AdminUsers() {
             <div className="search-section-pro">
                 <div className="search-glass-box">
                     <FaSearch />
-                    <input 
-                        placeholder="Buscar por nombre o DNI..." 
+                    <input
+                        placeholder="Buscar por nombre o DNI..."
                         value={busqueda}
                         onChange={(e) => setBusqueda(e.target.value)}
                     />
@@ -127,7 +201,7 @@ export function AdminUsers() {
                                         </td>
                                         <td data-label="Vencimiento">
                                             <div className="vencimiento-cell">
-                                                <span className="v-date">{new Date(alumno.fechaVencimiento).toLocaleDateString('es-ES', {day: '2-digit', month: 'short'})}</span>
+                                                <span className="v-date">{new Date(alumno.fechaVencimiento).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}</span>
                                                 <span className={`v-sub ${status.class}`}>{status.sub}</span>
                                             </div>
                                         </td>
@@ -136,9 +210,20 @@ export function AdminUsers() {
                                         </td>
                                         <td data-label="Acciones" className="text-right">
                                             <div className="actions-flex">
-                                                <button className="btn-action-pro" title="Ficha"><FaIdCard /></button>
-                                                <button className="btn-action-pro" title="Rutinas"><FaClipboardList /></button>
-                                                <button className="btn-action-pro btn-pago" title="Cobrar">$</button>
+                                                {/* Botón Ver Ficha */}
+                                                <button className="btn-action-pro" title="Ver Ficha Técnica" onClick={() => handleVerFicha(alumno)}>
+                                                    <FaIdCard />
+                                                </button>
+
+                                                {/* Botón Eliminar */}
+                                                <button className="btn-action-pro" title="Eliminar Alumno" onClick={() => handleEliminar(alumno)} style={{ color: '#ff4444' }}>
+                                                    <FaTrash />
+                                                </button>
+
+                                                {/* Botón Cobrar */}
+                                                <button className="btn-action-pro btn-pago" title="Registrar Pago y Renovar" onClick={() => handleCobrar(alumno)}>
+                                                    $
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>

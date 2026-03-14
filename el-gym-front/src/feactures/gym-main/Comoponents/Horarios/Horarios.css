@@ -1,20 +1,4 @@
-/* Horarios.css */
-
-/* --- VARIABLES & TOKENS DE DISEÑO --- */
-:root {
-    --color-neon: #d4f039;
-    --color-dark-green: #1a472a;
-    --color-bg-dark: #1a1a1a;
-    --color-bg-card: #252525;
-    --color-chip-inactive: #2a2a2a;
-    --color-text-muted: #aaa;
-    --border-color: #333;
-    
-    /* Espaciados consistentes */
-    --spacing-sm: 8px;
-    --spacing-md: 16px;
-    --spacing-lg: 32px;
-}
+/* Horarios.css — Los tokens se definen en styles/variables.css */
 
 /* --- RESET BÁSICO --- */
 .finder-container * {

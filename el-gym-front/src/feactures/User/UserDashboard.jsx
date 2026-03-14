@@ -7,11 +7,13 @@ import { HomeHub } from './HomeHub';
 import { HistoryView } from './HistoryView';
 import { FaHome, FaHistory, FaCalendarAlt, FaQrcode, FaUserAlt, FaSpinner } from 'react-icons/fa';
 import { ProfileView } from './ProfileView'
+import { ConfirmModal } from '../../Utils/ConfirmModal';
 import './UserDashboard.css';
 
 export function UserDashboard() {
     const { user } = useAuth();
     const [currentTab, setCurrentTab] = useState('home');
+    const [modalConfig, setModalConfig] = useState(null);
    const [activeWorkout, setActiveWorkout] = useState(() => {
         const guardado = localStorage.getItem('ffit_active_workout');
         return guardado ? JSON.parse(guardado) : null;
@@ -107,7 +109,12 @@ const handleFinishWorkout = async (workoutResult) => {
             
         } catch (error) {
             console.error("Error guardando el entrenamiento:", error);
-            alert("No se pudo guardar la rutina. Revisa la consola de tu backend para ver el error de MongoDB.");
+            setModalConfig({
+                isAlert: true,
+                title: 'Error al Guardar',
+                type: 'warning',
+                message: "No se pudo guardar la rutina. Revisa la consola de tu backend para ver el error de MongoDB."
+            });
         }
     };
     if (loading) {
@@ -120,6 +127,16 @@ const handleFinishWorkout = async (workoutResult) => {
 
     return (
         <div className="user-main-shell">
+            {modalConfig && (
+                <ConfirmModal
+                    title={modalConfig.title}
+                    message={modalConfig.message}
+                    type={modalConfig.type}
+                    isAlert={modalConfig.isAlert}
+                    onClose={() => setModalConfig(null)}
+                />
+            )}
+
             {activeWorkout && (
                 <WorkoutView 
                     session={activeWorkout} 

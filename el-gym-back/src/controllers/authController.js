@@ -6,7 +6,12 @@ const generateToken = (id) => {
 };
 
 exports.registerAdmin = async (req, res) => {
-    const { nombre, email, password } = req.body;
+    const { nombre, email, password, adminSecret } = req.body;
+
+    // Protección: Solo quien conozca el secreto puede crear administradores
+    if (adminSecret !== process.env.ADMIN_REGISTRATION_SECRET) {
+        return res.status(401).json({ message: 'No tienes autorización para crear un administrador.' });
+    }
 
     try {
         const userExists = await User.findOne({ email });

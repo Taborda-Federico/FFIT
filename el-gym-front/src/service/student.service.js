@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://ffit.onrender.com/api';
 
 export const StudentService = {
     // 1. Traer datos del Inicio (Días restantes, Plan activo, Racha)

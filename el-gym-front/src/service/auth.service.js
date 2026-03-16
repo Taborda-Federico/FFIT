@@ -1,6 +1,5 @@
 // src/service/auth.service.js
-
-const API_URL = 'http://localhost:5000/api'; // La ruta de tu backend
+const API_URL = 'https://ffit.onrender.com/api'; // La ruta de tu backend
 
 export const AuthService = {
     login: async (email, password) => {

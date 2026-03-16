@@ -1,6 +1,5 @@
 // src/service/plan.service.js
-
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://ffit.onrender.com/api';
 
 export const PlanService = {
     // 1. Guardar como Plantilla Reutilizable

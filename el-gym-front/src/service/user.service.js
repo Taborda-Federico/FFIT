@@ -1,6 +1,5 @@
 // src/service/user.service.js
-
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://ffit.onrender.com/api';
 
 export const UserService = {
     // Necesitamos pasarle los datos del formulario y el Token del admin

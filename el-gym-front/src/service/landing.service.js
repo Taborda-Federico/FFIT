@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://ffit.onrender.com/api';
 
 export const LandingService = {
     // 1. Traer la configuración del admin actual (Privado - Requiere Token)

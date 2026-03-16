@@ -3,7 +3,7 @@ import './MainPrincipal.css';
 import { Button } from '../../../Utils/Button'; 
 import { VerClases } from '../Comoponents/clases/VerClases';
 import { Horarios } from '../Comoponents/Horarios/Horarios';
-import { Nosotros} from "../Comoponents/Nosotros /Nosotros";
+import { Nosotros} from "../Comoponents/Nosotros/Nosotros";
 import { Navbar } from '../Comoponents/Navbar/Navbar'; 
 import { LandingService } from '../../../service/landing.service';
 

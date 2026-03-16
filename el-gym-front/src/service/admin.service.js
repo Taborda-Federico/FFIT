@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://ffit.onrender.com/api';
 
 export const AdminService = {
     // 1. Buscar alumnos para el buscador de la vista de progreso

@@ -87,7 +87,15 @@ export function MainPrincipal() {
             <section id="horarios" className="dark-section"><Horarios /></section>
             <section id="contacto" className="dark-section" style={{textAlign:'center', paddingBottom: '6rem'}}>
                 <div className="section-header"><h2>¿Listo para el cambio?</h2><span></span></div>
-                <Button variant="primary" size="lg">Contactanos por WhatsApp</Button>
+                <Button 
+                    variant="primary" 
+                    size="lg" 
+                    href="https://wa.me/5493548554456?text=Hola!%20Me%20gustar%C3%ADa%20recibir%20informaci%C3%B3n%20sobre%20el%20gimnasio." 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                >
+                    Contactanos por WhatsApp
+                </Button>
             </section>
             <section id="nosotros" className="dark-section" style={{ background: '#181818' }}><Nosotros /></section>
         </div>

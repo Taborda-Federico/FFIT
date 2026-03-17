@@ -1,7 +1,7 @@
 import React from 'react';
-import { 
-    FaUserCircle, FaIdCard, FaEnvelope, FaSignOutAlt, 
-    FaShieldAlt, FaQuestionCircle, FaCrown, FaCalendarAlt, FaWeight, FaRulerVertical 
+import {
+    FaUserCircle, FaIdCard, FaEnvelope, FaSignOutAlt,
+    FaShieldAlt, FaQuestionCircle, FaCrown, FaCalendarAlt, FaWeight, FaRulerVertical
 } from 'react-icons/fa';
 import { useAuth } from '../../contex/AuthContext';
 import './ProfileView.css';
@@ -39,7 +39,7 @@ export function ProfileView({ userData }) {
                 <div className="hero-info">
                     <h1>{user.nombre} <span className="text-neon">FFIT+</span></h1>
                     <div className="rank-badge">
-                        <FaCrown style={{ color: user.estado === 'ACTIVO' ? '#d4f039' : '#ff4444' }} /> 
+                        <FaCrown style={{ color: user.estado === 'ACTIVO' ? '#d4f039' : '#ff4444' }} />
                         <span>{user.estado === 'ACTIVO' ? 'SOCIO ACTIVO' : 'SOCIO VENCIDO'}</span>
                     </div>
                 </div>
@@ -68,7 +68,7 @@ export function ProfileView({ userData }) {
             {/* 3. FICHA PERSONAL */}
             <section className="personal-info-section">
                 <label className="section-label-profile">DATOS PERSONALES Y FÍSICOS</label>
-                
+
                 <div className="info-list-glass">
                     <div className="info-row">
                         <FaEnvelope />
@@ -89,11 +89,11 @@ export function ProfileView({ userData }) {
                     <div className="info-row">
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', width: '100%' }}>
                             <div className="info-text" style={{ flex: 1, minWidth: '120px' }}>
-                                <label><FaWeight style={{marginRight: '5px', color: '#BFFF00'}}/> Peso Inicial</label>
+                                <label><FaWeight style={{ marginRight: '5px', color: '#BFFF00' }} /> Peso Inicial</label>
                                 <span>{user.peso ? `${user.peso} kg` : '---'}</span>
                             </div>
                             <div className="info-text" style={{ flex: 1, minWidth: '120px' }}>
-                                <label><FaRulerVertical style={{marginRight: '5px', color: '#BFFF00'}}/> Altura</label>
+                                <label><FaRulerVertical style={{ marginRight: '5px', color: '#BFFF00' }} /> Altura</label>
                                 <span>{user.altura ? `${user.altura} cm` : '---'}</span>
                             </div>
                         </div>
@@ -114,7 +114,7 @@ export function ProfileView({ userData }) {
                 <button className="btn-action-outline">
                     <FaQuestionCircle /> Soporte Técnico o WhatsApp
                 </button>
-                
+
                 <button className="btn-logout-pro" onClick={logout}>
                     <FaSignOutAlt /> CERRAR SESIÓN
                 </button>
@@ -123,7 +123,7 @@ export function ProfileView({ userData }) {
             <footer className="profile-footer-branding">
                 <p>FFIT+ v2.0 • Total Sesiones: {stats?.sesionesCompletadas || 0}</p>
             </footer>
-            
+
             <div className="hub-footer-spacer"></div>
         </div>
     );

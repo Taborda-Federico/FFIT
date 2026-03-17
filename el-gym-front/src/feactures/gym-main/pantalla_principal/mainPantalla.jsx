@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import './MainPrincipal.css'; 
-import { Button } from '../../../Utils/Button'; 
+import './MainPrincipal.css';
+import { Button } from '../../../Utils/Button';
 import { VerClases } from '../Comoponents/clases/VerClases';
 import { Horarios } from '../Comoponents/Horarios/Horarios';
-import { Nosotros} from "../Comoponents/Nosotros/Nosotros";
-import { Navbar } from '../Comoponents/Navbar/Navbar'; 
+import { Nosotros } from "../Comoponents/Nosotros/Nosotros";
+import { Navbar } from '../Comoponents/Navbar/Navbar';
 import { LandingService } from '../../../service/landing.service';
 
 export function MainPrincipal() {
-    
+
     // Ahora las imágenes nacen desde un estado, esperando la base de datos
     const [backgroundImages, setBackgroundImages] = useState([
         'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop',
@@ -18,7 +18,7 @@ export function MainPrincipal() {
 
     const [currentBgIndex, setCurrentBgIndex] = useState(0);
 
-    // 1. CARGAMOS LAS IMÁGENES DEL BACKEND AL INICIAR
+
     useEffect(() => {
         const fetchPublicData = async () => {
             try {
@@ -34,10 +34,9 @@ export function MainPrincipal() {
         fetchPublicData();
     }, []);
 
-    // 2. LÓGICA DEL CARRUSEL (A prueba de balas)
     useEffect(() => {
         if (backgroundImages.length === 0) return;
-        
+
         const interval = setInterval(() => {
             setCurrentBgIndex((prev) => (prev === backgroundImages.length - 1 ? 0 : prev + 1));
         }, 5000);
@@ -51,14 +50,14 @@ export function MainPrincipal() {
 
     return (
         <div className="main-wrapper">
-            
-            <header 
-                className="hero-fullscreen" 
+
+            <header
+                className="hero-fullscreen"
                 id="inicio"
-                style={{ 
+                style={{
                     backgroundImage: `
                         linear-gradient(to bottom, rgba(26, 71, 42, 0.5), rgba(18, 18, 18, 1)),
-                        url(${backgroundImages[currentBgIndex]})` 
+                        url(${backgroundImages[currentBgIndex]})`
                 }}
             >
                 <Navbar onScroll={handleScroll} />
@@ -71,7 +70,7 @@ export function MainPrincipal() {
                     <p className="hero-subtitle">
                         Entrenamiento Integral de Alto Rendimiento
                     </p>
-                    
+
                     <div className="hero-buttons">
                         <Button variant="primary" size="lg" onClick={() => handleScroll('contacto')}>
                             Comenzar
@@ -85,13 +84,13 @@ export function MainPrincipal() {
 
             <section id="clases" className="dark-section"><VerClases /></section>
             <section id="horarios" className="dark-section"><Horarios /></section>
-            <section id="contacto" className="dark-section" style={{textAlign:'center', paddingBottom: '6rem'}}>
+            <section id="contacto" className="dark-section" style={{ textAlign: 'center', paddingBottom: '6rem' }}>
                 <div className="section-header"><h2>¿Listo para el cambio?</h2><span></span></div>
-                <Button 
-                    variant="primary" 
-                    size="lg" 
-                    href="https://wa.me/5493548554456?text=Hola!%20Me%20gustar%C3%ADa%20recibir%20informaci%C3%B3n%20sobre%20el%20gimnasio." 
-                    target="_blank" 
+                <Button
+                    variant="primary"
+                    size="lg"
+                    href="https://wa.me/5493548554456?text=Hola!%20Me%20gustar%C3%ADa%20recibir%20informaci%C3%B3n%20sobre%20el%20gimnasio."
+                    target="_blank"
                     rel="noopener noreferrer"
                 >
                     Contactanos por WhatsApp

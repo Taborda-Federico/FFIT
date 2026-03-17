@@ -1,3 +1,4 @@
+// src/feactures/Admin/pages/AdminDashboard.jsx
 import React, { useState, useEffect } from 'react';
 import {
     FaTrash, FaPlus, FaCloudUploadAlt, FaSave, FaUserEdit,
@@ -9,42 +10,40 @@ import { ConfirmModal } from '../../../Utils/ConfirmModal';
 import { Toast } from '../../../Utils/Toast';
 import './AdminDashboard.css';
 
-// 1. Importamos Servicios y Contexto
 import { useAuth } from '../../../contex/AuthContext';
 import { UserService } from '../../../service/user.service';
 import { PlanService } from '../../../service/plan.service';
 
-export function AdminDashboard() {
-    const { user } = useAuth(); // Extraemos el token del Admin
+// Generador de IDs robusto para evitar colisiones si se hacen clics rápidos
+const generateId = () => Date.now().toString() + Math.random().toString(36).substr(2, 5);
 
-    // --- ESTADOS ---
+export function AdminDashboard() {
+    const { user } = useAuth();
+
     const [plan, setPlan] = useState({
         alumno: '',
         alumnoId: null,
-        celular: '', // <-- NUEVO: Guardamos el celular para el WhatsApp directo
+        celular: '',
         titulo: '',
-        sesiones: [{ id: Date.now(), nombre: 'Día 1', bloques: [] }]
+        sesiones: [{ id: generateId(), nombre: 'Día 1', bloques: [] }]
     });
 
     const [showConfirm, setShowConfirm] = useState(false);
     const [toast, setToast] = useState(null);
     const [userSearch, setUserSearch] = useState("");
-    const [isProcessing, setIsProcessing] = useState(false); // Para evitar doble click
-    const [successWhatsApp, setSuccessWhatsApp] = useState(null); // Estado para el cartel de WhatsApp
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [successWhatsApp, setSuccessWhatsApp] = useState(null);
 
-    // Estados para la Base de Datos
     const [alumnosDb, setAlumnosDb] = useState([]);
     const [plantillasDb, setPlantillasDb] = useState([]);
 
     const notify = (msg, type = 'success') => setToast({ msg, type });
 
-    // --- CARGA INICIAL DE DATOS (Mongoose) ---
     useEffect(() => {
         if (!user || !user.token) return;
 
         const cargarDatos = async () => {
             try {
-                // Traemos alumnos y plantillas al mismo tiempo
                 const [alumnosData, plantillasData] = await Promise.all([
                     UserService.getStudents(user.token),
                     PlanService.getPlantillas(user.token)
@@ -58,9 +57,6 @@ export function AdminDashboard() {
         cargarDatos();
     }, [user]);
 
-    // --- LÓGICA DE BACKEND (GUARDAR / PUBLICAR) ---
-
-    // Al seleccionar una plantilla del desplegable
     const handleCargarPlantilla = (plantillaId) => {
         if (!plantillaId) return;
         const template = plantillasDb.find(p => p._id === plantillaId);
@@ -68,7 +64,6 @@ export function AdminDashboard() {
             setPlan(prev => ({
                 ...prev,
                 titulo: template.titulo,
-                // Copiamos las sesiones pero sin el ID de mongo para que sea un plan nuevo
                 sesiones: template.sesiones
             }));
             notify(`Plantilla "${template.titulo}" cargada`);
@@ -81,7 +76,6 @@ export function AdminDashboard() {
         try {
             await PlanService.guardarPlantilla(plan, user.token);
             notify("Plantilla guardada en la nube con éxito");
-            // Recargamos el selector
             const updatedPlantillas = await PlanService.getPlantillas(user.token);
             setPlantillasDb(updatedPlantillas);
         } catch (error) {
@@ -91,21 +85,23 @@ export function AdminDashboard() {
         }
     };
 
-    const handlePublicarPlan = async () => {
+    const handlePublicarPlan = async (semanasSeleccionadas) => {
         if (!plan.alumnoId) return notify("Por favor, selecciona un alumno de la lista", "error");
         if (!plan.titulo) return notify("El plan debe tener un título", "error");
 
         setIsProcessing(true);
         try {
-            await PlanService.publicarPlan(plan, user.token);
+            const planAEnviar = {
+                ...plan,
+                vencimiento: semanasSeleccionadas || 4
+            };
+
+            await PlanService.publicarPlan(planAEnviar, user.token);
             notify(`Plan asignado a ${plan.alumno} con éxito`);
             setShowConfirm(false);
 
-            // --- MAGIA DE WHATSAPP DIRECTO ---
-            // Preparamos el mensaje codificado para la URL
-            const mensajeWa = `¡Hola ${plan.alumno}! 🏋️‍♂️ Ya te subí tu nueva rutina: *${plan.titulo}*. ¡Entra a la app para verla y a romperla! 🔥`;
+            const mensajeWa = `¡Hola ${plan.alumno}! 🏋️‍♂️ Ya te subí tu nueva rutina: *${plan.titulo}* (${semanasSeleccionadas} semanas). ¡Entra a la app para verla! 🔥`;
 
-            // Verificamos si el alumno tiene celular para abrir el chat directo
             const linkWhatsApp = plan.celular
                 ? `https://wa.me/${plan.celular}?text=${encodeURIComponent(mensajeWa)}`
                 : `https://wa.me/?text=${encodeURIComponent(mensajeWa)}`;
@@ -115,8 +111,13 @@ export function AdminDashboard() {
                 link: linkWhatsApp
             });
 
-            // Limpiamos el formulario
-            setPlan({ alumno: '', alumnoId: null, celular: '', titulo: '', sesiones: [{ id: Date.now(), nombre: 'Día 1', bloques: [] }] });
+            setPlan({
+                alumno: '',
+                alumnoId: null,
+                celular: '',
+                titulo: '',
+                sesiones: [{ id: generateId(), nombre: 'Día 1', bloques: [] }]
+            });
         } catch (error) {
             notify(error.message, "error");
         } finally {
@@ -124,31 +125,46 @@ export function AdminDashboard() {
         }
     };
 
-    // --- LÓGICA VISUAL DE DÍAS Y BLOQUES (Se mantiene igual) ---
+    // --- LÓGICA DE DÍAS, BLOQUES Y EJERCICIOS (REPARADA PARA id y _id) ---
     const añadirDia = () => {
-        setPlan({ ...plan, sesiones: [...plan.sesiones, { id: Date.now(), nombre: `Día ${plan.sesiones.length + 1}`, bloques: [] }] });
+        setPlan({ ...plan, sesiones: [...plan.sesiones, { id: generateId(), nombre: `Día ${plan.sesiones.length + 1}`, bloques: [] }] });
         notify("Día añadido");
     };
 
     const añadirBloque = (sesionId, tipo) => {
-        const nuevoBloque = { id: Math.random(), tipo: tipo, descanso: 60, vueltas: tipo === 'circuit' ? 3 : 1, ejercicios: [{ id: Date.now(), nombre: '', reps: '', series: '', tiempo: '', video: '', notas: '' }] };
-        setPlan({ ...plan, sesiones: plan.sesiones.map(s => s.id === sesionId ? { ...s, bloques: [...s.bloques, nuevoBloque] } : s) });
+        const nuevoBloque = { id: generateId(), tipo: tipo, descanso: 60, vueltas: tipo === 'circuit' ? 3 : 1, ejercicios: [{ id: generateId(), nombre: '', reps: '', series: '', tiempo: '', video: '', notas: '' }] };
+        setPlan({ ...plan, sesiones: plan.sesiones.map(s => (s.id || s._id) === sesionId ? { ...s, bloques: [...s.bloques, nuevoBloque] } : s) });
     };
 
     const añadirEjercicioABloque = (sesionId, bloqueId) => {
-        setPlan({ ...plan, sesiones: plan.sesiones.map(s => s.id === sesionId ? { ...s, bloques: s.bloques.map(b => b.id === bloqueId ? { ...b, ejercicios: [...b.ejercicios, { id: Date.now(), nombre: '', reps: '', series: '', tiempo: '', video: '', notas: '' }] } : b) } : s) });
+        setPlan({ ...plan, sesiones: plan.sesiones.map(s => (s.id || s._id) === sesionId ? { ...s, bloques: s.bloques.map(b => (b.id || b._id) === bloqueId ? { ...b, ejercicios: [...b.ejercicios, { id: generateId(), nombre: '', reps: '', series: '', tiempo: '', video: '', notas: '' }] } : b) } : s) });
     };
 
     const updateEjercicio = (sesionId, bloqueId, ejId, campo, valor) => {
-        setPlan({ ...plan, sesiones: plan.sesiones.map(s => s.id === sesionId ? { ...s, bloques: s.bloques.map(b => b.id === bloqueId ? { ...b, ejercicios: b.ejercicios.map(e => e.id === ejId ? { ...e, [campo]: valor } : e) } : b) } : s) });
+        setPlan({
+            ...plan,
+            sesiones: plan.sesiones.map(s =>
+                (s.id || s._id) === sesionId ? {
+                    ...s,
+                    bloques: s.bloques.map(b =>
+                        (b.id || b._id) === bloqueId ? {
+                            ...b,
+                            ejercicios: b.ejercicios.map(e =>
+                                (e.id || e._id) === ejId ? { ...e, [campo]: valor } : e
+                            )
+                        } : b
+                    )
+                } : s
+            )
+        });
     };
 
     return (
         <div className="admin-dashboard-view">
             {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+
             {showConfirm && <ConfirmModal plan={plan} onClose={() => setShowConfirm(false)} onConfirm={handlePublicarPlan} />}
 
-            {/* BANNER DE ÉXITO CON WHATSAPP */}
             {successWhatsApp && (
                 <div style={{
                     background: 'rgba(37, 211, 102, 0.1)', border: '1px solid #25D366',
@@ -173,7 +189,7 @@ export function AdminDashboard() {
                                 borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold',
                                 display: 'flex', alignItems: 'center', gap: '8px'
                             }}
-                            onClick={() => setSuccessWhatsApp(null)} // Lo cerramos al hacer clic
+                            onClick={() => setSuccessWhatsApp(null)}
                         >
                             <FaWhatsapp size={18} /> Avisar ahora
                         </a>
@@ -187,7 +203,6 @@ export function AdminDashboard() {
                 </div>
             )}
 
-            {/* HEADER: BUSQUEDA DE USUARIO Y PLANTILLAS */}
             <div className="admin-top-controls">
                 <div className="search-user-container">
                     <FaSearch className="icon-dim" />
@@ -196,12 +211,10 @@ export function AdminDashboard() {
                         value={userSearch}
                         onChange={(e) => setUserSearch(e.target.value)}
                     />
-                    {/* Buscador Conectado a la Base de Datos */}
                     {userSearch && (
                         <div className="search-results-dropdown">
                             {alumnosDb.filter(a => a.nombre.toLowerCase().includes(userSearch.toLowerCase())).map(a => (
                                 <div key={a._id} className="result-item" onClick={() => {
-                                    // CAPTURAMOS EL ALUMNO, EL ID, Y EL CELULAR
                                     setPlan({ ...plan, alumno: a.nombre, alumnoId: a._id, celular: a.celular });
                                     setUserSearch("");
                                 }}>
@@ -212,21 +225,23 @@ export function AdminDashboard() {
                     )}
                 </div>
 
-                <div className="template-selector">
-                    <FaHistory className="text-neon" />
-                    <select className="minimal-select" onChange={(e) => handleCargarPlantilla(e.target.value)} defaultValue="">
-                        <option value="" disabled>Cargar Plantilla...</option>
-                        {plantillasDb.map(p => <option key={p._id} value={p._id}>{p.titulo}</option>)}
-                    </select>
+                <div className="admin-top-actions">
+                    <div className="template-selector">
+                        <FaHistory className="text-neon" />
+                        <select className="minimal-select" onChange={(e) => handleCargarPlantilla(e.target.value)} defaultValue="">
+                            <option value="" disabled>Cargar Plantilla...</option>
+                            {plantillasDb.map(p => <option key={p._id} value={p._id}>{p.titulo}</option>)}
+                        </select>
+                    </div>
                 </div>
             </div>
 
-            {/* INFO DEL PLAN */}
             <section className="plan-info-card">
                 <div className="assigned-user">
                     <FaUserEdit className="text-neon" />
                     <span>Asignado a: <strong>{plan.alumno || "Nadie todavía (Modo Plantilla)"}</strong></span>
                 </div>
+
                 <input
                     className="input-plan-title"
                     placeholder="TÍTULO DE LA RUTINA"
@@ -235,82 +250,90 @@ export function AdminDashboard() {
                 />
             </section>
 
-            {/* LISTADO DE SESIONES */}
             <div className="sesiones-list">
-                {plan.sesiones.map((sesion) => (
-                    <div key={sesion.id || sesion._id} className="sesion-card-pro">
-                        <div className="sesion-header">
-                            <div className="title-group">
-                                <FaDumbbell className="text-neon" />
-                                <input className="sesion-name-input" value={sesion.nombre} onChange={(e) => {
-                                    setPlan({ ...plan, sesiones: plan.sesiones.map(s => s.id === sesion.id ? { ...s, nombre: e.target.value } : s) });
-                                }} />
-                            </div>
-                            <button className="btn-icon-delete" onClick={() => setPlan({ ...plan, sesiones: plan.sesiones.filter(s => s.id !== sesion.id) })}><FaTrash /></button>
-                        </div>
-
-                        <div className="bloques-grid">
-                            {sesion.bloques.map((bloque) => (
-                                <div key={bloque.id || bloque._id} className={`admin-block-card ${bloque.tipo}`}>
-                                    <div className="block-type-header">
-                                        <div className="type-badge">
-                                            {bloque.tipo === 'superset' ? <FaLayerGroup /> : <FaClock />}
-                                            {bloque.tipo.toUpperCase()}
-                                        </div>
-                                        {bloque.tipo === 'circuit' && (
-                                            <div className="vueltas-input">
-                                                <label>Vueltas:</label>
-                                                <input type="number" value={bloque.vueltas} onChange={(e) => {
-                                                    const val = e.target.value;
-                                                    setPlan({ ...plan, sesiones: plan.sesiones.map(s => s.id === sesion.id ? { ...s, bloques: s.bloques.map(b => b.id === bloque.id ? { ...b, vueltas: val } : b) } : s) });
-                                                }} />
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {bloque.ejercicios.map((ej) => (
-                                        <div key={ej.id || ej._id} className="ej-complex-edit-row">
-                                            <div className="main-data-row">
-                                                <input className="input-styled ej-name" placeholder="Ejercicio" value={ej.nombre} onChange={(e) => updateEjercicio(sesion.id, bloque.id, ej.id, 'nombre', e.target.value)} />
-                                                <div className="sr-inputs-admin">
-                                                    {bloque.tipo === 'circuit' ? (
-                                                        <div className="time-group"><input placeholder="00" value={ej.tiempo} onChange={(e) => updateEjercicio(sesion.id, bloque.id, ej.id, 'tiempo', e.target.value)} /><span>seg</span></div>
-                                                    ) : (
-                                                        <><input placeholder="S" value={ej.series} onChange={(e) => updateEjercicio(sesion.id, bloque.id, ej.id, 'series', e.target.value)} /><span>x</span><input placeholder="R" value={ej.reps} onChange={(e) => updateEjercicio(sesion.id, bloque.id, ej.id, 'reps', e.target.value)} /></>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <div className="extra-data-row">
-                                                <div className="input-with-icon-admin"><FaLink /><input placeholder="URL Video" value={ej.video} onChange={(e) => updateEjercicio(sesion.id, bloque.id, ej.id, 'video', e.target.value)} /></div>
-                                                <div className="input-with-icon-admin"><FaInfoCircle /><input placeholder="Notas técnicas" value={ej.notas} onChange={(e) => updateEjercicio(sesion.id, bloque.id, ej.id, 'notas', e.target.value)} /></div>
-                                            </div>
-                                            <button className="delete-ej-btn-mini" onClick={() => {
-                                                const nuevas = plan.sesiones.map(s => s.id === sesion.id ? { ...s, bloques: s.bloques.map(b => b.id === bloque.id ? { ...b, ejercicios: b.ejercicios.filter(x => x.id !== ej.id) } : b) } : s);
-                                                setPlan({ ...plan, sesiones: nuevas });
-                                            }}>&times;</button>
-                                        </div>
-                                    ))}
-
-                                    <div className="block-footer-admin">
-                                        {(bloque.tipo === 'circuit' || bloque.tipo === 'superset') && (
-                                            <Button variant="outline" size="sm" className="btn-add-ej-to-block" onClick={() => añadirEjercicioABloque(sesion.id, bloque.id)}><FaPlus /> Añadir Ejercicio</Button>
-                                        )}
-                                        <div className="rest-input-admin"><FaClock /><input type="number" value={bloque.descanso} onChange={(e) => {
-                                            const val = e.target.value;
-                                            setPlan({ ...plan, sesiones: plan.sesiones.map(s => s.id === sesion.id ? { ...s, bloques: s.bloques.map(b => b.id === bloque.id ? { ...b, descanso: val } : b) } : s) });
-                                        }} /><span>seg descanso</span></div>
-                                    </div>
+                {plan.sesiones.map((sesion) => {
+                    const sId = sesion.id || sesion._id; // <-- ID Robusto de Sesión
+                    return (
+                        <div key={sId} className="sesion-card-pro">
+                            <div className="sesion-header">
+                                <div className="title-group">
+                                    <FaDumbbell className="text-neon" />
+                                    <input className="sesion-name-input" value={sesion.nombre} onChange={(e) => {
+                                        setPlan({ ...plan, sesiones: plan.sesiones.map(s => (s.id || s._id) === sId ? { ...s, nombre: e.target.value } : s) });
+                                    }} />
                                 </div>
-                            ))}
-                        </div>
+                                <button className="btn-icon-delete" onClick={() => setPlan({ ...plan, sesiones: plan.sesiones.filter(s => (s.id || s._id) !== sId) })}><FaTrash /></button>
+                            </div>
 
-                        <div className="add-block-actions">
-                            <Button variant="secondary" size="sm" onClick={() => añadirBloque(sesion.id, 'standard')}><FaPlus /> Serie</Button>
-                            <Button variant="secondary" size="sm" onClick={() => añadirBloque(sesion.id, 'superset')}><FaLayerGroup /> Superserie</Button>
-                            <Button variant="secondary" size="sm" onClick={() => añadirBloque(sesion.id, 'circuit')}><FaClock /> Circuito</Button>
+                            <div className="bloques-grid">
+                                {sesion.bloques.map((bloque) => {
+                                    const bId = bloque.id || bloque._id; // <-- ID Robusto de Bloque
+                                    return (
+                                        <div key={bId} className={`admin-block-card ${bloque.tipo}`}>
+                                            <div className="block-type-header">
+                                                <div className="type-badge">
+                                                    {bloque.tipo === 'superset' ? <FaLayerGroup /> : <FaClock />}
+                                                    {bloque.tipo.toUpperCase()}
+                                                </div>
+                                                {bloque.tipo === 'circuit' && (
+                                                    <div className="vueltas-input">
+                                                        <label>Vueltas:</label>
+                                                        <input type="number" value={bloque.vueltas} onChange={(e) => {
+                                                            const val = e.target.value;
+                                                            setPlan({ ...plan, sesiones: plan.sesiones.map(s => (s.id || s._id) === sId ? { ...s, bloques: s.bloques.map(b => (b.id || b._id) === bId ? { ...b, vueltas: val } : b) } : s) });
+                                                        }} />
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {bloque.ejercicios.map((ej) => {
+                                                const eId = ej.id || ej._id; // <-- ID Robusto de Ejercicio
+                                                return (
+                                                    <div key={eId} className="ej-complex-edit-row">
+                                                        <div className="main-data-row">
+                                                            <input className="input-styled ej-name" placeholder="Ejercicio" value={ej.nombre} onChange={(e) => updateEjercicio(sId, bId, eId, 'nombre', e.target.value)} />
+                                                            <div className="sr-inputs-admin">
+                                                                {bloque.tipo === 'circuit' ? (
+                                                                    <div className="time-group"><input placeholder="00" value={ej.tiempo} onChange={(e) => updateEjercicio(sId, bId, eId, 'tiempo', e.target.value)} /><span>seg</span></div>
+                                                                ) : (
+                                                                    <><input placeholder="S" value={ej.series} onChange={(e) => updateEjercicio(sId, bId, eId, 'series', e.target.value)} /><span>x</span><input placeholder="R" value={ej.reps} onChange={(e) => updateEjercicio(sId, bId, eId, 'reps', e.target.value)} /></>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div className="extra-data-row">
+                                                            <div className="input-with-icon-admin"><FaLink /><input placeholder="URL Video" value={ej.video} onChange={(e) => updateEjercicio(sId, bId, eId, 'video', e.target.value)} /></div>
+                                                            <div className="input-with-icon-admin"><FaInfoCircle /><input placeholder="Notas técnicas" value={ej.notas} onChange={(e) => updateEjercicio(sId, bId, eId, 'notas', e.target.value)} /></div>
+                                                        </div>
+                                                        <button className="delete-ej-btn-mini" onClick={() => {
+                                                            const nuevas = plan.sesiones.map(s => (s.id || s._id) === sId ? { ...s, bloques: s.bloques.map(b => (b.id || b._id) === bId ? { ...b, ejercicios: b.ejercicios.filter(x => (x.id || x._id) !== eId) } : b) } : s);
+                                                            setPlan({ ...plan, sesiones: nuevas });
+                                                        }}>&times;</button>
+                                                    </div>
+                                                );
+                                            })}
+
+                                            <div className="block-footer-admin">
+                                                {(bloque.tipo === 'circuit' || bloque.tipo === 'superset') && (
+                                                    <Button variant="outline" size="sm" className="btn-add-ej-to-block" onClick={() => añadirEjercicioABloque(sId, bId)}><FaPlus /> Añadir Ejercicio</Button>
+                                                )}
+                                                <div className="rest-input-admin"><FaClock /><input type="number" value={bloque.descanso} onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setPlan({ ...plan, sesiones: plan.sesiones.map(s => (s.id || s._id) === sId ? { ...s, bloques: s.bloques.map(b => (b.id || b._id) === bId ? { ...b, descanso: val } : b) } : s) });
+                                                }} /><span>seg descanso</span></div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            <div className="add-block-actions">
+                                <Button variant="secondary" size="sm" onClick={() => añadirBloque(sId, 'standard')}><FaPlus /> Serie</Button>
+                                <Button variant="secondary" size="sm" onClick={() => añadirBloque(sId, 'superset')}><FaLayerGroup /> Superserie</Button>
+                                <Button variant="secondary" size="sm" onClick={() => añadirBloque(sId, 'circuit')}><FaClock /> Circuito</Button>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
 
             <div className="footer-add-day">
@@ -319,7 +342,6 @@ export function AdminDashboard() {
                 </Button>
             </div>
 
-            {/* BOTONES CONECTADOS A LA NUBE */}
             <div className="admin-actions-center-bar">
                 <Button
                     variant="outline"

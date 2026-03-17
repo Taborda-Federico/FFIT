@@ -30,7 +30,7 @@ const sesionSchema = new mongoose.Schema({
 const planSchema = new mongoose.Schema({
     titulo: { type: String, required: true },
     notasGlobales: { type: String },
-    vencimiento: { type: Date },
+    vencimiento: { type: Number, default: 4 },
 
     alumnoId: {
         type: mongoose.Schema.Types.ObjectId,

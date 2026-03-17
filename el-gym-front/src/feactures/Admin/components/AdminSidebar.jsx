@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { FaUsers, FaDumbbell, FaEdit, FaHome, FaSignOutAlt, FaTimes, FaWallet, FaChartLine, FaUserPlus } from 'react-icons/fa';
+import {
+    FaUsers, FaDumbbell, FaEdit, FaHome, FaSignOutAlt,
+    FaTimes, FaChartLine, FaUserPlus
+} from 'react-icons/fa';
 import { useAuth } from '../../../contex/AuthContext';
 import { CreateAdminModal } from './CreateAdminModal';
 import { Toast } from '../../../Utils/Toast';
@@ -9,8 +12,7 @@ import './AdminSidebar.css';
 export function AdminSidebar({ onClose, isOpen }) {
     const { logout } = useAuth();
     const navigate = useNavigate();
-    
-    // Estados para el Modal de Admin
+
     const [showAdminModal, setShowAdminModal] = useState(false);
     const [toast, setToast] = useState(null);
 
@@ -24,7 +26,7 @@ export function AdminSidebar({ onClose, isOpen }) {
     return (
         <aside className={`admin-sidebar ${isOpen ? 'open' : ''}`}>
             {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
-            
+
             {showAdminModal && (
                 <CreateAdminModal
                     onClose={() => setShowAdminModal(false)}
@@ -33,10 +35,14 @@ export function AdminSidebar({ onClose, isOpen }) {
                 />
             )}
 
-            {/* Cabecera con Logo y Cierre para Móvil */}
+            {/* Cabecera con Logo a la izquierda */}
             <div className="sidebar-header">
-                <div className="sidebar-logo">
-                    FFIT<span className="text-neon">+</span>
+                <div className="sidebar-logo-container">
+                    <img
+                        src="/logo ffit wellness blanco y lima.PNG"
+                        alt="FFIT+ Logo"
+                        className="sidebar-logo-img"
+                    />
                 </div>
                 <button className="close-sidebar-btn" onClick={onClose} aria-label="Cerrar menú">
                     <FaTimes />
@@ -61,8 +67,10 @@ export function AdminSidebar({ onClose, isOpen }) {
                         <FaEdit className="nav-icon" />
                         <span className="nav-text">Editor Web</span>
                     </NavLink>
-                    <NavLink to="/admin/progreso" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-                        <FaChartLine className="nav-icon" /> <span className="nav-text">Seguimiento</span>
+
+                    <NavLink to="/admin/progreso" onClick={onClose} className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                        <FaChartLine className="nav-icon" />
+                        <span className="nav-text">Seguimiento</span>
                     </NavLink>
                 </div>
 
@@ -80,15 +88,14 @@ export function AdminSidebar({ onClose, isOpen }) {
 
                 <div className="nav-section">
                     <span className="nav-label">ACCIONES</span>
-                    <button className="nav-item" onClick={() => setShowAdminModal(true)} style={{ background: 'transparent', border: 'none', width: '100%', textAlign: 'left' }}>
-                        <FaUserPlus className="nav-icon" style={{ color: "var(--neon)" }} />
-                        <span className="nav-text" style={{ color: "var(--neon)" }}>Nuevo Admin</span>
+                    <button className="nav-item btn-action-admin" onClick={() => setShowAdminModal(true)}>
+                        <FaUserPlus className="nav-icon neon-icon" />
+                        <span className="nav-text neon-text">Nuevo Admin</span>
                     </button>
                 </div>
 
                 <div className="sidebar-divider" />
 
-                {/* 4. Conectamos el botón de Salida con nuestra función */}
                 <button className="nav-item logout-btn" onClick={handleLogout}>
                     <FaSignOutAlt className="nav-icon" />
                     <span className="nav-text">Cerrar Sesión</span>

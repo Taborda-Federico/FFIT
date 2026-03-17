@@ -1,87 +1,86 @@
 // src/feactures/User/UserDashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contex/AuthContext';
-import { StudentService } from '../../service/student.service'; // <-- Importamos el nuevo servicio
+import { StudentService } from '../../service/student.service';
 import { WorkoutView } from './WorkoutView';
 import { HomeHub } from './HomeHub';
 import { HistoryView } from './HistoryView';
-import { FaHome, FaHistory, FaCalendarAlt, FaQrcode, FaUserAlt, FaSpinner } from 'react-icons/fa';
-import { ProfileView } from './ProfileView'
+import { ProfileView } from './ProfileView';
 import { ConfirmModal } from '../../Utils/ConfirmModal';
+import {
+    FaHome,
+    FaHistory,
+    FaUserAlt,
+    FaSpinner,
+    FaCalendarCheck
+} from 'react-icons/fa';
 import './UserDashboard.css';
 
 export function UserDashboard() {
     const { user } = useAuth();
-    const [currentTab, setCurrentTab] = useState('home');
+    const [currentTab, setCurrentTab] = useState('home'); // 'home' | 'history' | 'profile'
     const [modalConfig, setModalConfig] = useState(null);
-   const [activeWorkout, setActiveWorkout] = useState(() => {
+    const [activeWorkout, setActiveWorkout] = useState(() => {
         const guardado = localStorage.getItem('ffit_active_workout');
         return guardado ? JSON.parse(guardado) : null;
     });
-useEffect(() => {
+
+    // Persistencia de rutina para evitar pérdidas por recarga
+    useEffect(() => {
         if (activeWorkout) {
             localStorage.setItem('ffit_active_workout', JSON.stringify(activeWorkout));
         } else {
             localStorage.removeItem('ffit_active_workout');
         }
     }, [activeWorkout]);
-    // --- NUEVOS ESTADOS DE LA BASE DE DATOS ---
+
     const [dashboardData, setDashboardData] = useState(null);
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Cargar la información del alumno al entrar
+    // Carga de datos inicial del alumno
     useEffect(() => {
         if (!user?.token) return;
 
         const fetchData = async () => {
             try {
                 setLoading(true);
-                // Traemos el dashboard y el historial en paralelo para que sea más rápido
                 const [dashData, histData] = await Promise.all([
                     StudentService.getDashboard(user.token),
                     StudentService.getHistory(user.token)
                 ]);
-                
+
                 setDashboardData(dashData);
                 setHistory(histData);
             } catch (error) {
-                console.error("Error al cargar datos del alumno:", error);
+                console.error("Error al cargar datos:", error);
             } finally {
                 setLoading(false);
             }
         };
 
         fetchData();
-    }, [user, currentTab]); // Si cambia de pestaña, podríamos refrescar, pero por ahora está bien así.
+    }, [user]);
 
-    // Iniciar entrenamiento (Pasamos la sesión completa a WorkoutView)
     const handleStartWorkout = (session) => {
-        // Le agregamos el título del plan por si WorkoutView lo necesita
         setActiveWorkout({ ...session, planTitle: dashboardData?.plan?.titulo });
     };
 
-const handleFinishWorkout = async (workoutResult) => {
+    const handleFinishWorkout = async (workoutResult) => {
         try {
             const ejerciciosFormateados = [];
             let pesoTotalSuma = 0;
 
-            // 1. Escaneamos la sesión activa y armamos la lista exacta de ejercicios
             if (activeWorkout && activeWorkout.bloques) {
                 activeWorkout.bloques.forEach(bloque => {
                     if (bloque.ejercicios) {
                         bloque.ejercicios.forEach(ej => {
-                            // Obligamos a que el ID sea un String (Mongoose odia los números aquí)
                             const ejId = String(ej.id || ej._id || Math.random());
-                            
-                            // Si el alumno no anotó peso, mandamos 0 por defecto para que Mongoose no falle
                             const peso = Number(workoutResult[ej.id || ej._id]) || 0;
-                            
                             pesoTotalSuma += peso;
-
                             ejerciciosFormateados.push({
                                 ejercicioId: ejId,
-                                nombre: ej.nombre || 'Ejercicio sin nombre',
+                                nombre: ej.nombre || 'Ejercicio',
                                 pesoUsado: peso
                             });
                         });
@@ -89,38 +88,34 @@ const handleFinishWorkout = async (workoutResult) => {
                 });
             }
 
-            // 2. Enviamos TODAS las variables posibles para que cualquier versión de tu backend lo acepte
             await StudentService.saveWorkout({
-                nombreSesion: activeWorkout?.nombre || 'Rutina Completada', 
-                duracion: '45m', 
-                duracionMins: 45,             // Por si tu modelo pide número
-                pesoTotal: pesoTotalSuma,     // Por si tu modelo pide el peso global
-                ejercicios: ejerciciosFormateados,         // Mapeo directo
-                ejerciciosGrabados: ejerciciosFormateados  // Mapeo alternativo
+                nombreSesion: activeWorkout?.nombre || 'Rutina Completada',
+                duracion: '45m',
+                duracionMins: 45,
+                pesoTotal: pesoTotalSuma,
+                ejercicios: ejerciciosFormateados
             }, user.token);
 
-            // 3. Refrescamos el historial en tiempo real
             const updatedHistory = await StudentService.getHistory(user.token);
             setHistory(updatedHistory);
-            
-            // 4. Limpiamos la pantalla y llevamos al alumno a su Logbook
-            setActiveWorkout(null); 
-            setCurrentTab('history'); 
-            
+            setActiveWorkout(null);
+            setCurrentTab('history');
+
         } catch (error) {
             console.error("Error guardando el entrenamiento:", error);
             setModalConfig({
                 isAlert: true,
                 title: 'Error al Guardar',
                 type: 'warning',
-                message: "No se pudo guardar la rutina. Revisa la consola de tu backend para ver el error de MongoDB."
+                message: "No se pudo guardar la rutina en el servidor."
             });
         }
     };
+
     if (loading) {
         return (
-            <div className="user-main-shell" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                <FaSpinner className="spin text-neon" style={{ fontSize: '3rem' }} />
+            <div className="user-loading-screen">
+                <FaSpinner className="spin text-neon" />
             </div>
         );
     }
@@ -137,45 +132,69 @@ const handleFinishWorkout = async (workoutResult) => {
                 />
             )}
 
+            {/* MODO ENTRENAMIENTO (CAPA SUPERIOR) */}
             {activeWorkout && (
-                <WorkoutView 
-                    session={activeWorkout} 
+                <WorkoutView
+                    session={activeWorkout}
                     onExit={() => setActiveWorkout(null)}
                     onFinish={handleFinishWorkout}
                 />
             )}
 
+            {/* VISTAS DE NAVEGACIÓN */}
             {!activeWorkout && (
                 <>
                     <main className="main-content-scroll">
-                        {currentTab === 'home' && (
-                            // Pasamos los datos reales al HomeHub
-                            <HomeHub dashboardData={dashboardData} onStart={handleStartWorkout} history={history}/>
+                        {/* WIDGET SUPERIOR DE PROGRESO */}
+                        {dashboardData?.plan && currentTab === 'home' && (
+                            <div className="progress-widget-container">
+                                <div className="pw-left">
+                                    <FaCalendarCheck className="text-neon" />
+                                    <div className="pw-info">
+                                        <h4>{dashboardData.plan.titulo}</h4>
+                                        <span>PROGRESO DEL PLAN</span>
+                                    </div>
+                                </div>
+                                <div className="pw-right">
+                                    <span className="weeks-num">{dashboardData.plan.semanasRestantes || 0}</span>
+                                    <span className="weeks-label">SEMANAS</span>
+                                </div>
+                            </div>
                         )}
-                        {currentTab === 'history' && (
-                            <HistoryView history={history} />
-                        )}
-                        {currentTab === 'schedule' && (
-                            <div className="placeholder-view" style={{color: 'white', textAlign: 'center', marginTop: '50px'}}>Próximamente: Turnero</div>
-                        )
-                        }
-                         {currentTab === 'profile' && <ProfileView userData={dashboardData} />}
+
+                        <div className="tab-view-content">
+                            {currentTab === 'home' && (
+                                <HomeHub dashboardData={dashboardData} onStart={handleStartWorkout} history={history} />
+                            )}
+                            {currentTab === 'history' && (
+                                <HistoryView history={history} />
+                            )}
+                            {currentTab === 'profile' && (
+                                <ProfileView userData={dashboardData} />
+                            )}
+                        </div>
                     </main>
 
+                    {/* --- BARRA DE NAVEGACIÓN INFERIOR (3 ITEMS) --- */}
                     <nav className="bottom-nav-oled">
-                        <button className={`nav-tab ${currentTab === 'home' ? 'active' : ''}`} onClick={() => setCurrentTab('home')}>
+                        <button
+                            className={`nav-tab ${currentTab === 'home' ? 'active' : ''}`}
+                            onClick={() => setCurrentTab('home')}
+                        >
                             <FaHome /> <span>Inicio</span>
                         </button>
-                        <button className={`nav-tab ${currentTab === 'history' ? 'active' : ''}`} onClick={() => setCurrentTab('history')}>
+
+                        <button
+                            className={`nav-tab ${currentTab === 'history' ? 'active' : ''}`}
+                            onClick={() => setCurrentTab('history')}
+                        >
                             <FaHistory /> <span>Historial</span>
                         </button>
-                        <div className="nav-tab-center">
-                            <button className="qr-fab"><FaQrcode /></button>
-                        </div>
-                        <button className={`nav-tab ${currentTab === 'schedule' ? 'active' : ''}`} onClick={() => setCurrentTab('schedule')}>
-                            <FaCalendarAlt /> <span>Turnos</span>
-                        </button>
-                        <button className="nav-tab" onClick={()=>setCurrentTab('profile')}>
+
+                        <button
+                            className={`nav-tab ${currentTab === 'profile' ? 'active' : ''}`}
+                            onClick={() => setCurrentTab('profile')}
+                        >
                             <FaUserAlt /> <span>Perfil</span>
                         </button>
                     </nav>

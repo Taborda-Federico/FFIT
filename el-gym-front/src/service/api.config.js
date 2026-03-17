@@ -2,7 +2,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://ffit.onrender.com/api';
 
 export const apiFetch = async (endpoint, options = {}) => {
     const token = localStorage.getItem('token');
-    
+
     const defaultHeaders = {
         'Content-Type': 'application/json',
         ...(token && { 'Authorization': `Bearer ${token}` })

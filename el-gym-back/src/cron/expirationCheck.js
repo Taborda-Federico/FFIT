@@ -2,8 +2,8 @@ const cron = require('node-cron');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
 const transporter = require('../config/mailer');
+const Plan = require('../models/Plan');
 
-// Se ejecuta todos los días a las 09:00 AM hora del servidor ("0 9 * * *")
 cron.schedule('0 9 * * *', async () => {
     console.log("🤖 Ejecutando robot de revisión de membresías...");
 
@@ -45,4 +45,36 @@ cron.schedule('0 9 * * *', async () => {
     } catch (error) {
         console.error("Error en el robot de vencimientos:", error);
     }
+});
+
+
+cron.schedule('59 23 * * 0', async () => {
+    console.log("🔄 Iniciando proceso de actualización semanal de planes...");
+
+    try {
+        const planesActivos = await Plan.find({
+            esPlantilla: false,
+            activo: true,
+            vencimiento: { $gt: 0 }
+        });
+
+        for (let plan of planesActivos) {
+            plan.vencimiento -= 1;
+
+            if (plan.vencimiento <= 0) {
+                plan.vencimiento = 0;
+                plan.activo = false;
+                plan.notasGlobales = (plan.notasGlobales || "") + " [PLAN FINALIZADO]";
+            }
+
+            await plan.save();
+        }
+
+        console.log(`✅ Se actualizaron ${planesActivos.length} planes con éxito.`);
+    } catch (error) {
+        console.error("❌ Error en el proceso semanal de planes:", error);
+    }
+}, {
+    scheduled: true,
+    timezone: "America/Argentina/Buenos_Aires"
 });

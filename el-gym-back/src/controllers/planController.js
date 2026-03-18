@@ -13,6 +13,8 @@ const publicarPlan = async (req, res) => {
         }
 
         // 1. Apagamos los planes viejos del alumno
+
+        // 1. Apagamos los planes viejos del alumno
         await Plan.updateMany(
             { alumnoId: alumno._id, esPlantilla: false },
             { $set: { activo: false } }
@@ -26,6 +28,7 @@ const publicarPlan = async (req, res) => {
             alumnoId: alumno._id,
             adminId: req.user._id,
             esPlantilla: false,
+
 
             activo: true,
 

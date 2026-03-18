@@ -1,65 +1,155 @@
-/* Ajuste para que el modal no sea tan gigante en PC pero cómodo en móvil */
-.register-modal-card {
-    background: #0f0f0f;
-    padding: 30px;
-    border-radius: 20px;
-    border: 1px solid #333;
-    width: 95%;
-    max-width: 480px;
-    max-height: 90vh; /* Permite scroll interno si la pantalla es muy chica */
-    overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(15px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    padding: 15px;
 }
 
-.modal-header-pro h2 { font-family: 'Oswald'; font-size: 1.8rem; margin-bottom: 5px; }
-.modal-header-pro p { color: #555; font-size: 0.85rem; margin-bottom: 25px; }
+.register-modal-card {
+    background: #0a0a0a;
+    padding: 30px;
+    border-radius: 28px;
+    border: 1px solid #222;
+    width: 100%;
+    max-width: 500px;
+    max-height: 95vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
 
-.register-form { display: flex; flex-direction: column; gap: 12px; }
+.close-modal-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: transparent;
+    border: none;
+    color: #555;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: 0.3s;
+}
 
-/* Corrección de alineación de iconos e inputs */
+.close-modal-btn:hover {
+    color: #ff4444;
+}
+
+.text-neon {
+    color: #d4f039;
+    text-shadow: 0 0 10px rgba(212, 240, 57, 0.3);
+}
+
+.modal-header {
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.modal-header h2 {
+    font-size: 1.8rem;
+    margin-bottom: 5px;
+    color: #fff;
+}
+
+.modal-header p {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* GRID DEL FORMULARIO */
+.register-grid-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* CONTENEDORES DE INPUT (ESTILO GLASS) */
 .input-glass-group {
-    background: #1a1a1a;
-    border: 1px solid #282828;
-    padding: 10px 15px;
-    border-radius: 10px;
     display: flex;
     align-items: center;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid #222;
+    border-radius: 14px;
+    padding: 12px 16px;
     gap: 12px;
+    transition: all 0.3s ease;
 }
 
-.input-icon { 
-    color: var(--color-accent, #d4f039); 
+.input-glass-group:focus-within {
+    border-color: #d4f039;
+    background: rgba(212, 240, 57, 0.05);
+}
+
+.input-icon {
+    color: #d4f039;
     font-size: 1rem;
-    min-width: 20px; /* Evita que el icono se mueva */
-    text-align: center;
+    flex-shrink: 0;
+    /* EVITA QUE EL ICONO SE ACHIQUE */
+    width: 20px;
+    opacity: 0.8;
 }
 
 .input-glass-group input {
     background: transparent;
     border: none;
     color: white;
-    width: 100%;
+    flex: 1;
+    min-width: 0;
+    /* EVITA QUE EL INPUT ROMPA EL CONTENEDOR */
     outline: none;
     font-size: 0.95rem;
 }
 
-/* Chrome, Safari, Edge, Opera: Quitar flechitas de los números */
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-.input-grid-dual {
+/* FILAS ESPECIALES */
+.input-row-flex {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    gap: 15px;
+}
+
+.full-width {
+    grid-column: span 2;
+}
+
+.error-badge {
+    background: rgba(255, 0, 0, 0.1);
+    color: #ff6b6b;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    margin-bottom: 15px;
+    border: 1px solid rgba(255, 0, 0, 0.2);
+    text-align: center;
 }
 
 .modal-footer-actions {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 12px;
     margin-top: 20px;
-    display: flex;
-    gap: 10px;
 }
 
-.modal-footer-actions .btn { flex: 1; }
+/* RESPONSIVIDAD PARA MÓVILES */
+@media (max-width: 500px) {
+    .register-modal-card {
+        padding: 25px 15px;
+    }
+
+    .input-row-flex {
+        grid-template-columns: 1fr;
+    }
+
+    /* Peso y altura uno bajo el otro */
+    .modal-footer-actions {
+        grid-template-columns: 1fr;
+    }
+
+    /* Botones apilados */
+    .modal-header h2 {
+        font-size: 1.5rem;
+    }
+}

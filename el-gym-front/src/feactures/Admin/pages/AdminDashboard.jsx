@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import {
     FaTrash, FaPlus, FaCloudUploadAlt, FaSave, FaUserEdit,
     FaLink, FaInfoCircle, FaDumbbell, FaHistory, FaLayerGroup,
-    FaClock, FaCalendarPlus, FaSearch, FaWhatsapp, FaCheckCircle
+    FaClock, FaCalendarPlus, FaSearch, FaWhatsapp, FaCheckCircle, FaSpinner
 } from 'react-icons/fa';
 import { Button } from '../../../Utils/Button';
 import { ConfirmModal } from '../../../Utils/ConfirmModal';
@@ -89,7 +89,9 @@ export function AdminDashboard() {
         if (!plan.alumnoId) return notify("Por favor, selecciona un alumno de la lista", "error");
         if (!plan.titulo) return notify("El plan debe tener un título", "error");
 
-        setIsProcessing(true);
+        setShowConfirm(false); // 🚨 Se cierra el modal instantáneamente
+        setIsProcessing(true); // 🚨 Arranca la ruedita
+
         try {
             const planAEnviar = {
                 ...plan,
@@ -98,7 +100,6 @@ export function AdminDashboard() {
 
             await PlanService.publicarPlan(planAEnviar, user.token);
             notify(`Plan asignado a ${plan.alumno} con éxito`);
-            setShowConfirm(false);
 
             const mensajeWa = `¡Hola ${plan.alumno}! 🏋️‍♂️ Ya te subí tu nueva rutina: *${plan.titulo}* (${semanasSeleccionadas} semanas). ¡Entra a la app para verla! 🔥`;
 
@@ -121,7 +122,7 @@ export function AdminDashboard() {
         } catch (error) {
             notify(error.message, "error");
         } finally {
-            setIsProcessing(false);
+            setIsProcessing(false); // 🚨 Se detiene la ruedita
         }
     };
 
@@ -349,7 +350,8 @@ export function AdminDashboard() {
                     onClick={handleGuardarPlantilla}
                     disabled={isProcessing}
                 >
-                    <FaSave /> <span>{isProcessing ? 'Guardando...' : 'Guardar Plantilla'}</span>
+                    {isProcessing ? <FaSpinner className="spin" /> : <FaSave />}
+                    <span>{isProcessing ? 'Guardando...' : 'Guardar Plantilla'}</span>
                 </Button>
                 <Button
                     variant="primary"
@@ -357,7 +359,8 @@ export function AdminDashboard() {
                     onClick={() => plan.alumnoId ? setShowConfirm(true) : notify("Busca y selecciona un alumno primero", "error")}
                     disabled={isProcessing}
                 >
-                    <FaCloudUploadAlt /> <span>Publicar a Alumno</span>
+                    {isProcessing ? <FaSpinner className="spin" /> : <FaCloudUploadAlt />}
+                    <span>{isProcessing ? 'Publicando...' : 'Publicar a Alumno'}</span>
                 </Button>
             </div>
         </div>

@@ -2,13 +2,15 @@
 
 /* --- CONFIGURACIÓN GENERAL --- */
 .nosotros-container {
-    padding: 4rem 5%; /* Un poco más de aire arriba */
+    padding: 4rem 5%;
+    /* Un poco más de aire arriba */
     max-width: 1400px;
     margin: 0 auto;
 }
 
 .section-header {
-    text-align: center; /* Asegura que el título H2 se centre */
+    text-align: center;
+    /* Asegura que el título H2 se centre */
     margin-bottom: 3rem;
 }
 
@@ -27,19 +29,21 @@
     margin-top: 1rem;
     font-size: 1.1rem;
     line-height: 1.6;
-    
+
     /* Centrado perfecto */
-    text-align: center; 
-    max-width: 800px; 
+    text-align: center;
+    max-width: 800px;
     margin-left: auto;
     margin-right: auto;
-    display: block; /* Asegura que ocupe el ancho para centrarse */
+    display: block;
+    /* Asegura que ocupe el ancho para centrarse */
 }
 
 .text-neon {
-    color: var(--brand-neon, #d4f039); /* Fallback por si la variable falla */
+    color: var(--brand-neon, #d4f039);
+    /* Fallback por si la variable falla */
     font-weight: bold;
-    display: inline; 
+    display: inline;
 }
 
 /* --- GRID RESPONSIVO (MOBILE FIRST) --- */
@@ -49,19 +53,22 @@
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 2rem;
     margin-top: 2rem;
-    justify-content: center; /* Si sobra espacio, centra las tarjetas */
+    justify-content: center;
+    /* Si sobra espacio, centra las tarjetas */
 }
 
 /* --- DISEÑO DE TARJETA --- */
 .team-card {
     position: relative;
-    height: 500px; /* Altura desktop */
+    height: 500px;
+    /* Altura desktop */
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     border: 1px solid #333;
-    background-color: #1a1a1a; /* Fondo base por si la imagen tarda en cargar */
+    background-color: #1a1a1a;
+    /* Fondo base por si la imagen tarda en cargar */
 }
 
 .team-card:hover {
@@ -77,7 +84,8 @@
     width: 100%;
     height: 100%;
     background-size: cover;
-    background-position: center top; /* Enfoca las caras */
+    background-position: center top;
+    /* Enfoca las caras */
     transition: transform 0.5s ease;
     z-index: 1;
 }
@@ -93,12 +101,10 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(
-        to bottom, 
-        rgba(0,0,0,0) 0%, 
-        rgba(18, 18, 18, 0.3) 40%, 
-        rgba(18, 18, 18, 0.98) 90%
-    );
+    background: linear-gradient(to bottom,
+            rgba(0, 0, 0, 0) 0%,
+            rgba(18, 18, 18, 0.3) 40%,
+            rgba(18, 18, 18, 0.98) 90%);
     z-index: 2;
     display: flex;
     flex-direction: column;
@@ -120,7 +126,7 @@
     margin: 0;
     line-height: 1;
     color: var(--brand-neon, #d4f039);
-    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 .coach-role {
@@ -169,7 +175,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-top: 1px solid rgba(255,255,255,0.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
     padding-top: 1rem;
     margin-top: auto;
 }
@@ -177,12 +183,13 @@
 /* Forzamos transparencia en el botón para quitar el fondo blanco */
 .coach-actions button,
 .coach-actions .btn {
-    background-color: transparent !important; 
+    background-color: transparent !important;
     border: 1px solid var(--brand-neon, #d4f039) !important;
     color: var(--brand-neon, #d4f039) !important;
     font-family: 'Oswald', sans-serif !important;
     text-transform: uppercase;
-    padding: 5px 15px; /* Ajuste seguro */
+    padding: 5px 15px;
+    /* Ajuste seguro */
     cursor: pointer;
     transition: all 0.3s ease;
 }
@@ -194,7 +201,8 @@
 
 /* Solución para el link de Instagram */
 .social-link {
-    color: #ffffff !important; /* Blanco forzado */
+    color: #ffffff !important;
+    /* Blanco forzado */
     text-decoration: none;
     font-family: 'Oswald', sans-serif;
     font-size: 0.9rem;
@@ -209,6 +217,92 @@
     text-decoration: underline;
 }
 
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+
+/* CONTENEDOR PRINCIPAL */
+.Nosotros_encuadre {
+    /* 🚨 AJUSTE AQUÍ: Reducido de 150px a 40px para subir el apartado */
+    padding-top: 40px;
+    padding-bottom: 120px;
+    /* Reduje un poco el bottom para balancear */
+    background-color: #000;
+    color: #fff;
+    text-align: center;
+    padding-left: 20px;
+    padding-right: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* TÍTULO PRINCIPAL */
+.Nosotros_titulo {
+    font-family: 'Oswald', sans-serif;
+    font-size: 3rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    color: #fff;
+    letter-spacing: 2px;
+}
+
+/* LÍNEA DIVISORA NEÓN */
+.linea_div_nosotros {
+    width: 60%;
+    height: 4px;
+    background-color: #dfff00;
+    /* Neón brillante */
+    border: none;
+    margin-bottom: 50px;
+    box-shadow: 0 0 10px #dfff00, 0 0 20px #dfff00;
+}
+
+/* CONTENEDOR DE PÁRRAFOS */
+.div_todos_p {
+    max-width: 900px;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+/* ESTILO DE CADA PÁRRAFO */
+.Nosotros_p {
+    font-family: 'Roboto', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 300;
+    line-height: 1.8;
+    color: #fff;
+    text-align: center;
+}
+
+.Nosotros_p strong {
+    font-weight: 700;
+    color: #dfff00;
+}
+
+/* RESPONSIVE (CELULARES) */
+@media (max-width: 900px) {
+    .Nosotros_encuadre {
+        /* 🚨 AJUSTE AQUÍ: Reducido en mobile también */
+        padding-top: 30px;
+        padding-bottom: 80px;
+    }
+
+    .Nosotros_titulo {
+        font-size: 2.2rem;
+    }
+
+    .linea_div_nosotros {
+        width: 80%;
+    }
+
+    .Nosotros_p {
+        font-size: 1.1rem;
+        text-align: center;
+    }
+}
+
 /* --- MEDIA QUERIES (MÓVIL) --- */
 @media (max-width: 768px) {
     .nosotros-container {
@@ -218,28 +312,26 @@
     .section-header h2 {
         font-size: 2.2rem;
     }
-    
+
     .team-intro {
         font-size: 1rem;
     }
 
     /* En móvil las tarjetas son un poco más bajas para facilitar el scroll */
     .team-card {
-        height: 420px; 
+        height: 420px;
     }
 
     .coach-name {
         font-size: 1.6rem;
     }
-    
+
     /* Ajuste del overlay en móvil para asegurar legibilidad */
     .team-overlay {
-        background: linear-gradient(
-            to bottom, 
-            rgba(0,0,0,0) 0%, 
-            rgba(18, 18, 18, 0.4) 30%, 
-            rgba(18, 18, 18, 0.98) 85%
-        );
+        background: linear-gradient(to bottom,
+                rgba(0, 0, 0, 0) 0%,
+                rgba(18, 18, 18, 0.4) 30%,
+                rgba(18, 18, 18, 0.98) 85%);
         padding: 1.2rem;
     }
 }

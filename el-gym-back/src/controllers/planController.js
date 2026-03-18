@@ -26,7 +26,9 @@ const publicarPlan = async (req, res) => {
             alumnoId: alumno._id,
             adminId: req.user._id,
             esPlantilla: false,
+
             activo: true,
+
             sesiones
         });
 

@@ -1,20 +1,17 @@
 import React, { useState } from 'react';
 import {
     FaUser, FaIdCard, FaEnvelope, FaCalendarAlt,
-    FaMoneyBillWave, FaWeight, FaArrowsAltV, FaMapMarkerAlt, FaPhone
+    FaMoneyBillWave, FaWeight, FaArrowsAltV, FaMapMarkerAlt, FaPhone, FaTimes
 } from 'react-icons/fa';
 import { Button } from '../../../Utils/Button';
 import './RegisterUserModal.css';
 
-// 1. Importamos el contexto y el servicio
+// Importamos el contexto y el servicio para mantener la escalabilidad
 import { useAuth } from '../../../contex/AuthContext';
 import { UserService } from '../../../service/user.service';
 
 export function RegisterUserModal({ onClose, onSave }) {
-    // Extraemos al usuario logueado (Admin) para usar su Token
-    const { user } = useAuth();
-
-    // Estados para UX (Carga y Errores)
+    const { user } = useAuth(); // Token del Admin
     const [isLoading, setIsLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
 
@@ -36,15 +33,12 @@ export function RegisterUserModal({ onClose, onSave }) {
         setErrorMsg('');
 
         try {
-            // 2. Llamamos a nuestro backend real
+            // Llamada al backend (Node/Mongo) siguiendo el patrón de servicio
             const newStudent = await UserService.createStudent(formData, user.token);
-
-            // 3. Si todo sale bien, le avisamos al componente padre (AdminUsers)
             onSave(newStudent);
-            onClose(); // Cerramos el modal
-        } catch (error) {
-            // Si el backend nos rechaza (ej: DNI repetido), mostramos el error
-            setErrorMsg(error.message);
+            onClose();
+        } catch (err) {
+            setErrorMsg(err.response?.data?.message || 'Error al registrar socio');
         } finally {
             setIsLoading(false);
         }
@@ -53,69 +47,108 @@ export function RegisterUserModal({ onClose, onSave }) {
     return (
         <div className="modal-overlay">
             <div className="register-modal-card">
-                <header className="modal-header-pro">
-                    <h2>Nuevo <span className="text-neon">Socio</span></h2>
-                    <p>Ficha técnica y personal del alumno.</p>
+                <button className="close-modal-btn" onClick={onClose}><FaTimes /></button>
+
+                <header className="modal-header">
+                    <h2>Nuevo <span className="text-neon">Miembro</span></h2>
+                    <p>Completa los datos para el alta en el sistema</p>
                 </header>
 
-                <form onSubmit={handleSubmit} className="register-form">
-                    {/* Mensaje de Error Dinámico */}
-                    {errorMsg && (
-                        <div style={{ color: '#ff4444', background: 'rgba(255,0,0,0.1)', padding: '10px', borderRadius: '8px', marginBottom: '15px', textAlign: 'center', fontSize: '0.9rem' }}>
-                            {errorMsg}
-                        </div>
-                    )}
+                {errorMsg && <div className="error-badge">{errorMsg}</div>}
+
+                <form onSubmit={handleSubmit} className="register-grid-form">
 
                     <div className="input-glass-group">
                         <FaUser className="input-icon" />
-                        <input type="text" placeholder="Nombre Completo" required onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} />
+                        <input
+                            type="text"
+                            placeholder="Nombre y Apellido"
+                            required
+                            onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                        />
                     </div>
 
-                    <div className="input-grid-dual">
-                        <div className="input-glass-group">
-                            <FaIdCard className="input-icon" />
-                            <input type="number" placeholder="DNI" required onChange={(e) => setFormData({ ...formData, dni: e.target.value })} />
-                        </div>
-                        <div className="input-glass-group">
-                            <FaMoneyBillWave className="input-icon" />
-                            {/* El monto por ahora no lo enviamos al backend de User, pero se usará para Finanzas después */}
-                            <input type="number" placeholder="Monto ($)" required onChange={(e) => setFormData({ ...formData, montoPago: e.target.value })} />
-                        </div>
+                    <div className="input-glass-group">
+                        <FaIdCard className="input-icon" />
+                        <input
+                            type="text"
+                            placeholder="DNI / Identificación"
+                            required
+                            onChange={(e) => setFormData({ ...formData, dni: e.target.value })}
+                        />
                     </div>
 
-                    <div className="input-grid-dual">
-                        <div className="input-glass-group">
-                            <FaWeight className="input-icon" />
-                            <input type="number" placeholder="Peso (kg)" step="0.1" onChange={(e) => setFormData({ ...formData, peso: e.target.value })} />
-                        </div>
-                        <div className="input-glass-group">
-                            <FaArrowsAltV className="input-icon" />
-                            <input type="number" placeholder="Altura (cm)" onChange={(e) => setFormData({ ...formData, altura: e.target.value })} />
-                        </div>
-                    </div>
                     <div className="input-glass-group">
                         <FaPhone className="input-icon" />
-                        <input type="telefono" placeholder="Telefono" required onChange={(e) => setFormData({ ...formData, telefono: e.target.value })} />
+                        <input
+                            type="tel"
+                            placeholder="Teléfono de contacto"
+                            required
+                            onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                        />
                     </div>
-
 
                     <div className="input-glass-group">
                         <FaEnvelope className="input-icon" />
-                        <input type="email" placeholder="Correo Electrónico" required onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+                        <input
+                            type="email"
+                            placeholder="Correo Electrónico"
+                            required
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        />
                     </div>
 
-                    <div className="input-glass-group">
+                    <div className="input-glass-group full-width">
                         <FaMapMarkerAlt className="input-icon" />
-                        <input type="text" placeholder="Dirección de Domicilio" onChange={(e) => setFormData({ ...formData, domicilio: e.target.value })} />
+                        <input
+                            type="text"
+                            placeholder="Dirección de Domicilio"
+                            onChange={(e) => setFormData({ ...formData, domicilio: e.target.value })}
+                        />
+                    </div>
+
+                    <div className="input-row-flex">
+                        <div className="input-glass-group">
+                            <FaWeight className="input-icon" />
+                            <input
+                                type="number"
+                                placeholder="Peso (kg)"
+                                onChange={(e) => setFormData({ ...formData, peso: e.target.value })}
+                            />
+                        </div>
+                        <div className="input-glass-group">
+                            <FaArrowsAltV className="input-icon" />
+                            <input
+                                type="number"
+                                placeholder="Altura (cm)"
+                                onChange={(e) => setFormData({ ...formData, altura: e.target.value })}
+                            />
+                        </div>
                     </div>
 
                     <div className="input-glass-group">
                         <FaCalendarAlt className="input-icon" />
-                        <input type="date" value={formData.fechaInicio} onChange={(e) => setFormData({ ...formData, fechaInicio: e.target.value })} />
+                        <input
+                            type="date"
+                            value={formData.fechaInicio}
+                            onChange={(e) => setFormData({ ...formData, fechaInicio: e.target.value })}
+                        />
+                    </div>
+
+                    <div className="input-glass-group">
+                        <FaMoneyBillWave className="input-icon" />
+                        <input
+                            type="number"
+                            placeholder="Monto de Pago"
+                            required
+                            onChange={(e) => setFormData({ ...formData, montoPago: e.target.value })}
+                        />
                     </div>
 
                     <footer className="modal-footer-actions">
-                        <Button variant="outline" onClick={onClose} type="button" disabled={isLoading}>Cancelar</Button>
+                        <Button variant="outline" onClick={onClose} type="button" disabled={isLoading}>
+                            Cancelar
+                        </Button>
                         <Button variant="primary" type="submit" disabled={isLoading}>
                             {isLoading ? 'Registrando...' : 'Finalizar Registro'}
                         </Button>

@@ -20,13 +20,11 @@ import { WorkoutView } from './feactures/User/WorkoutView';
 
 export default function App() {
     return (
-        <AuthProvider> {/* Proveedor de datos global */}
+        <AuthProvider>
             <BrowserRouter>
                 <Routes>
-                    {/* --- RUTAS PÚBLICAS --- */}
                     <Route path="/" element={<MainPrincipal />} />
 
-                    {/* --- RUTAS ADMIN (PROTEGIDAS) --- */}
                     <Route
                         path="/admin"
                         element={
@@ -35,15 +33,14 @@ export default function App() {
                             </ProtectedRoute>
                         }
                     >
-                        {/* Como AdminLayout está protegido, todo lo de aquí adentro también lo está */}
                         <Route index element={<AdminUsers />} />
                         <Route path="planes" element={<AdminDashboard />} />
                         <Route path="finanzas" element={<div>Finanzas</div>} />
                         <Route path="editor" element={<AdminLandingEditor />} />
                         <Route path="progreso" element={<StudentProgressView />} />
+                        <Route path="*" element={<NotFound />} />
                     </Route>
 
-                    {/* --- RUTAS USER (PROTEGIDAS) --- */}
                     <Route
                         path="/user/*"
                         element={
@@ -51,6 +48,7 @@ export default function App() {
                                 <UserDashboard />
                             </ProtectedRoute>
                         }
+
                     />
 
                     {/* --- FALLBACK --- */}

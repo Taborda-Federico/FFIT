@@ -1,146 +1,277 @@
-/* Horarios.css — Los tokens se definen en styles/variables.css */
+/* ==========================================================================
+   Horarios.css — Estética Premium "Grid & Finder"
+   ========================================================================== */
 
-/* --- RESET BÁSICO --- */
-.finder-container * {
-    box-sizing: border-box; 
+:root {
+    --color-neon: #d4f039;
+    --color-dark-green: #1a472a;
+    --color-bg-dark: #0a0a0a;
+    --border-glass: rgba(255, 255, 255, 0.08);
+    --font-heading: 'Oswald', sans-serif;
+    --font-body: 'Roboto', sans-serif;
 }
 
-/* --- CONTENEDOR PRINCIPAL --- */
 .finder-container {
     width: 100%;
-    max-width: 1200px;
+    max-width: 1400px;
+    /* Más ancho para que entren los 5 días cómodos */
     margin: 0 auto;
-    padding: 2rem 5%;
-    min-height: 80vh;
+    padding: 4rem 2%;
+    color: #fff;
 }
 
-/* HEADER SECCIÓN */
+/* --- HEADERS DE SECCIÓN --- */
 .finder-header {
     text-align: center;
     margin-bottom: 3rem;
 }
 
 .finder-header .section-title {
-    font-family: 'Oswald', sans-serif;
-    color: #ffffff;
-    font-size: 3rem;
+    font-family: var(--font-heading);
+    font-size: clamp(2.5rem, 6vw, 4rem);
     text-transform: uppercase;
-    line-height: 1.1;
-    margin: 0;
+    font-style: italic;
+    line-height: 1;
+    margin-bottom: 1rem;
+    color: #fff;
 }
 
-.section-subtitle {
-    color: var(--color-text-muted);
-    margin-top: 10px;
-    font-family: 'Roboto', sans-serif;
+.finder-header .section-subtitle {
+    font-family: var(--font-body);
+    color: #aaa;
     font-size: 1.1rem;
+    letter-spacing: 1px;
+    font-weight: 300;
 }
 
-/* --- FORMULARIO DE FILTROS --- */
-.finder-form {
-    background-color: var(--color-bg-dark);
-    padding: 2rem;
-    border-radius: 12px; /* Bordes un poco más suaves */
-    border: 1px solid var(--border-color);
+/* =========================================
+   1. GRILLA GENERAL (EL CUADRO COMPLETO)
+   ========================================= */
+.schedule-columns.full-grid {
+    display: grid;
+    /* 5 columnas fijas para L-M-M-J-V */
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 2rem;
+    align-items: stretch;
+}
+
+.day-column {
+    background-color: rgba(20, 20, 20, 0.5);
+    border: 1px solid var(--border-glass);
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
-    gap: 2rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    max-width: 900px;
-    margin: 0 auto;
+    transition: all 0.3s ease;
 }
 
-.full-width {
-    width: 100%;
+.day-column:hover {
+    border-color: rgba(212, 240, 57, 0.2);
+    background-color: rgba(30, 30, 30, 0.5);
 }
 
-.form-group label {
-    color: var(--color-neon);
-    font-family: 'Oswald', sans-serif;
+.day-header {
+    background-color: var(--color-dark-green);
+    color: #fff;
+    padding: 15px 10px;
+    text-align: center;
+    font-family: var(--font-heading);
+    font-size: 1.4rem;
     text-transform: uppercase;
     letter-spacing: 1px;
-    font-size: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 1rem;
+    border-bottom: 3px solid var(--color-neon);
+    border-radius: 12px 12px 0 0;
 }
 
-/* --- CHIPS / BOTONES (MEJORADO CON GRID) --- */
-.days-grid {
-    display: grid;
-    /* Esto crea columnas automáticas que no bajan de 140px pero se estiran */
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 10px;
-}
-
-.day-chip {
-    background-color: var(--color-chip-inactive);
-    color: var(--color-text-muted);
-    border: 1px solid #444;
+.day-body {
     padding: 12px;
-    border-radius: 8px; /* Menos redondeado para verse más moderno y estructurado */
-    cursor: pointer;
-    font-family: 'Oswald', sans-serif;
-    font-size: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-grow: 1;
+}
+
+/* TARJETAS DE CLASE DENTRO DE LA GRILLA */
+.schedule-card {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 12px;
+    border-radius: 8px;
+    border-left: 4px solid #444;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: transform 0.2s ease;
+}
+
+.schedule-card:hover {
+    transform: scale(1.02);
+    background: rgba(255, 255, 255, 0.07);
+}
+
+/* Colores por tipo de clase */
+.schedule-card.type-funcional {
+    border-left-color: #4CAF50;
+}
+
+.schedule-card.type-semipersonalizado {
+    border-left-color: #00d4ff;
+}
+
+.schedule-card.type-hibrido {
+    border-left-color: var(--color-neon);
+}
+
+.schedule-card.type-cross {
+    border-left-color: #ff5e5e;
+}
+
+.schedule-card.type-avanzado {
+    border-left-color: #ff9800;
+}
+
+.schedule-card.type-salud {
+    border-left-color: #88d498;
+}
+
+.schedule-card.type-libre {
+    border-left-color: #777;
+}
+
+.schedule-card.type-cardio {
+    border-left-color: #e91e63;
+}
+
+.sc-time {
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    color: var(--color-neon);
+    font-weight: 700;
+}
+
+.sc-name {
+    font-family: var(--font-body);
+    font-size: 0.85rem;
     text-transform: uppercase;
-    transition: all 0.2s ease;
+    font-weight: 700;
+    color: #eee;
+    line-height: 1.2;
+}
+
+/* =========================================
+   2. SEPARADOR NEON
+   ========================================= */
+.separator-neon {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 2rem;
+    margin: 6rem 0;
+}
+
+.separator-neon span {
+    height: 1px;
+    flex-grow: 1;
+    background: linear-gradient(90deg, transparent, var(--color-neon), transparent);
+    opacity: 0.3;
+}
+
+.separator-neon svg {
+    color: var(--color-neon);
+    font-size: 2.2rem;
+    filter: drop-shadow(0 0 10px var(--color-neon));
+}
+
+/* =========================================
+   3. FORMULARIO "ARMÁ TU RUTINA"
+   ========================================= */
+.finder-form {
+    background-color: #111;
+    padding: 3rem;
+    border-radius: 20px;
+    border: 1px solid var(--border-glass);
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+    max-width: 1000px;
+    margin: 0 auto;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+}
+
+.form-group label {
+    display: block;
+    font-family: var(--font-heading);
+    font-size: 1.2rem;
+    color: var(--color-neon);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 1.5rem;
     text-align: center;
-    line-height: 1.2;
+}
+
+.days-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+}
+
+.day-chip {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #888;
+    padding: 15px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: var(--font-heading);
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
 }
 
 .day-chip:hover {
     border-color: var(--color-neon);
     color: #fff;
-    background-color: #333;
-    transform: translateY(-2px);
 }
 
 .day-chip.active {
     background-color: var(--color-neon);
-    color: var(--color-dark-green); 
-    border-color: var(--color-neon);
-    font-weight: bold;
-    box-shadow: 0 0 15px rgba(212, 240, 57, 0.2);
+    color: #000;
+    font-weight: 700;
+    box-shadow: 0 0 20px rgba(212, 240, 57, 0.4);
 }
 
-/* Botón especial "TODOS" */
 .day-chip.all-days {
-    background-color: var(--color-dark-green);
+    grid-column: 1 / -1;
+    background: var(--color-dark-green);
     color: #fff;
-    border-color: var(--color-dark-green);
-    /* Hacemos que ocupe 2 columnas si hay espacio, o toda la fila */
-    grid-column: 1 / -1; 
 }
+
 .day-chip.all-days.active {
     background-color: var(--color-neon);
-    color: var(--color-dark-green);
+    color: #000;
 }
 
-/* --- BOTONES DE ACCIÓN --- */
+/* BOTÓN LIMPIAR */
 .form-actions {
     display: flex;
-    justify-content: flex-end;
-    margin-top: 1rem;
+    justify-content: center;
 }
 
 .btn-clear {
     background: transparent;
-    color: #ff5e5e;
     border: 1px solid #ff5e5e;
-    padding: 10px 20px;
-    border-radius: 6px;
+    color: #ff5e5e;
+    padding: 12px 30px;
+    border-radius: 8px;
+    font-family: var(--font-heading);
+    text-transform: uppercase;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-family: 'Oswald', sans-serif;
-    text-transform: uppercase;
-    transition: all 0.2s;
+    gap: 10px;
+    transition: all 0.3s;
 }
 
 .btn-clear:hover {
@@ -148,201 +279,107 @@
     color: #fff;
 }
 
-/* --- RESULTADOS: GRILLA DE HORARIOS --- */
-.schedule-container {
+/* =========================================
+   4. ÁREA DE RESULTADOS (RUTINA SUGERIDA)
+   ========================================= */
+.result-area {
     margin-top: 4rem;
-    animation: slideUp 0.5s ease-out;
+    animation: fadeInUp 0.6s ease;
 }
 
-@keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .schedule-title {
     text-align: center;
-    color: #fff;
-    font-family: 'Oswald', sans-serif;
+    font-family: var(--font-heading);
     font-size: 2.5rem;
-    margin-bottom: 2rem;
-    text-transform: uppercase;
-}
-
-/* Layout Desktop: Columnas verticales */
-.schedule-columns {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1.5rem;
-    align-items: start;
-}
-
-.day-column {
-    background-color: #121212;
-    border: 1px solid #333;
-    border-radius: 8px;
-    overflow: hidden;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-.day-header {
-    background-color: var(--color-dark-green); 
     color: #fff;
-    text-align: center;
-    padding: 15px;
-    font-family: 'Oswald', sans-serif;
-    font-size: 1.3rem;
-    border-bottom: 3px solid var(--color-neon);
-    letter-spacing: 1px;
-}
-
-.day-body {
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    flex-grow: 1; /* Ocupa el espacio restante */
-}
-
-/* TARJETAS DE CLASE (Desktop) */
-.schedule-card {
-    background-color: var(--color-bg-card);
-    padding: 12px 15px;
-    border-radius: 6px;
-    border-left: 5px solid #666;
-    transition: transform 0.2s;
-}
-
-.schedule-card:hover {
-    transform: translateX(5px);
-    background-color: #303030;
-}
-
-/* Colores por tipo (Lógica de negocio visual) */
-.schedule-card.type-funcional { border-left-color: #4a7c59; }
-.schedule-card.type-hibrido { border-left-color: var(--color-neon); }
-.schedule-card.type-cross { border-left-color: #ff5e5e; }
-.schedule-card.type-avanzado { border-left-color: var(--color-dark-green); border-right: 1px solid var(--color-neon); }
-.schedule-card.type-salud { border-left-color: #88d498; }
-.schedule-card.type-libre { border-left-color: #ccc; }
-
-.sc-time {
-    display: block;
-    font-size: 0.9rem;
-    color: var(--color-neon);
-    font-weight: bold;
-    margin-bottom: 4px;
-}
-
-.sc-name {
-    display: block;
-    color: #fff;
-    font-size: 1rem;
+    margin-bottom: 3rem;
     text-transform: uppercase;
-    font-weight: 500;
-}
-
-.empty-day {
-    color: #666;
-    font-size: 0.9rem;
-    text-align: center;
-    padding: 1rem 0;
     font-style: italic;
 }
 
+/* Resalte de la columna recomendada */
+.day-column.highlight {
+    border: 2px solid var(--color-neon);
+    box-shadow: 0 0 30px rgba(212, 240, 57, 0.15);
+    transform: translateY(-5px);
+}
+
 /* =========================================
-   MEDIA QUERIES (RESPONSIVE AVANZADO)
+   RESPONSIVE AVANZADO
    ========================================= */
 
-/* Tablets y Móviles (< 900px) */
-@media (max-width: 900px) { 
-    
+/* Desktop Pequeño / Tablets Grandes */
+@media (max-width: 1200px) {
+    .schedule-columns.full-grid {
+        grid-template-columns: repeat(3, 1fr);
+        /* Pasa a 3 columnas */
+    }
+}
+
+/* Tablets Medianas */
+@media (max-width: 900px) {
+    .schedule-columns.full-grid {
+        grid-template-columns: repeat(2, 1fr);
+        /* Pasa a 2 columnas */
+    }
+
     .finder-container {
-        padding: 1rem;
-        width: 100%;
-        overflow-x: hidden;
+        padding: 2rem 5%;
     }
+}
 
-    .finder-header .section-title {
-        font-size: 2rem;
-    }
+/* Móviles */
+@media (max-width: 600px) {
 
-    .finder-form {
-        padding: 1.5rem;
-        gap: 1.5rem;
-    }
-
-    /* Ajuste de Grilla de Botones para Móvil */
-    .days-grid {
-        grid-template-columns: repeat(2, 1fr); /* 2 botones por fila fijos */
-        gap: 8px;
-    }
-    
-    .day-chip {
-        font-size: 0.85rem;
-        padding: 10px;
-    }
-
-    /* Transformación del Calendario a Lista Vertical */
+    .schedule-columns.full-grid,
     .schedule-columns {
         display: flex;
         flex-direction: column;
-        gap: 2rem; /* Más espacio entre días */
+        /* Todo en una columna */
+        gap: 2rem;
     }
 
-    .day-column {
-        background: transparent;
-        border: none;
-        overflow: visible; /* Necesario para el sticky header */
-    }
-
-    /* MAGIA STICKY: El título del día se queda pegado arriba al scrollear */
     .day-header {
         position: sticky;
         top: 0;
-        z-index: 100;
-        border-radius: 8px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        padding: 10px;
-        text-align: left;
-        padding-left: 20px;
+        /* Si tienes un nav floating, ajusta este valor */
+        z-index: 10;
         font-size: 1.2rem;
     }
 
-    .day-body {
-        padding: 10px 0 0 0;
-    }
-
-    /* Tarjeta Móvil: Layout Horizontal (Flex row) */
     .schedule-card {
-        display: flex;
-        flex-direction: row; /* Horizontal */
-        align-items: center;
+        flex-direction: row;
         justify-content: space-between;
+        align-items: center;
         padding: 15px;
-        margin-bottom: 5px;
     }
 
     .sc-time {
-        margin-bottom: 0;
-        font-size: 1.1rem; /* Hora más grande para lectura rápida */
-        min-width: 80px;
+        font-size: 1.1rem;
     }
 
     .sc-name {
         text-align: right;
-        font-size: 0.95rem;
+        max-width: 60%;
     }
-}
 
-/* Móviles Muy Pequeños (Ej. iPhone SE, Galaxy Fold cerrado) */
-@media (max-width: 380px) {
-    .days-grid {
-        grid-template-columns: 1fr; /* 1 columna, botones anchos */
+    .finder-form {
+        padding: 1.5rem;
     }
-    
-    .finder-header .section-title {
-        font-size: 1.8rem;
+
+    .days-grid {
+        grid-template-columns: 1fr;
     }
 }

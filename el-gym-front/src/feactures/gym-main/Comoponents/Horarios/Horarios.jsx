@@ -1,36 +1,65 @@
-import React, { useState, useEffect } from 'react'; // 1. Importamos useEffect
+import React, { useState, useEffect } from 'react';
 import './Horarios.css';
-import { FaCheck, FaTrashAlt, FaDumbbell, FaRunning, FaHeartbeat, FaTrophy, FaUnlockAlt } from 'react-icons/fa';
+import { FaCheck, FaTrashAlt, FaDumbbell, FaRunning, FaHeartbeat, FaTrophy, FaUnlockAlt, FaCalendarAlt } from 'react-icons/fa';
 
 export function Horarios() {
-    
-    // --- DATOS (Igual que antes) ---
+
     const clasesDB = [
+        // --- 07:30 ---
         { dia: 'Lunes', hora: '07:30', clase: 'Funcional FFIT', tipo: 'funcional' },
-        { dia: 'Lunes', hora: '08:30', clase: 'Funcional FFIT', tipo: 'funcional' },
-        { dia: 'Martes', hora: '07:30', clase: 'Entren. Híbrido', tipo: 'hibrido' },
-        { dia: 'Martes', hora: '08:30', clase: 'Entren. Híbrido', tipo: 'hibrido' },
+        { dia: 'Martes', hora: '07:30', clase: 'Entren. Semipersonalizado', tipo: 'semipersonalizado' },
         { dia: 'Miércoles', hora: '07:30', clase: 'Funcional FFIT', tipo: 'funcional' },
-        { dia: 'Miércoles', hora: '11:00', clase: 'Vital FFIT', tipo: 'salud' },
-        { dia: 'Jueves', hora: '07:30', clase: 'Entren. Híbrido', tipo: 'hibrido' },
+        { dia: 'Jueves', hora: '07:30', clase: 'Entren. Semipersonalizado', tipo: 'semipersonalizado' },
         { dia: 'Viernes', hora: '07:30', clase: 'Funcional FFIT', tipo: 'funcional' },
+        // --- 08:30 ---
+        { dia: 'Lunes', hora: '08:30', clase: 'Funcional FFIT', tipo: 'funcional' },
+        { dia: 'Martes', hora: '08:30', clase: 'Entren. Híbrido', tipo: 'hibrido' },
+        { dia: 'Miércoles', hora: '08:30', clase: 'Funcional FFIT', tipo: 'funcional' },
+        { dia: 'Jueves', hora: '08:30', clase: 'Entren. Híbrido', tipo: 'hibrido' },
+        { dia: 'Viernes', hora: '08:30', clase: 'Funcional FFIT', tipo: 'funcional' },
+        // --- 09:30 ---
+        { dia: 'Lunes', hora: '09:30', clase: 'Entren. Semipersonalizado', tipo: 'semipersonalizado' },
+        { dia: 'Martes', hora: '09:30', clase: 'Gimnasio Libre', tipo: 'libre' },
+        { dia: 'Miércoles', hora: '09:30', clase: 'Entren. Semipersonalizado', tipo: 'semipersonalizado' },
+        { dia: 'Jueves', hora: '09:30', clase: 'Gimnasio Libre', tipo: 'libre' },
+        { dia: 'Viernes', hora: '09:30', clase: 'Entren. Semipersonalizado', tipo: 'semipersonalizado' },
+        // --- 11:00 ---
+        { dia: 'Miércoles', hora: '11:00', clase: 'Vital FFIT', tipo: 'salud' },
         { dia: 'Viernes', hora: '11:00', clase: 'Vital FFIT', tipo: 'salud' },
+        // --- 15:00 ---
         { dia: 'Lunes', hora: '15:00', clase: 'FFIT Cross', tipo: 'cross' },
-        { dia: 'Lunes', hora: '18:00', clase: 'Intro FFIT', tipo: 'hibrido' },
-        { dia: 'Lunes', hora: '20:00', clase: 'Entren. Híbrido', tipo: 'hibrido' },
-        { dia: 'Martes', hora: '16:30', clase: 'Yoga Integral', tipo: 'salud' },
-        { dia: 'Martes', hora: '18:00', clase: 'FFIT Performance', tipo: 'avanzado' },
-        { dia: 'Martes', hora: '20:00', clase: 'HIIT FFIT', tipo: 'cardio' },
-        { dia: 'Martes', hora: '21:00', clase: 'FFIT RX', tipo: 'avanzado' },
+        { dia: 'Martes', hora: '15:00', clase: 'Gimnasio Libre', tipo: 'libre' },
         { dia: 'Miércoles', hora: '15:00', clase: 'FFIT Cross', tipo: 'cross' },
-        { dia: 'Miércoles', hora: '18:00', clase: 'Intro FFIT', tipo: 'hibrido' },
-        { dia: 'Jueves', hora: '16:30', clase: 'Yoga Integral', tipo: 'salud' },
-        { dia: 'Jueves', hora: '18:00', clase: 'FFIT Performance', tipo: 'avanzado' },
-        { dia: 'Jueves', hora: '20:00', clase: 'HIIT FFIT', tipo: 'cardio' },
+        { dia: 'Jueves', hora: '15:00', clase: 'Gimnasio Libre', tipo: 'libre' },
         { dia: 'Viernes', hora: '15:00', clase: 'FFIT Cross', tipo: 'cross' },
+        // --- 16:30 ---
+        { dia: 'Lunes', hora: '16:30', clase: 'FFIT Cross', tipo: 'cross' },
+        { dia: 'Martes', hora: '16:30', clase: 'Gimnasio Libre', tipo: 'libre' },
+        { dia: 'Miércoles', hora: '16:30', clase: 'FFIT Cross', tipo: 'cross' },
+        { dia: 'Jueves', hora: '16:30', clase: 'Yoga Integral', tipo: 'salud' },
+        { dia: 'Viernes', hora: '16:30', clase: 'FFIT Cross', tipo: 'cross' },
+        // --- 18:00 ---
+        { dia: 'Lunes', hora: '18:00', clase: 'Intro FFIT', tipo: 'hibrido' },
+        { dia: 'Martes', hora: '18:00', clase: 'FFIT Performance', tipo: 'avanzado' },
+        { dia: 'Miércoles', hora: '18:00', clase: 'Intro FFIT', tipo: 'hibrido' },
+        { dia: 'Jueves', hora: '18:00', clase: 'FFIT Performance', tipo: 'avanzado' },
         { dia: 'Viernes', hora: '18:00', clase: 'Intro FFIT', tipo: 'hibrido' },
-        { dia: 'Viernes', hora: '21:00', clase: 'FFIT RX', tipo: 'avanzado' },
-        { dia: 'Todos', hora: '09:00 - 21:00', clase: 'Gimnasio Libre', tipo: 'libre' },
+        // --- 19:00 ---
+        { dia: 'Lunes', hora: '19:00', clase: 'Entren. Híbrido', tipo: 'hibrido' },
+        { dia: 'Martes', hora: '19:00', clase: 'FFIT Performance', tipo: 'avanzado' },
+        { dia: 'Miércoles', hora: '19:00', clase: 'Entren. Híbrido', tipo: 'hibrido' },
+        { dia: 'Jueves', hora: '19:00', clase: 'FFIT Performance', tipo: 'avanzado' },
+        { dia: 'Viernes', hora: '19:00', clase: 'Entren. Híbrido', tipo: 'hibrido' },
+        // --- 20:00 ---
+        { dia: 'Lunes', hora: '20:00', clase: 'Entren. Híbrido', tipo: 'hibrido' },
+        { dia: 'Martes', hora: '20:00', clase: 'HIIT FFIT', tipo: 'cardio' },
+        { dia: 'Miércoles', hora: '20:00', clase: 'Entren. Híbrido', tipo: 'hibrido' },
+        { dia: 'Jueves', hora: '20:00', clase: 'HIIT FFIT', tipo: 'cardio' },
+        { dia: 'Viernes', hora: '20:00', clase: 'HIIT FFIT', tipo: 'cardio' },
+        // --- 21:00 ---
+        { dia: 'Martes', hora: '21:00', clase: 'FFIT RX', tipo: 'avanzado' },
+        { dia: 'Jueves', hora: '21:00', clase: 'FFIT RX', tipo: 'avanzado' },
+        { dia: 'Viernes', hora: '21:00', clase: 'FFIT RX', tipo: 'avanzado' }
     ];
 
     const weekDays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
@@ -43,90 +72,89 @@ export function Horarios() {
         { id: 'libre', label: 'Entrenamiento Libre', icon: <FaUnlockAlt /> }
     ];
 
-    // --- ESTADOS ---
+    // ESTADOS PARA EL FILTRADOR
     const [objetivo, setObjetivo] = useState('');
-    const [diasSeleccionados, setDiasSeleccionados] = useState([]); 
-    const [cronograma, setCronograma] = useState(null); 
+    const [diasSeleccionados, setDiasSeleccionados] = useState([]);
+    const [cronograma, setCronograma] = useState(null);
 
-    // --- MANEJADORES DE CLICK ---
     const toggleDia = (dia) => {
-        if (diasSeleccionados.includes(dia)) {
-            setDiasSeleccionados(diasSeleccionados.filter(d => d !== dia));
-        } else {
-            setDiasSeleccionados([...diasSeleccionados, dia]);
-        }
+        setDiasSeleccionados(prev => prev.includes(dia) ? prev.filter(d => d !== dia) : [...prev, dia]);
     };
 
     const toggleTodos = () => {
-        if (diasSeleccionados.length === weekDays.length) {
-            setDiasSeleccionados([]); 
-        } else {
-            setDiasSeleccionados(weekDays); 
-        }
+        setDiasSeleccionados(diasSeleccionados.length === weekDays.length ? [] : weekDays);
     };
 
     const limpiarFiltros = () => {
         setObjetivo('');
         setDiasSeleccionados([]);
-        // No hace falta setCronograma(null) aquí porque el useEffect lo hará solo
     }
 
-    // --- LA MAGIA: USE EFFECT ---
     useEffect(() => {
-        // 1. Si faltan datos, limpiamos y salimos
         if (!objetivo || diasSeleccionados.length === 0) {
             setCronograma(null);
             return;
         }
 
-        // 2. Lógica de Filtrado (La misma que tenías antes)
         let filtroPlano = clasesDB.filter(item => {
-            const diaMatch = diasSeleccionados.includes(item.dia) || item.dia === 'Todos';
-            
+            const diaMatch = diasSeleccionados.includes(item.dia);
             let tipoMatch = false;
-            if (objetivo === 'fuerza') tipoMatch = ['funcional', 'cross', 'avanzado'].includes(item.tipo);
+            if (objetivo === 'fuerza') tipoMatch = ['funcional', 'cross', 'avanzado', 'semipersonalizado'].includes(item.tipo);
             if (objetivo === 'resistencia') tipoMatch = ['hibrido', 'cardio', 'funcional'].includes(item.tipo);
             if (objetivo === 'salud') tipoMatch = ['salud', 'yoga', 'libre'].includes(item.tipo);
             if (objetivo === 'performance') tipoMatch = ['avanzado', 'rx', 'cross'].includes(item.tipo);
             if (objetivo === 'libre') tipoMatch = item.tipo === 'libre';
-
             return diaMatch && tipoMatch;
         });
 
-        // 3. Lógica de Agrupamiento
         const agrupado = {};
         diasSeleccionados.forEach(d => agrupado[d] = []);
-
         filtroPlano.forEach(clase => {
-            if (clase.dia === 'Todos') {
-                diasSeleccionados.forEach(d => agrupado[d].push(clase));
-            } else if (diasSeleccionados.includes(clase.dia)) {
-                agrupado[clase.dia].push(clase);
-            }
+            if (diasSeleccionados.includes(clase.dia)) agrupado[clase.dia].push(clase);
         });
-
-        Object.keys(agrupado).forEach(dia => {
-            agrupado[dia].sort((a, b) => a.hora.localeCompare(b.hora));
-        });
-
-        // 4. Actualizamos el estado automáticamente
         setCronograma(agrupado);
-
-    }, [objetivo, diasSeleccionados]); // <--- AQUÍ ESTÁ LA CLAVE: Se ejecuta cuando esto cambia
+    }, [objetivo, diasSeleccionados]);
 
     return (
         <div className="finder-container">
+
+            {/* --- SECCIÓN 1: GRILLA GENERAL --- */}
             <div className="finder-header">
-                <h2 className="section-title">Armá tu Rutina Semanal</h2>
-                <p className="section-subtitle">Seleccioná tu objetivo y los días. El plan se actualiza automáticamente.</p>
+                <h2 className="section-title">Nuestros Horarios</h2>
+                <p className="section-subtitle">Explora todas nuestras actividades de la semana</p>
             </div>
 
-            {/* Quitamos el onSubmit porque ya no usamos submit */}
+            <div className="schedule-columns full-grid">
+                {weekDays.map(dia => (
+                    <div key={dia} className="day-column">
+                        <div className="day-header">{dia}</div>
+                        <div className="day-body">
+                            {clasesDB.filter(c => c.dia === dia).map((item, idx) => (
+                                <div key={idx} className={`schedule-card type-${item.tipo}`}>
+                                    <span className="sc-time">{item.hora}</span>
+                                    <span className="sc-name">{item.clase}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <div className="separator-neon">
+                <span></span>
+                <FaCalendarAlt />
+                <span></span>
+            </div>
+
+            {/* --- SECCIÓN 2: ARMÁ TU RUTINA --- */}
+            <div className="finder-header" style={{ marginTop: '2rem' }}>
+                <h2 className="section-title">Armá tu Rutina</h2>
+                <p className="section-subtitle">Seleccioná tu objetivo y días para una recomendación personalizada.</p>
+            </div>
+
             <form className="finder-form" onSubmit={(e) => e.preventDefault()}>
-                
-                {/* 1. OBJETIVO */}
                 <div className="form-group full-width">
-                    <label style={{marginBottom: '1rem'}}>1. ELEGÍ TU OBJETIVO PRINCIPAL</label>
+                    <label>1. OBJETIVO PRINCIPAL</label>
                     <div className="days-grid">
                         {objetivosOptions.map((opt) => (
                             <button
@@ -136,63 +164,41 @@ export function Horarios() {
                                 onClick={() => setObjetivo(opt.id)}
                             >
                                 {opt.icon} {opt.label}
-                                {objetivo === opt.id && <FaCheck className="check-icon" style={{marginLeft:'5px'}}/>}
                             </button>
                         ))}
                     </div>
                 </div>
 
-                {/* 2. DÍAS */}
                 <div className="form-group full-width">
-                    <label style={{marginBottom: '1rem'}}>2. ¿QUÉ DÍAS VENÍS?</label>
+                    <label>2. ¿QUÉ DÍAS ENTRENÁS?</label>
                     <div className="days-grid">
-                        <button 
-                            type="button"
-                            className={`day-chip all-days ${diasSeleccionados.length === 5 ? 'active' : ''}`}
-                            onClick={toggleTodos}
-                        >
-                            TODOS
-                        </button>
+                        <button type="button" className={`day-chip all-days ${diasSeleccionados.length === 5 ? 'active' : ''}`} onClick={toggleTodos}>TODOS</button>
                         {weekDays.map(dia => (
-                            <button
-                                key={dia}
-                                type="button"
-                                className={`day-chip ${diasSeleccionados.includes(dia) ? 'active' : ''}`}
-                                onClick={() => toggleDia(dia)}
-                            >
+                            <button key={dia} type="button" className={`day-chip ${diasSeleccionados.includes(dia) ? 'active' : ''}`} onClick={() => toggleDia(dia)}>
                                 {dia.substring(0, 3)}
-                                {diasSeleccionados.includes(dia) && <FaCheck className="check-icon"/>}
                             </button>
                         ))}
                     </div>
                 </div>
 
-                {/* BOTONES DE ACCIÓN: Solo dejamos el de limpiar si hay resultados */}
                 {cronograma && (
-                    <div className="form-actions" style={{justifyContent: 'flex-end'}}>
-                        <button 
-                            type="button" 
-                            className="btn-clear" 
-                            onClick={limpiarFiltros} 
-                            title="Limpiar Filtros"
-                            style={{width: 'auto', padding: '0 20px', gap: '10px'}} // Ajuste visual rápido
-                        >
+                    <div className="form-actions">
+                        <button type="button" className="btn-clear" onClick={limpiarFiltros}>
                             LIMPIAR FILTROS <FaTrashAlt />
                         </button>
                     </div>
                 )}
             </form>
 
-            {/* --- RESULTADOS: EL CRONOGRAMA --- */}
             {cronograma && (
-                <div className="schedule-container">
+                <div className="schedule-container result-area">
                     <h3 className="schedule-title">Tu Plan Sugerido:</h3>
                     <div className="schedule-columns">
                         {weekDays.map(dia => {
                             if (!diasSeleccionados.includes(dia)) return null;
                             const clasesDelDia = cronograma[dia] || [];
                             return (
-                                <div key={dia} className="day-column">
+                                <div key={dia} className="day-column highlight">
                                     <div className="day-header">{dia}</div>
                                     <div className="day-body">
                                         {clasesDelDia.length > 0 ? (
@@ -203,7 +209,7 @@ export function Horarios() {
                                                 </div>
                                             ))
                                         ) : (
-                                            <div className="empty-day">Sin clases este día.</div>
+                                            <div className="empty-day">No hay clases que coincidan con tu objetivo este día.</div>
                                         )}
                                     </div>
                                 </div>

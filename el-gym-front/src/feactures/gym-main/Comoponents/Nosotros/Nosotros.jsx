@@ -57,7 +57,7 @@ export function Nosotros() {
                 <h2>Nuestro Equipo</h2>
                 <span></span>
                 <p className="team-intro">
-                    Profesionales certificados listos para llevarte al <span className="text-neon">siguiente nivel</span>.
+                    Profesionales certificados listos para llevarte al siguiente nivel <span className="text-neon"></span>
                 </p>
             </div>
 

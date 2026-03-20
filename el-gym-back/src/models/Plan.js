@@ -6,7 +6,7 @@ const ejercicioSchema = new mongoose.Schema({
     reps: { type: String },
     tiempo: { type: String },
     pesoAnterior: { type: String },
-    videoUrl: { type: String },
+    video: { type: String },
     notas: { type: String }
 });
 

@@ -18,7 +18,7 @@ import './UserDashboard.css';
 
 export function UserDashboard() {
     const { user } = useAuth();
-    const [currentTab, setCurrentTab] = useState('home'); // 'home' | 'history' | 'profile'
+    const [currentTab, setCurrentTab] = useState('home');
     const [modalConfig, setModalConfig] = useState(null);
     const [activeWorkout, setActiveWorkout] = useState(() => {
         const guardado = localStorage.getItem('ffit_active_workout');
@@ -132,7 +132,7 @@ export function UserDashboard() {
                 />
             )}
 
-            {/* MODO ENTRENAMIENTO (CAPA SUPERIOR) */}
+
             {activeWorkout && (
                 <WorkoutView
                     session={activeWorkout}
@@ -141,11 +141,11 @@ export function UserDashboard() {
                 />
             )}
 
-            {/* VISTAS DE NAVEGACIÓN */}
+
             {!activeWorkout && (
                 <>
                     <main className="main-content-scroll">
-                        {/* WIDGET SUPERIOR DE PROGRESO */}
+
                         {dashboardData?.plan && currentTab === 'home' && (
                             <div className="progress-widget-container">
                                 <div className="pw-left">
@@ -175,7 +175,7 @@ export function UserDashboard() {
                         </div>
                     </main>
 
-                    {/* --- BARRA DE NAVEGACIÓN INFERIOR (3 ITEMS) --- */}
+
                     <nav className="bottom-nav-oled">
                         <button
                             className={`nav-tab ${currentTab === 'home' ? 'active' : ''}`}

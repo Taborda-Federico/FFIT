@@ -6,7 +6,6 @@ import {
 import { Button } from '../../../Utils/Button';
 import './RegisterUserModal.css';
 
-// Importamos el contexto y el servicio para mantener la escalabilidad
 import { useAuth } from '../../../contex/AuthContext';
 import { UserService } from '../../../service/user.service';
 
@@ -33,7 +32,6 @@ export function RegisterUserModal({ onClose, onSave }) {
         setErrorMsg('');
 
         try {
-            // Llamada al backend (Node/Mongo) siguiendo el patrón de servicio
             const newStudent = await UserService.createStudent(formData, user.token);
             onSave(newStudent);
             onClose();

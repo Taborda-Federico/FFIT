@@ -1,4 +1,3 @@
-// src/feactures/gym-main/components/Navbar/Navbar.jsx
 import React, { useState } from 'react';
 import { FaBars, FaTimes } from 'react-icons/fa';
 import { Button } from '../../../../Utils/Button';
@@ -22,7 +21,6 @@ export function Navbar({ onScroll }) {
             <nav className={`navbar-floating ${isMenuOpen ? 'menu-active' : ''}`}>
                 <div className="nav-container-wrapper">
 
-                    {/* LOGO ARRIBA A LA IZQUIERDA */}
                     <div className="logo-container" onClick={(e) => handleClick(e, 'inicio')}>
                         <img
                             src="/logo ffit wellness blanco y lima.PNG"

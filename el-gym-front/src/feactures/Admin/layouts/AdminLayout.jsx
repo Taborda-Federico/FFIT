@@ -9,15 +9,12 @@ export function AdminLayout() {
 
     return (
         <div className={`admin-master-wrapper ${isSidebarOpen ? 'sidebar-open' : ''}`}>
-            
-            {/* Overlay: Se activa solo en móvil para cerrar el menú */}
+
             <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
-            
-            {/* Sidebar: Controla su propio estado de PC/Móvil por CSS */}
+
             <AdminSidebar isOpen={isSidebarOpen} onClose={() => setSidebarOpen(false)} />
 
             <main className="admin-main-content">
-                {/* Top Nav: Estilo Apple/Stripe con Blur */}
                 <header className="admin-top-nav">
                     <div className="nav-left">
                         <button className="menu-toggle" onClick={() => setSidebarOpen(true)}>
@@ -39,9 +36,8 @@ export function AdminLayout() {
                     </div>
                 </header>
 
-                {/* Contenedor de las páginas dinámicas */}
                 <section className="admin-page-container">
-                    <Outlet /> 
+                    <Outlet />
                 </section>
             </main>
         </div>

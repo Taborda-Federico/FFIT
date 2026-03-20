@@ -8,14 +8,13 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Al cargar, verificamos si hay sesión en el navegador (Local Storage)
         const savedUser = localStorage.getItem('gym_session');
         if (savedUser) setUser(JSON.parse(savedUser));
         setLoading(false);
     }, []);
 
     const login = (userData) => {
-        setUser(userData); // { name: 'Fede', role: 'user', id: '123' }
+        setUser(userData);
         localStorage.setItem('gym_session', JSON.stringify(userData));
     };
 

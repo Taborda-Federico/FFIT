@@ -9,7 +9,6 @@ import { LandingService } from '../../../service/landing.service';
 
 export function MainPrincipal() {
 
-    // Ahora las imágenes nacen desde un estado, esperando la base de datos
     const [backgroundImages, setBackgroundImages] = useState([
         'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop',
         'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop',
@@ -24,7 +23,6 @@ export function MainPrincipal() {
             try {
                 const data = await LandingService.getPublicLanding();
                 if (data.heroBackgrounds && data.heroBackgrounds.length > 0) {
-                    // Extraemos solo las URLs del array de objetos de Mongo
                     setBackgroundImages(data.heroBackgrounds.map(bg => bg.url));
                 }
             } catch (error) {

@@ -10,29 +10,22 @@ export function HomeHub({ onStart, dashboardData, history = [] }) {
 
     const { user, stats, plan } = dashboardData;
 
-    // --- LÓGICA DE BLOQUEO DE RUTINA (UX) ---
 
-    // 1. Validar si YA ENTRENÓ HOY (cualquier sesión)
     const hoyString = new Date().toDateString();
     const yaEntrenoHoy = history.some(log => new Date(log.createdAt).toDateString() === hoyString);
 
-    // 2. Verifica si la sesión se completó esta semana (reinicia el domingo)
     const isSessionCompleted = (sessionName) => {
         if (!history || history.length === 0) return false;
-
-        // Calculamos el inicio de la semana (Domingo a las 00:00)
         const hoy = new Date();
         const diaDeLaSemana = hoy.getDay();
         const inicioDeSemana = new Date(hoy);
         inicioDeSemana.setDate(hoy.getDate() - diaDeLaSemana);
         inicioDeSemana.setHours(0, 0, 0, 0);
 
-        // Obtenemos cuándo se asignó ESTE plan nuevo (evita "fantasmas" de planes anteriores)
         const fechaPlan = plan && plan.createdAt ? new Date(plan.createdAt) : new Date(0);
 
         return history.some(log => {
             const fechaLog = new Date(log.createdAt);
-            // Comparamos que se llame igual, que sea de esta semana y DESPUÉS de asignar el plan
             return (
                 log.nombreSesion === sessionName &&
                 fechaLog >= inicioDeSemana &&
@@ -105,16 +98,15 @@ export function HomeHub({ onStart, dashboardData, history = [] }) {
                         plan.sesiones.map((session, index) => {
                             // Variables de estado del día
                             const isDone = isSessionCompleted(session.nombre);
-                            // Se bloquea si ya está hecha, O si no la hizo pero ya entrenó otra sesión hoy
                             const isBlocked = isDone || (!isDone && yaEntrenoHoy);
 
                             return (
                                 <div
                                     key={session._id || index}
                                     className="hub-session-card"
-                                    onClick={() => !isBlocked && onStart(session)} // Bloqueamos el click si corresponde
+                                    onClick={() => !isBlocked && onStart(session)}
                                     style={{
-                                        opacity: isBlocked ? 0.6 : 1, // Opacamos si no se puede clickear
+                                        opacity: isBlocked ? 0.6 : 1,
                                         cursor: isBlocked ? 'default' : 'pointer',
                                         border: isDone ? '1px solid rgba(191, 255, 0, 0.2)' : ''
                                     }}
@@ -130,7 +122,6 @@ export function HomeHub({ onStart, dashboardData, history = [] }) {
                                             </div>
                                         </div>
                                         <div className="s-card-action">
-                                            {/* Si está terminada, mostramos un Check. Si no, el Play */}
                                             {isDone ? (
                                                 <FaCheckCircle style={{ color: '#BFFF00', fontSize: '1.8rem', opacity: 0.8 }} />
                                             ) : (

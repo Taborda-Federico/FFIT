@@ -12,13 +12,11 @@ const publicarPlan = async (req, res) => {
             return res.status(404).json({ message: 'Alumno no encontrado en la base de datos.' });
         }
 
-        // 1. Apagamos los planes viejos del alumno
         await Plan.updateMany(
             { alumnoId: alumno._id, esPlantilla: false },
             { $set: { activo: false } }
         );
 
-        // 2. Creamos el plan nuevo encendido (activo: true)
         const nuevoPlan = await Plan.create({
             titulo,
             notasGlobales,
@@ -32,7 +30,6 @@ const publicarPlan = async (req, res) => {
             sesiones
         });
 
-        // 3. Enviamos el email (CON await)
         try {
             if (alumno && alumno.email) {
                 await transporter.sendMail({

@@ -14,7 +14,7 @@ export function ProfileView({ userData }) {
 
     const { user, stats } = userData;
 
-    // Función para poner la fecha de ingreso bonita (ej: "Marzo 2024")
+
     const formatearMesAnio = (fechaIso) => {
         if (!fechaIso) return '---';
         const date = new Date(fechaIso);
@@ -30,7 +30,7 @@ export function ProfileView({ userData }) {
 
     return (
         <div className="profile-page-container">
-            {/* 1. HEADER: IDENTIDAD */}
+
             <header className="profile-hero">
                 <div className="avatar-huge">
                     <FaUserCircle />
@@ -45,7 +45,7 @@ export function ProfileView({ userData }) {
                 </div>
             </header>
 
-            {/* 2. CARD DE MEMBRESÍA (INFO CRÍTICA) */}
+
             <section className="membership-profile-card">
                 <div className="m-card-header">
                     <FaShieldAlt className="text-neon" />
@@ -65,7 +65,7 @@ export function ProfileView({ userData }) {
                 </div>
             </section>
 
-            {/* 3. FICHA PERSONAL */}
+
             <section className="personal-info-section">
                 <label className="section-label-profile">DATOS PERSONALES Y FÍSICOS</label>
 
@@ -109,7 +109,6 @@ export function ProfileView({ userData }) {
                 </div>
             </section>
 
-            {/* 4. ACCIONES DE CUENTA */}
             <section className="profile-actions-area">
                 <button className="btn-action-outline">
                     <FaQuestionCircle /> Soporte Técnico o WhatsApp

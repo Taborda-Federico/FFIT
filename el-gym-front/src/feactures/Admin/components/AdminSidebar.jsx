@@ -35,7 +35,6 @@ export function AdminSidebar({ onClose, isOpen }) {
                 />
             )}
 
-            {/* Cabecera con Logo a la izquierda */}
             <div className="sidebar-header">
                 <div className="sidebar-logo-container">
                     <img

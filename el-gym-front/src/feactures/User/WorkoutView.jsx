@@ -7,12 +7,12 @@ import { Button } from '../../Utils/Button';
 import './WorkoutView.css';
 
 export function WorkoutView({ session, onFinish, onExit }) {
-    // --- ESTADOS DE CRONÓMETRO ---
+
     const [restTimer, setRestTimer] = useState(0);
     const [isRestActive, setIsRestActive] = useState(false);
     const [exerciseTimer, setExerciseTimer] = useState(null);
 
-    // --- PERSISTENCIA (ANTI-F5) ---
+
     const [workoutPayload, setWorkoutPayload] = useState(() => {
         const guardado = localStorage.getItem('ffit_workout_payload');
         return guardado ? JSON.parse(guardado) : {};
@@ -34,7 +34,7 @@ export function WorkoutView({ session, onFinish, onExit }) {
         }
     }, [session, blockProgress]);
 
-    // Guardar en Storage automáticamente
+
     useEffect(() => {
         localStorage.setItem('ffit_workout_payload', JSON.stringify(workoutPayload));
         if (blockProgress) {
@@ -42,7 +42,7 @@ export function WorkoutView({ session, onFinish, onExit }) {
         }
     }, [workoutPayload, blockProgress]);
 
-    // Lógica del Temporizador (Descanso y Ejercicio)
+
     useEffect(() => {
         let interval = null;
         if (restTimer > 0) {
@@ -85,17 +85,17 @@ export function WorkoutView({ session, onFinish, onExit }) {
         if (window.navigator.vibrate) window.navigator.vibrate(100);
     };
 
-    // 🚨 AQUÍ ESTÁ LA SOLUCIÓN DEL ERROR: Funciones para salir y finalizar 🚨
+
     const handleExit = () => {
         localStorage.removeItem('ffit_workout_payload');
         localStorage.removeItem('ffit_block_progress');
-        onExit(); // Llama a la función del padre para cerrar la vista
+        onExit();
     };
 
     const handleFinish = () => {
         localStorage.removeItem('ffit_workout_payload');
         localStorage.removeItem('ffit_block_progress');
-        // Le mandamos los pesos registrados al UserDashboard para que los guarde en la BD
+
         onFinish(workoutPayload);
     };
 
@@ -103,7 +103,7 @@ export function WorkoutView({ session, onFinish, onExit }) {
 
     return (
         <div className="workout-view-active">
-            {/* OVERLAY DE DESCANSO */}
+
             {restTimer > 0 && (
                 <div className="timer-overlay-fullscreen rest">
                     <div className="timer-content">
@@ -115,7 +115,6 @@ export function WorkoutView({ session, onFinish, onExit }) {
                 </div>
             )}
 
-            {/* OVERLAY DE EJERCICIO (CIRCUITO) */}
             {exerciseTimer && (
                 <div className="timer-overlay-fullscreen work">
                     <div className="timer-content">
@@ -128,7 +127,6 @@ export function WorkoutView({ session, onFinish, onExit }) {
             )}
 
             <header className="workout-sticky-header">
-                {/* Usamos handleExit para que limpie la memoria al salir */}
                 <button className="btn-exit-workout" onClick={handleExit}><FaTimes /></button>
                 <div className="nav-info-center">
                     <label>ENTRENAMIENTO ACTIVO</label>
@@ -163,7 +161,6 @@ export function WorkoutView({ session, onFinish, onExit }) {
                                                 <div className="ex-info-side">
                                                     <div className="ex-title-row">
                                                         <h4>{ej.nombre}</h4>
-                                                        {/* SECCIÓN DE URL/VIDEO */}
                                                         {videoLink && (
                                                             <a href={videoLink} target="_blank" rel="noopener noreferrer" className="btn-technique-link">
                                                                 <FaVideo />

@@ -1,4 +1,3 @@
-// src/feactures/Admin/pages/AdminDashboard.jsx
 import React, { useState, useEffect } from 'react';
 import {
     FaTrash, FaPlus, FaCloudUploadAlt, FaSave, FaUserEdit,
@@ -14,7 +13,6 @@ import { useAuth } from '../../../contex/AuthContext';
 import { UserService } from '../../../service/user.service';
 import { PlanService } from '../../../service/plan.service';
 
-// Generador de IDs robusto para evitar colisiones si se hacen clics rápidos
 const generateId = () => Date.now().toString() + Math.random().toString(36).substr(2, 5);
 
 export function AdminDashboard() {
@@ -89,8 +87,8 @@ export function AdminDashboard() {
         if (!plan.alumnoId) return notify("Por favor, selecciona un alumno de la lista", "error");
         if (!plan.titulo) return notify("El plan debe tener un título", "error");
 
-        setShowConfirm(false); // 🚨 Se cierra el modal instantáneamente
-        setIsProcessing(true); // 🚨 Arranca la ruedita
+        setShowConfirm(false);
+        setIsProcessing(true);
 
         try {
             const planAEnviar = {

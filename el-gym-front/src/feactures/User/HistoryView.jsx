@@ -8,7 +8,7 @@ import './HistoryView.css';
 export function HistoryView({ history = [] }) {
     const [selectedLog, setSelectedLog] = useState(null);
 
-    // 1. Formateador de Fechas dinámico
+
     const formatearFecha = (fechaIso) => {
         if (!fechaIso) return { dia: '-', mes: '-', completa: 'Fecha desconocida' };
         const date = new Date(fechaIso);
@@ -19,7 +19,6 @@ export function HistoryView({ history = [] }) {
         };
     };
 
-    // 2. Cálculo de Peso Total de una sesión
     const calcularPesoSesion = (ejercicios) => {
         if (!ejercicios || !Array.isArray(ejercicios)) return 0;
         return ejercicios.reduce((total, ex) => {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-    FaWallet, FaArrowUp, FaArrowDown, FaUserClock, 
-    FaFileInvoiceDollar, FaPlus, FaSearch, FaHistory 
+import {
+    FaWallet, FaArrowUp, FaArrowDown, FaUserClock,
+    FaFileInvoiceDollar, FaPlus, FaSearch, FaHistory
 } from 'react-icons/fa';
 import { GymService } from '../../../service/gym.service';
 import { Button } from '../../../Utils/Button';
@@ -43,12 +43,11 @@ export function AdminFinanceDashboard() {
                     <h1>Cashflow <span className="text-neon">Pro</span></h1>
                     <p>Gestión de ingresos, morosidad y proyecciones.</p>
                 </div>
-                <Button variant="primary" onClick={() => {/* Modal de pago */}}>
+                <Button variant="primary" onClick={() => {/* Modal de pago */ }}>
                     <FaPlus /> Registrar Ingreso
                 </Button>
             </header>
 
-            {/* GRID DE MÉTRICAS RÁPIDAS */}
             <section className="stats-grid">
                 <div className="stat-card">
                     <div className="stat-icon revenue"><FaWallet /></div>
@@ -78,7 +77,7 @@ export function AdminFinanceDashboard() {
                 </div>
             </section>
 
-            {/* HISTORIAL DE TRANSACCIONES */}
+
             <section className="finance-main-content">
                 <div className="content-card">
                     <div className="card-header">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-    FaChartLine, FaHistory, FaStickyNote, FaWeightHanging, 
-    FaClock, FaPlus, FaChevronRight, FaSearch, FaSpinner, FaDumbbell 
+import {
+    FaChartLine, FaHistory, FaStickyNote, FaWeightHanging,
+    FaClock, FaPlus, FaChevronRight, FaSearch, FaSpinner, FaDumbbell
 } from 'react-icons/fa';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Button } from '../../../Utils/Button';
@@ -15,15 +15,13 @@ export function StudentProgressView() {
     const { user: admin } = useAuth();
     const [toast, setToast] = useState(null);
     const [loading, setLoading] = useState(false);
-    
-    // Estados de búsqueda
+
     const [searchQuery, setSearchQuery] = useState("");
     const [allStudents, setAllStudents] = useState([]);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [progressData, setProgressData] = useState({ historial: [], notas: [] });
     const [newNote, setNewNote] = useState("");
 
-    // NUEVO: Estados para el gráfico de experto
     const [uniqueExercises, setUniqueExercises] = useState([]);
     const [selectedExercise, setSelectedExercise] = useState("");
 
@@ -42,11 +40,11 @@ export function StudentProgressView() {
         fetchInitialData();
     }, [admin]);
 
-    const filteredResults = searchQuery.length > 0 
-        ? allStudents.filter(s => 
-            s.nombre.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const filteredResults = searchQuery.length > 0
+        ? allStudents.filter(s =>
+            s.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
             s.dni.toString().includes(searchQuery)
-          ).slice(0, 5)
+        ).slice(0, 5)
         : [];
 
     const loadStudentData = async (student) => {
@@ -56,8 +54,7 @@ export function StudentProgressView() {
             setSelectedStudent(student);
             setProgressData(data);
             setSearchQuery("");
-            
-            // --- LÓGICA EXPERTA: Extraer todos los ejercicios únicos del historial ---
+
             const exercisesSet = new Set();
             data.historial.forEach(session => {
                 session.ejercicios?.forEach(ej => {
@@ -66,8 +63,7 @@ export function StudentProgressView() {
             });
             const exercisesArray = Array.from(exercisesSet).sort();
             setUniqueExercises(exercisesArray);
-            
-            // Seleccionamos el primero por defecto si existe
+
             if (exercisesArray.length > 0) {
                 setSelectedExercise(exercisesArray[0]);
             } else {
@@ -88,7 +84,7 @@ export function StudentProgressView() {
                 alumnoId: selectedStudent._id,
                 contenido: newNote
             }, admin.token);
-            
+
             setProgressData(prev => ({ ...prev, notas: [createdNote, ...prev.notas] }));
             setNewNote("");
             notify("Observación guardada");
@@ -97,13 +93,11 @@ export function StudentProgressView() {
         }
     };
 
-    // --- LÓGICA EXPERTA: Generar datos solo para el ejercicio seleccionado ---
     const chartData = [...progressData.historial].reverse().reduce((acc, session) => {
         if (!selectedExercise) return acc;
-        
-        // Buscamos si en esta sesión hizo el ejercicio seleccionado
+
         const exerciseData = session.ejercicios?.find(ej => ej.nombre === selectedExercise);
-        
+
         if (exerciseData && exerciseData.pesoUsado > 0) {
             acc.push({
                 fecha: new Date(session.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
@@ -114,7 +108,6 @@ export function StudentProgressView() {
         return acc;
     }, []);
 
-    // Tooltip personalizado para el gráfico
     const CustomTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
             return (
@@ -133,12 +126,11 @@ export function StudentProgressView() {
         <div className="progress-view-wrapper">
             {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
-            {/* BUSCADOR LOCAL TIPO DROPDOWN */}
             <div className="search-bar-floating-container">
                 <div className={`search-glass-pro ${filteredResults.length > 0 ? 'has-results' : ''}`}>
                     <FaSearch className="search-icon" />
-                    <input 
-                        placeholder="Escribe nombre o DNI para buscar..." 
+                    <input
+                        placeholder="Escribe nombre o DNI para buscar..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -179,15 +171,15 @@ export function StudentProgressView() {
                         <div className="main-chart-card">
                             <div className="chart-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div>
-                                    <h3><FaDumbbell style={{ marginRight: '8px', color: '#d4f039' }}/> CURVA DE FUERZA (KG)</h3>
+                                    <h3><FaDumbbell style={{ marginRight: '8px', color: '#d4f039' }} /> CURVA DE FUERZA (KG)</h3>
                                     <span className="stat-growth">SOBRECARGA PROGRESIVA</span>
                                 </div>
-                                
+
                                 {/* SELECTOR DE EJERCICIO */}
                                 {uniqueExercises.length > 0 && (
-                                    <select 
+                                    <select
                                         style={{
-                                            background: '#1a1a1a', color: '#fff', border: '1px solid #333', 
+                                            background: '#1a1a1a', color: '#fff', border: '1px solid #333',
                                             padding: '8px 15px', borderRadius: '8px', outline: 'none', cursor: 'pointer',
                                             fontFamily: 'Roboto', fontSize: '0.9rem'
                                         }}
@@ -200,7 +192,7 @@ export function StudentProgressView() {
                                     </select>
                                 )}
                             </div>
-                            
+
                             <div className="chart-area" style={{ marginTop: '20px' }}>
                                 {chartData.length > 0 ? (
                                     <ResponsiveContainer width="100%" height={250}>
@@ -209,12 +201,12 @@ export function StudentProgressView() {
                                             <XAxis dataKey="fecha" stroke="#666" fontSize={11} tickMargin={10} />
                                             <YAxis stroke="#666" fontSize={11} width={30} />
                                             <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#333', strokeWidth: 2 }} />
-                                            <Line 
-                                                type="monotone" 
-                                                dataKey="peso" 
-                                                stroke="#d4f039" 
-                                                strokeWidth={4} 
-                                                dot={{ r: 5, fill: '#000', stroke: '#d4f039', strokeWidth: 2 }} 
+                                            <Line
+                                                type="monotone"
+                                                dataKey="peso"
+                                                stroke="#d4f039"
+                                                strokeWidth={4}
+                                                dot={{ r: 5, fill: '#000', stroke: '#d4f039', strokeWidth: 2 }}
                                                 activeDot={{ r: 8, fill: '#d4f039', stroke: '#fff' }}
                                                 animationDuration={1500}
                                             />
@@ -222,8 +214,8 @@ export function StudentProgressView() {
                                     </ResponsiveContainer>
                                 ) : (
                                     <div style={{ height: '250px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555' }}>
-                                        {uniqueExercises.length === 0 
-                                            ? "El alumno aún no ha registrado pesos en sus ejercicios." 
+                                        {uniqueExercises.length === 0
+                                            ? "El alumno aún no ha registrado pesos en sus ejercicios."
                                             : "No hay registros de peso para este ejercicio específico."}
                                     </div>
                                 )}
@@ -255,7 +247,7 @@ export function StudentProgressView() {
                                     <h4>{h.nombreSesion}</h4>
                                     <div className="h-card-exercises">
                                         {h.ejercicios?.map((ej, i) => (
-                                            <div key={i} className="ej-pill">{ej.nombre}: <strong style={{color: '#d4f039'}}>{ej.pesoUsado}kg</strong></div>
+                                            <div key={i} className="ej-pill">{ej.nombre}: <strong style={{ color: '#d4f039' }}>{ej.pesoUsado}kg</strong></div>
                                         ))}
                                     </div>
                                 </div>

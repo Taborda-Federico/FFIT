@@ -72,7 +72,7 @@ export function Horarios() {
         { id: 'libre', label: 'Entrenamiento Libre', icon: <FaUnlockAlt /> }
     ];
 
-    // ESTADOS PARA EL FILTRADOR
+
     const [objetivo, setObjetivo] = useState('');
     const [diasSeleccionados, setDiasSeleccionados] = useState([]);
     const [cronograma, setCronograma] = useState(null);
@@ -118,7 +118,6 @@ export function Horarios() {
     return (
         <div className="finder-container">
 
-            {/* --- SECCIÓN 1: GRILLA GENERAL --- */}
             <div className="finder-header">
                 <h2 className="section-title">Nuestros Horarios</h2>
                 <p className="section-subtitle">Explora todas nuestras actividades de la semana</p>
@@ -146,7 +145,6 @@ export function Horarios() {
                 <span></span>
             </div>
 
-            {/* --- SECCIÓN 2: ARMÁ TU RUTINA --- */}
             <div className="finder-header" style={{ marginTop: '2rem' }}>
                 <h2 className="section-title">Armá tu Rutina</h2>
                 <p className="section-subtitle">Seleccioná tu objetivo y días para una recomendación personalizada.</p>

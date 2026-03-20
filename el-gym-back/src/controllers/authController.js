@@ -32,7 +32,6 @@ exports.registerAdmin = async (req, res) => {
     }
 };
 
-// Controlador para crear admins (usado DESDE el dashboard, protegido por middlewares)
 exports.createAdmin = async (req, res) => {
     const { nombre, email, password } = req.body;
 

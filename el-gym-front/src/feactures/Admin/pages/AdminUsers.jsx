@@ -41,10 +41,9 @@ export function AdminUsers() {
     const handleSaveUser = (newUser) => {
         setShowModal(false);
         setToast({ msg: `¡Socio ${newUser.nombre} registrado!`, type: 'success' });
-        fetchAlumnos(); // Recargar lista
+        fetchAlumnos();
     };
 
-    // --- ACCIÓN: COBRAR Y RENOVAR ---
     const handleCobrar = (alumno) => {
         setModalConfig({
             action: 'cobrar',
@@ -128,7 +127,7 @@ export function AdminUsers() {
             {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
             {showModal && <RegisterUserModal onClose={() => setShowModal(false)} onSave={handleSaveUser} />}
             {modalConfig && (
-                <ConfirmModal 
+                <ConfirmModal
                     title={modalConfig.title}
                     message={modalConfig.message}
                     type={modalConfig.type}

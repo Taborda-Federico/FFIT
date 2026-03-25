@@ -21,7 +21,7 @@ const apiLimiter = rateLimit({
 app.use('/api/', apiLimiter);
 
 app.use(cors({
-    origin: ['http://localhost:5173', 'https://gimnasio-ffit.vercel.app', 'https://ffitwellnes.com/'],
+    origin: ['http://localhost:5173', 'https://gimnasio-ffit.vercel.app', 'https://ffitwellnes.com'],
     credentials: true
 }));
 app.use(express.json());

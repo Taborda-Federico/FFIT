@@ -18,6 +18,33 @@ const getStudentDashboard = async (req, res) => {
             activo: true
         }).sort({ createdAt: -1 }); const totalWorkouts = await WorkoutLog.countDocuments({ alumnoId: user._id });
 
+        let planFinal = null;
+        if (planActivo) {
+            const vencimientoEnSemanas = planActivo.vencimiento || 4;
+            const fechaExpiracion = new Date(planActivo.createdAt);
+            fechaExpiracion.setDate(fechaExpiracion.getDate() + (vencimientoEnSemanas * 7));
+            const diasRestantesPlan = Math.ceil((fechaExpiracion - hoy) / (1000 * 60 * 60 * 24));
+            
+            if (diasRestantesPlan <= 0) {
+                planActivo.activo = false;
+                await planActivo.save();
+            } else {
+                planFinal = planActivo;
+                planFinal.semanasRestantesDinamicas = Math.ceil(diasRestantesPlan / 7);
+                
+                if (diasRestantesPlan <= 7 && !planActivo.avisoVencimientoEnviado) {
+                    await Notification.create({
+                        alumnoId: user._id,
+                        titulo: '¡Tu plan está por vencer! ⚠️',
+                        mensaje: `Te quedan ${diasRestantesPlan} días de tu plan "${planActivo.titulo}". ¡Hablá con tu profe para renovarlo antes de quedarte sin rutina!`,
+                        tipo: 'PLAN'
+                    });
+                    planActivo.avisoVencimientoEnviado = true;
+                    await planActivo.save();
+                }
+            }
+        }
+
         res.json({
             user: {
                 nombre: user.nombre,
@@ -30,14 +57,14 @@ const getStudentDashboard = async (req, res) => {
                 diasRestantes: diasRestantes > 0 ? diasRestantes : 0,
                 estado: diasRestantes > 0 ? 'ACTIVO' : 'VENCIDO'
             },
-            stats: { sesionesCompletadas: totalWorkouts, racha: 12 },
+            stats: { sesionesCompletadas: totalWorkouts, racha: 0 },
 
-            plan: planActivo ? {
-                _id: planActivo._id,
-                titulo: planActivo.titulo,
-                semanasRestantes: planActivo.vencimiento,
-                sesiones: planActivo.sesiones,
-                createdAt: planActivo.createdAt
+            plan: planFinal ? {
+                _id: planFinal._id,
+                titulo: planFinal.titulo,
+                semanasRestantes: planFinal.semanasRestantesDinamicas,
+                sesiones: planFinal.sesiones,
+                createdAt: planFinal.createdAt
             } : null
         });
     } catch (error) {
@@ -83,7 +110,7 @@ const saveWorkoutLog = async (req, res) => {
 
 const getMyHistory = async (req, res) => {
     try {
-        const history = await WorkoutLog.find({ alumnoId: req.user._id }).sort({ createdAt: -1 });
+        const history = await WorkoutLog.find({ alumnoId: req.user._id }).sort({ createdAt: -1 }).limit(50);
         res.json(history);
     } catch (error) {
         res.status(500).json({ message: 'Error al cargar el historial' });
@@ -92,7 +119,11 @@ const getMyHistory = async (req, res) => {
 const getStudentProgressForAdmin = async (req, res) => {
     try {
         const { alumnoId } = req.params;
-        const historial = await WorkoutLog.find({ alumnoId }).sort({ createdAt: -1 });
+        // FIX IDOR
+        const alumno = await User.findOne({ _id: alumnoId, adminId: req.user._id });
+        if (!alumno) return res.status(403).json({ message: 'No autorizado' });
+
+        const historial = await WorkoutLog.find({ alumnoId }).sort({ createdAt: -1 }).limit(50);
         const notas = await AdminNote.find({ alumnoId }).sort({ createdAt: -1 });
 
         res.json({ historial, notas });
@@ -120,4 +151,25 @@ const markNotificationRead = async (req, res) => {
         res.status(500).json({ message: 'Error al actualizar notificación' });
     }
 };
-module.exports = { getStudentDashboard, saveWorkoutLog, getMyHistory, getMyNotifications, markNotificationRead };
+
+const changePassword = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
+
+        const { currentPassword, newPassword } = req.body;
+        
+        if (!(await user.matchPassword(currentPassword))) {
+            return res.status(401).json({ message: 'La contraseña actual es incorrecta' });
+        }
+
+        user.password = newPassword;
+        await user.save();
+
+        res.json({ message: 'Contraseña actualizada con éxito' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al cambiar la contraseña' });
+    }
+};
+
+module.exports = { getStudentDashboard, saveWorkoutLog, getMyHistory, getMyNotifications, markNotificationRead, changePassword };

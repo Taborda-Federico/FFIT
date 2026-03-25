@@ -15,6 +15,19 @@ body {
   width: 100%;
 }
 
+/* Base global inputs configuration to prevent zoom and ensure styling uniformity */
+input, textarea, select {
+    font-family: inherit;
+    font-size: 16px; /* 16px is critical to prevent iOS zoom */
+    box-sizing: border-box;
+}
+
+@media screen and (max-width: 768px) {
+    input, textarea, select {
+        font-size: 16px !important;
+    }
+}
+
 /* Clases utilitarias para botones escalables */
 .btn-primary {
   background-color: var(--accent-color);

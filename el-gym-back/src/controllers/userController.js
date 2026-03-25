@@ -79,8 +79,8 @@ const getStudents = async (req, res) => {
 
 const renewSubscription = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id);
-        if (!user) return res.status(404).json({ message: 'Alumno no encontrado' });
+        const user = await User.findOne({ _id: req.params.id, adminId: req.user._id });
+        if (!user) return res.status(404).json({ message: 'Alumno no encontrado o no autorizado' });
 
         const hoy = new Date();
         const vencimientoActual = new Date(user.fechaVencimiento);
@@ -99,8 +99,8 @@ const renewSubscription = async (req, res) => {
 
 const deleteStudent = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id);
-        if (!user) return res.status(404).json({ message: 'Alumno no encontrado' });
+        const user = await User.findOne({ _id: req.params.id, adminId: req.user._id });
+        if (!user) return res.status(404).json({ message: 'Alumno no encontrado o no autorizado' });
 
         await User.findByIdAndDelete(req.params.id);
         res.json({ message: 'Alumno eliminado del sistema' });

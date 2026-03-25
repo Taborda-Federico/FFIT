@@ -5,7 +5,14 @@ const User = require('../models/User');
 const getStudentProgress = async (req, res) => {
     try {
         const { alumnoId } = req.params;
-        const historial = await WorkoutLog.find({ alumnoId }).sort({ createdAt: -1 });
+
+        // VERIFICACIÓN DE SEGURIDAD (IDOR)
+        const alumno = await User.findOne({ _id: alumnoId, adminId: req.user._id });
+        if (!alumno) {
+            return res.status(403).json({ message: 'No tienes permisos para ver el progreso de este alumno' });
+        }
+
+        const historial = await WorkoutLog.find({ alumnoId }).sort({ createdAt: -1 }).limit(50);
         const notas = await AdminNote.find({ alumnoId }).sort({ createdAt: -1 });
 
         res.json({
@@ -20,6 +27,12 @@ const getStudentProgress = async (req, res) => {
 const createAdminNote = async (req, res) => {
     try {
         const { alumnoId, contenido } = req.body;
+
+        // VERIFICACIÓN DE SEGURIDAD (IDOR)
+        const alumno = await User.findOne({ _id: alumnoId, adminId: req.user._id });
+        if (!alumno) {
+            return res.status(403).json({ message: 'No tienes permisos para agregar notas a este alumno' });
+        }
 
         const nuevaNota = await AdminNote.create({
             alumnoId,

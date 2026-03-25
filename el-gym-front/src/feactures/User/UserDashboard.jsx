@@ -63,7 +63,7 @@ export function UserDashboard() {
     }, [user]);
 
     const handleStartWorkout = (session) => {
-        setActiveWorkout({ ...session, planTitle: dashboardData?.plan?.titulo });
+        setActiveWorkout({ ...session, planTitle: dashboardData?.plan?.titulo, startTime: Date.now() });
     };
 
     const handleFinishWorkout = async (workoutResult) => {
@@ -88,10 +88,17 @@ export function UserDashboard() {
                 });
             }
 
+            let duracionStr = '1m';
+            if (activeWorkout?.startTime) {
+                const diffMs = Date.now() - activeWorkout.startTime;
+                const duracionMins = Math.floor(diffMs / 60000);
+                duracionStr = duracionMins > 0 ? `${duracionMins}m` : '1m';
+            }
+
             await StudentService.saveWorkout({
                 nombreSesion: activeWorkout?.nombre || 'Rutina Completada',
-                duracion: '45m',
-                duracionMins: 45,
+                duracion: duracionStr,
+                duracionMins: duracionStr.replace('m', ''),
                 pesoTotal: pesoTotalSuma,
                 ejercicios: ejerciciosFormateados
             }, user.token);

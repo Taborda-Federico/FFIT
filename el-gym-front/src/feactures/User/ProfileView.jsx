@@ -1,13 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     FaUserCircle, FaIdCard, FaEnvelope, FaSignOutAlt,
-    FaShieldAlt, FaQuestionCircle, FaCrown, FaCalendarAlt, FaWeight, FaRulerVertical
+    FaShieldAlt, FaQuestionCircle, FaCrown, FaCalendarAlt, FaWeight, FaRulerVertical, FaKey, FaTimes, FaCheck
 } from 'react-icons/fa';
 import { useAuth } from '../../contex/AuthContext';
+import { StudentService } from '../../service/student.service';
 import './ProfileView.css';
 
 export function ProfileView({ userData }) {
-    const { logout } = useAuth();
+    const { user: authUser, logout } = useAuth();
+    const [showPasswordForm, setShowPasswordForm] = useState(false);
+    const [pwdData, setPwdData] = useState({ current: '', new: '', confirm: '' });
+    const [pwdStatus, setPwdStatus] = useState({ loading: false, error: '', success: '' });
 
     // Si no hay datos aún, evitamos que la pantalla explote
     if (!userData || !userData.user) return null;
@@ -26,6 +30,31 @@ export function ProfileView({ userData }) {
     const formatearFechaExacta = (fechaIso) => {
         if (!fechaIso) return '---';
         return new Date(fechaIso).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    };
+
+    const handleChangePassword = async (e) => {
+        e.preventDefault();
+        setPwdStatus({ loading: false, error: '', success: '' });
+        
+        if (pwdData.new !== pwdData.confirm) {
+            return setPwdStatus({ loading: false, error: 'Las nuevas contraseñas no coinciden', success: '' });
+        }
+        if (pwdData.new.length < 6) {
+            return setPwdStatus({ loading: false, error: 'La nueva contraseña debe tener al menos 6 caracteres', success: '' });
+        }
+
+        setPwdStatus({ loading: true, error: '', success: '' });
+        try {
+            await StudentService.changePassword(pwdData.current, pwdData.new, authUser.token);
+            setPwdStatus({ loading: false, error: '', success: '¡Contraseña actualizada con éxito!' });
+            setPwdData({ current: '', new: '', confirm: '' });
+            setTimeout(() => {
+                setShowPasswordForm(false);
+                setPwdStatus({ loading: false, error: '', success: '' });
+            }, 2500);
+        } catch (error) {
+            setPwdStatus({ loading: false, error: error.message || 'Error al actualizar', success: '' });
+        }
     };
 
     return (
@@ -107,6 +136,51 @@ export function ProfileView({ userData }) {
                         </div>
                     </div>
                 </div>
+            </section>
+
+            <section className="security-section-profile">
+                {showPasswordForm ? (
+                    <div className="pwd-change-form">
+                        <div className="pwd-header">
+                            <h4><FaKey /> Cambiar Contraseña</h4>
+                            <button className="btn-close-pwd" onClick={() => setShowPasswordForm(false)}><FaTimes /></button>
+                        </div>
+                        
+                        {pwdStatus.error && <p className="pwd-error">{pwdStatus.error}</p>}
+                        {pwdStatus.success && <p className="pwd-success"><FaCheck /> {pwdStatus.success}</p>}
+                        
+                        <form onSubmit={handleChangePassword}>
+                            <input 
+                                type="password" 
+                                placeholder="Contraseña Actual (ej. tu DNI)"
+                                value={pwdData.current}
+                                onChange={e => setPwdData({...pwdData, current: e.target.value})}
+                                required 
+                            />
+                            <input 
+                                type="password" 
+                                placeholder="Nueva Contraseña"
+                                value={pwdData.new}
+                                onChange={e => setPwdData({...pwdData, new: e.target.value})}
+                                required 
+                            />
+                            <input 
+                                type="password" 
+                                placeholder="Repetir Nueva Contraseña"
+                                value={pwdData.confirm}
+                                onChange={e => setPwdData({...pwdData, confirm: e.target.value})}
+                                required 
+                            />
+                            <button type="submit" disabled={pwdStatus.loading} className="btn-primary" style={{width: '100%', marginTop: '10px'}}>
+                                {pwdStatus.loading ? 'Actualizando...' : 'Guardar Cambios'}
+                            </button>
+                        </form>
+                    </div>
+                ) : (
+                    <button className="btn-action-outline pwd-trigger-btn" onClick={() => setShowPasswordForm(true)}>
+                        <FaKey /> Configurar Contraseña
+                    </button>
+                )}
             </section>
 
             <section className="profile-actions-area">

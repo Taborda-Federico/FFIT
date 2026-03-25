@@ -63,6 +63,19 @@ export const StudentService = {
             method: 'PUT',
             headers: { 'Authorization': `Bearer ${token}` }
         });
-    }
+    },
 
+    changePassword: async (currentPassword, newPassword, token) => {
+        const response = await fetch(`${API_URL}/student/change-password`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ currentPassword, newPassword })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message);
+        return data;
+    }
 };

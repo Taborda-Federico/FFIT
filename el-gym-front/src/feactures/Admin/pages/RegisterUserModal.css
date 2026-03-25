@@ -101,7 +101,7 @@
     min-width: 0;
     /* EVITA QUE EL INPUT ROMPA EL CONTENEDOR */
     outline: none;
-    font-size: 0.95rem;
+    font-size: 1rem;
 }
 
 /* FILAS ESPECIALES */
@@ -136,7 +136,13 @@
 /* RESPONSIVIDAD PARA MÓVILES */
 @media (max-width: 500px) {
     .register-modal-card {
-        padding: 25px 15px;
+        padding: 25px 20px;
+        width: 100%;
+        margin: 0 10px;
+    }
+    
+    .input-glass-group {
+        padding: 14px 16px;
     }
 
     .input-row-flex {

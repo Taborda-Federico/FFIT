@@ -67,7 +67,7 @@
 }
 
 /* Si es la racha, le damos un toque naranja/fuego si prefieres, o mantenemos neón */
-.h-insight-item:last-child .h-icon-box {
+.h-insight-item .h-icon-box.racha-box {
     color: var(--color-warning);
     background: var(--color-warning-bg);
 }

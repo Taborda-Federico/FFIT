@@ -45,6 +45,7 @@ const planSchema = new mongoose.Schema({
 
     esPlantilla: { type: Boolean, default: false },
     activo: { type: Boolean, default: true },
+    avisoVencimientoEnviado: { type: Boolean, default: false },
 
 
     sesiones: [sesionSchema]

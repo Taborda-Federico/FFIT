@@ -61,6 +61,29 @@ export function HistoryView({ history = [] }) {
         return racha;
     }, [history]);
 
+    const { tonelajeTotal, tiempoTotalMins } = useMemo(() => {
+        let kg = 0;
+        let mins = 0;
+        history.forEach(log => {
+            kg += calcularPesoSesion(log.ejercicios);
+            if (log.duracion) {
+                // Extracts the number of minutes assuming format "XXm"
+                const match = log.duracion.match(/(\d+)m/);
+                if (match) {
+                    mins += parseInt(match[1], 10);
+                }
+            }
+        });
+        return { tonelajeTotal: kg, tiempoTotalMins: mins };
+    }, [history]);
+
+    const formatTiempoTotal = (totalMins) => {
+        if (totalMins < 60) return `${totalMins}m`;
+        const hrs = Math.floor(totalMins / 60);
+        const mins = totalMins % 60;
+        return `${hrs}h ${mins > 0 ? mins + 'm' : ''}`;
+    };
+
     const formatearDuracion = (duracion) => {
         if (!duracion) return '0m';
         if (typeof duracion === 'number') {
@@ -144,10 +167,24 @@ export function HistoryView({ history = [] }) {
                     </div>
                 </div>
                 <div className="h-insight-item">
-                    <div className="h-icon-box"><FaFire /></div>
+                    <div className="h-icon-box racha-box"><FaFire /></div>
                     <div className="h-data">
                         <span className="h-val">{calcularRacha} d</span>
                         <label>Racha Actual</label>
+                    </div>
+                </div>
+                <div className="h-insight-item">
+                    <div className="h-icon-box" style={{color: '#d4f039'}}><FaWeightHanging /></div>
+                    <div className="h-data">
+                        <span className="h-val">{tonelajeTotal}</span>
+                        <label>Tonelaje (KG)</label>
+                    </div>
+                </div>
+                <div className="h-insight-item">
+                    <div className="h-icon-box" style={{color: '#d4f039'}}><FaClock /></div>
+                    <div className="h-data">
+                        <span className="h-val">{formatTiempoTotal(tiempoTotalMins)}</span>
+                        <label>Tiempo Total</label>
                     </div>
                 </div>
             </section>

@@ -137,6 +137,7 @@ export function WorkoutView({ session, onFinish, onExit }) {
 
             <main className="workout-content-scroll">
                 {session.bloques.map((bloque, bIdx) => {
+                    if (!bloque.ejercicios || bloque.ejercicios.length === 0) return null;
                     const maxSets = bloque.tipo === 'circuit' ? Number(bloque.vueltas) : Number(bloque.ejercicios[0]?.series || 1);
                     const currentSet = blockProgress[bIdx];
                     const isFinished = currentSet > maxSets;

@@ -72,7 +72,14 @@ export function AdminDashboard() {
         if (!plan.titulo) return notify("Debes ponerle un título a la plantilla", "error");
         setIsProcessing(true);
         try {
-            await PlanService.guardarPlantilla(plan, user.token);
+            const planLimpio = {
+                ...plan,
+                sesiones: plan.sesiones.map(s => ({
+                    ...s,
+                    bloques: s.bloques.filter(b => b.ejercicios && b.ejercicios.length > 0)
+                }))
+            };
+            await PlanService.guardarPlantilla(planLimpio, user.token);
             notify("Plantilla guardada en la nube con éxito");
             const updatedPlantillas = await PlanService.getPlantillas(user.token);
             setPlantillasDb(updatedPlantillas);
@@ -93,7 +100,11 @@ export function AdminDashboard() {
         try {
             const planAEnviar = {
                 ...plan,
-                vencimiento: semanasSeleccionadas || 4
+                vencimiento: semanasSeleccionadas || 4,
+                sesiones: plan.sesiones.map(s => ({
+                    ...s,
+                    bloques: s.bloques.filter(b => b.ejercicios && b.ejercicios.length > 0)
+                }))
             };
 
             await PlanService.publicarPlan(planAEnviar, user.token);
@@ -304,7 +315,17 @@ export function AdminDashboard() {
                                                             <div className="input-with-icon-admin"><FaInfoCircle /><input placeholder="Notas técnicas" value={ej.notas} onChange={(e) => updateEjercicio(sId, bId, eId, 'notas', e.target.value)} /></div>
                                                         </div>
                                                         <button className="delete-ej-btn-mini" onClick={() => {
-                                                            const nuevas = plan.sesiones.map(s => (s.id || s._id) === sId ? { ...s, bloques: s.bloques.map(b => (b.id || b._id) === bId ? { ...b, ejercicios: b.ejercicios.filter(x => (x.id || x._id) !== eId) } : b) } : s);
+                                                            const nuevas = plan.sesiones.map(s => {
+                                                                if ((s.id || s._id) === sId) {
+                                                                    return {
+                                                                        ...s,
+                                                                        bloques: s.bloques
+                                                                            .map(b => (b.id || b._id) === bId ? { ...b, ejercicios: b.ejercicios.filter(x => (x.id || x._id) !== eId) } : b)
+                                                                            .filter(b => b.ejercicios && b.ejercicios.length > 0)
+                                                                    };
+                                                                }
+                                                                return s;
+                                                            });
                                                             setPlan({ ...plan, sesiones: nuevas });
                                                         }}>&times;</button>
                                                     </div>

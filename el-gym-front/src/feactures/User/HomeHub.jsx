@@ -115,7 +115,7 @@ export function HomeHub({ onStart, dashboardData, history = [] }) {
                                         <div className="s-card-info">
                                             <h3 style={{ color: isDone ? '#BFFF00' : 'white' }}>{session.nombre}</h3>
                                             <div className="s-card-tags">
-                                                <span className="tag-pill">{session.bloques?.length || 0} Bloques</span>
+                                                <span className="tag-pill">{session.bloques?.filter(b => b.ejercicios && b.ejercicios.length > 0).length || 0} Bloques</span>
                                                 <span className="tag-pill accent">
                                                     {isDone ? 'COMPLETADA' : (isBlocked ? 'ESPERA A MAÑANA' : 'Fuerza / Hipertrofia')}
                                                 </span>

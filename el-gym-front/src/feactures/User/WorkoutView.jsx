@@ -109,7 +109,7 @@ export function WorkoutView({ session, onFinish, onExit }) {
                     <div className="timer-content">
                         <FaStopwatch className="icon-pulse-accent" />
                         <span className="timer-label">RECUPERACIÓN</span>
-                        <span className="big-timer">{restTimer}s</span>
+                        <span className="big-timer">{restTimer}seg</span>
                         <button className="btn-skip-timer" onClick={() => setRestTimer(0)}>SALTAR</button>
                     </div>
                 </div>
@@ -120,7 +120,7 @@ export function WorkoutView({ session, onFinish, onExit }) {
                     <div className="timer-content">
                         <FaClock className="icon-pulse-white" />
                         <span className="timer-label">TIEMPO BAJO TENSIÓN</span>
-                        <span className="big-timer">{exerciseTimer.time}s</span>
+                        <span className="big-timer">{exerciseTimer.time}seg</span>
                         <button className="btn-skip-timer" onClick={() => setExerciseTimer(null)}>DETENER</button>
                     </div>
                 </div>
@@ -178,7 +178,7 @@ export function WorkoutView({ session, onFinish, onExit }) {
                                                                 className="timer-trigger-btn"
                                                                 onClick={() => !isFinished && startExerciseTimer(ej._id || ej.id, ej.tiempo)}
                                                             >
-                                                                <FaPlay size={10} /> {ej.tiempo}s
+                                                                <FaPlay size={10} /> {ej.tiempo}seg
                                                             </button>
                                                         ) : (
                                                             <span className="metric-tag">{ej.reps} reps</span>

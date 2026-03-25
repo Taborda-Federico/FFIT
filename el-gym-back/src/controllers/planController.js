@@ -7,9 +7,9 @@ const publicarPlan = async (req, res) => {
     try {
         const { alumnoId, titulo, notasGlobales, vencimiento, sesiones } = req.body;
 
-        const alumno = await User.findById(alumnoId);
+        const alumno = await User.findOne({ _id: alumnoId, adminId: req.user._id });
         if (!alumno) {
-            return res.status(404).json({ message: 'Alumno no encontrado en la base de datos.' });
+            return res.status(403).json({ message: 'Alumno no encontrado o no autorizado en tu panel.' });
         }
 
         await Plan.updateMany(
@@ -75,7 +75,8 @@ const guardarPlantilla = async (req, res) => {
 
 const getPlantillas = async (req, res) => {
     try {
-        const plantillas = await Plan.find({ esPlantilla: true }).sort({ createdAt: -1 });
+        // IDOR FIX: Solo obtener plantillas que pertenecen a este admin
+        const plantillas = await Plan.find({ esPlantilla: true, adminId: req.user._id }).sort({ createdAt: -1 });
         res.json(plantillas);
     } catch (error) {
         res.status(500).json({ message: 'Error al obtener las plantillas' });

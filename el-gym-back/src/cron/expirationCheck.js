@@ -2,6 +2,7 @@ const cron = require('node-cron');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
 const transporter = require('../config/mailer');
+const Plan = require('../models/Plan'); // 🚨 ¡IMPORTANTE! Faltaba importar el modelo Plan
 
 // Se ejecuta todos los días a las 09:00 AM hora del servidor ("0 9 * * *")
 cron.schedule('0 9 * * *', async () => {
@@ -46,20 +47,27 @@ cron.schedule('0 9 * * *', async () => {
         console.error("Error en el robot de vencimientos:", error);
     }
 });
-cron.schedule('* * * * *', async () => {
+
+// 🔄 Se ejecuta cada Domingo a las 23:59 ("59 23 * * 0")
+cron.schedule('59 23 * * 0', async () => {
     console.log("🔄 Iniciando proceso de actualización semanal de planes...");
 
     try {
+        // Buscamos planes que no sean plantillas, que estén ACTIVOS y tengan semanas
         const planesActivos = await Plan.find({
             esPlantilla: false,
-            semanasRestantes: { $gt: 0 }
+            activo: true, // 🚨 Clave para no tocar los planes zombis/viejos
+            vencimiento: { $gt: 0 } // 🚨 Corregido: Usamos 'vencimiento', no 'semanasRestantes'
         });
 
         for (let plan of planesActivos) {
-            plan.semanasRestantes -= 1;
+            plan.vencimiento -= 1; // 🚨 Corregido a 'vencimiento'
 
-            if (plan.semanasRestantes === 0) {
-                plan.notasGlobales += " [PLAN FINALIZADO]";
+            // Si el plan se quedó sin semanas (llegó a 0)
+            if (plan.vencimiento <= 0) {
+                plan.vencimiento = 0;
+                plan.activo = false; // 🚨 Apagamos el plan para que el alumno no lo vea más
+                plan.notasGlobales = (plan.notasGlobales || "") + " [PLAN FINALIZADO]";
             }
 
             await plan.save();

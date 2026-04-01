@@ -31,7 +31,6 @@ const planSchema = new mongoose.Schema({
     titulo: { type: String, required: true },
     notasGlobales: { type: String },
     vencimiento: { type: Number, default: 4 },
-
     alumnoId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -45,6 +44,8 @@ const planSchema = new mongoose.Schema({
     },
 
     esPlantilla: { type: Boolean, default: false },
+    activo: { type: Boolean, default: true },
+
 
     sesiones: [sesionSchema]
 }, { timestamps: true });

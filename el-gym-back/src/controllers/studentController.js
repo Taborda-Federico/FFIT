@@ -11,8 +11,12 @@ const getStudentDashboard = async (req, res) => {
         const vencimientoCuota = new Date(user.fechaVencimiento);
         const diasRestantes = Math.ceil((vencimientoCuota - hoy) / (1000 * 60 * 60 * 24));
 
-        const planActivo = await Plan.findOne({ alumnoId: user._id, esPlantilla: false }).sort({ createdAt: -1 });
-        const totalWorkouts = await WorkoutLog.countDocuments({ alumnoId: user._id });
+
+        const planActivo = await Plan.findOne({
+            alumnoId: user._id,
+            esPlantilla: false,
+            activo: true
+        }).sort({ createdAt: -1 }); const totalWorkouts = await WorkoutLog.countDocuments({ alumnoId: user._id });
 
         res.json({
             user: {
@@ -62,13 +66,13 @@ const saveWorkoutLog = async (req, res) => {
             });
         }
 
-        const { nombreSesion, duracion, ejerciciosGrabados } = req.body;
+        const { nombreSesion, duracion, ejercicios } = req.body;
 
         const newLog = await WorkoutLog.create({
             alumnoId: req.user._id,
             nombreSesion,
             duracion,
-            ejercicios: ejerciciosGrabados
+            ejercicios: ejercicios
         });
 
         res.status(201).json({ message: 'Entrenamiento guardado', log: newLog });

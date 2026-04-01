@@ -11,6 +11,10 @@ const publicarPlan = async (req, res) => {
         if (!alumno) {
             return res.status(404).json({ message: 'Alumno no encontrado en la base de datos.' });
         }
+        await Plan.updateMany(
+            { alumnoId: alumno._id, esPlantilla: false },
+            { $set: { activo: false } }
+        );
         const nuevoPlan = await Plan.create({
             titulo,
             notasGlobales,

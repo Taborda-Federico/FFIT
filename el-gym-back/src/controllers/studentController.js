@@ -8,8 +8,8 @@ const getStudentDashboard = async (req, res) => {
         const user = await User.findById(req.user._id);
 
         const hoy = new Date();
-        const vencimiento = new Date(user.fechaVencimiento);
-        const diasRestantes = Math.ceil((vencimiento - hoy) / (1000 * 60 * 60 * 24));
+        const vencimientoCuota = new Date(user.fechaVencimiento);
+        const diasRestantes = Math.ceil((vencimientoCuota - hoy) / (1000 * 60 * 60 * 24));
 
         const planActivo = await Plan.findOne({ alumnoId: user._id, esPlantilla: false }).sort({ createdAt: -1 });
         const totalWorkouts = await WorkoutLog.countDocuments({ alumnoId: user._id });
@@ -27,15 +27,41 @@ const getStudentDashboard = async (req, res) => {
                 estado: diasRestantes > 0 ? 'ACTIVO' : 'VENCIDO'
             },
             stats: { sesionesCompletadas: totalWorkouts, racha: 12 },
-            plan: planActivo ? { titulo: planActivo.titulo, sesiones: planActivo.sesiones } : null
+
+            plan: planActivo ? {
+                _id: planActivo._id,
+                titulo: planActivo.titulo,
+                semanasRestantes: planActivo.vencimiento,
+                sesiones: planActivo.sesiones,
+                createdAt: planActivo.createdAt
+            } : null
         });
     } catch (error) {
         res.status(500).json({ message: 'Error al cargar el dashboard' });
     }
 };
 
+//
 const saveWorkoutLog = async (req, res) => {
     try {
+        const hoyInicio = new Date();
+        hoyInicio.setHours(0, 0, 0, 0);
+
+        const hoyFin = new Date();
+        hoyFin.setHours(23, 59, 59, 999);
+
+        const yaEntrenoHoy = await WorkoutLog.findOne({
+            alumnoId: req.user._id,
+            createdAt: { $gte: hoyInicio, $lte: hoyFin }
+        });
+
+
+        if (yaEntrenoHoy) {
+            return res.status(400).json({
+                message: '¡Ey! Ya registraste un entrenamiento hoy. No hagas trampa. 😉'
+            });
+        }
+
         const { nombreSesion, duracion, ejerciciosGrabados } = req.body;
 
         const newLog = await WorkoutLog.create({

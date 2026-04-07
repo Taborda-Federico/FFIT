@@ -1,6 +1,6 @@
 import React from 'react';
-import { 
-    FaPlay, FaChartLine, FaHistory, FaQrcode, 
+import {
+    FaPlay, FaChartLine, FaHistory,
     FaCalendarCheck, FaFire, FaWeightHanging, FaDumbbell, FaCheckCircle
 } from 'react-icons/fa';
 import './HomeHub.css';
@@ -11,23 +11,39 @@ export function HomeHub({ onStart, dashboardData, history = [] }) {
     const { user, stats, plan } = dashboardData;
 
     // --- LÓGICA DE BLOQUEO DE RUTINA (UX) ---
-    // Verifica si la sesión se completó en los últimos 6 días
+
+    // 1. Validar si YA ENTRENÓ HOY (cualquier sesión)
+    const hoyString = new Date().toDateString();
+    const yaEntrenoHoy = history.some(log => new Date(log.createdAt).toDateString() === hoyString);
+
+    // 2. Verifica si la sesión se completó esta semana (reinicia el domingo)
     const isSessionCompleted = (sessionName) => {
         if (!history || history.length === 0) return false;
-        
-        const haceUnosDias = new Date();
-        haceUnosDias.setDate(haceUnosDias.getDate() - 6); // Rango de "Esta semana"
-        
+
+        // Calculamos el inicio de la semana (Domingo a las 00:00)
+        const hoy = new Date();
+        const diaDeLaSemana = hoy.getDay();
+        const inicioDeSemana = new Date(hoy);
+        inicioDeSemana.setDate(hoy.getDate() - diaDeLaSemana);
+        inicioDeSemana.setHours(0, 0, 0, 0);
+
+        // Obtenemos cuándo se asignó ESTE plan nuevo (evita "fantasmas" de planes anteriores)
+        const fechaPlan = plan && plan.createdAt ? new Date(plan.createdAt) : new Date(0);
+
         return history.some(log => {
             const fechaLog = new Date(log.createdAt);
-            // Comparamos el nombre y que esté dentro de la última semana
-            return (log.nombreSesion === sessionName) && (fechaLog >= haceUnosDias);
+            // Comparamos que se llame igual, que sea de esta semana y DESPUÉS de asignar el plan
+            return (
+                log.nombreSesion === sessionName &&
+                fechaLog >= inicioDeSemana &&
+                fechaLog >= fechaPlan
+            );
         });
     };
 
     return (
         <div className="home-hub-container">
-            
+
             <header className="hub-user-header">
                 <div className="user-profile-meta">
                     <div className="avatar-neon-glow">{user.nombre.charAt(0).toUpperCase()}</div>
@@ -37,7 +53,7 @@ export function HomeHub({ onStart, dashboardData, history = [] }) {
                     </div>
                 </div>
                 <button className="qr-shortcut-btn">
-                    <FaQrcode />
+                    <img src="/logo ffit wellness blanco y lima.PNG" alt="FFIT Logo" className="qr-hub-logo" />
                 </button>
             </header>
 
@@ -45,12 +61,12 @@ export function HomeHub({ onStart, dashboardData, history = [] }) {
                 <div className="status-main">
                     <div className="status-info">
                         <label>ESTADO DE SOCIO</label>
-                        <div className={`status-badge-active ${user.estado === 'VENCIDO' ? 'debt' : ''}`} style={{ backgroundColor: user.estado === 'VENCIDO' ? '#ff4444' : ''}}>
+                        <div className={`status-badge-active ${user.estado === 'VENCIDO' ? 'debt' : ''}`} style={{ backgroundColor: user.estado === 'VENCIDO' ? '#ff4444' : '' }}>
                             {user.estado}
                         </div>
                         <p className="expiry-text">
-                            {user.diasRestantes > 0 
-                                ? `Tu plan vence en ${user.diasRestantes} días` 
+                            {user.diasRestantes > 0
+                                ? `Tu plan vence en ${user.diasRestantes} días`
                                 : 'Tu cuota mensual está vencida'}
                         </p>
                     </div>
@@ -87,16 +103,19 @@ export function HomeHub({ onStart, dashboardData, history = [] }) {
                 <div className="sessions-vertical-stack">
                     {plan && plan.sesiones && plan.sesiones.length > 0 ? (
                         plan.sesiones.map((session, index) => {
-                            const isDone = isSessionCompleted(session.nombre); // ¿Ya la hizo?
+                            // Variables de estado del día
+                            const isDone = isSessionCompleted(session.nombre);
+                            // Se bloquea si ya está hecha, O si no la hizo pero ya entrenó otra sesión hoy
+                            const isBlocked = isDone || (!isDone && yaEntrenoHoy);
 
                             return (
-                                <div 
-                                    key={session._id || index} 
+                                <div
+                                    key={session._id || index}
                                     className="hub-session-card"
-                                    onClick={() => !isDone && onStart(session)} // Bloqueamos el click
-                                    style={{ 
-                                        opacity: isDone ? 0.6 : 1, // La opacamos si ya está hecha
-                                        cursor: isDone ? 'default' : 'pointer',
+                                    onClick={() => !isBlocked && onStart(session)} // Bloqueamos el click si corresponde
+                                    style={{
+                                        opacity: isBlocked ? 0.6 : 1, // Opacamos si no se puede clickear
+                                        cursor: isBlocked ? 'default' : 'pointer',
                                         border: isDone ? '1px solid rgba(191, 255, 0, 0.2)' : ''
                                     }}
                                 >
@@ -106,7 +125,7 @@ export function HomeHub({ onStart, dashboardData, history = [] }) {
                                             <div className="s-card-tags">
                                                 <span className="tag-pill">{session.bloques?.length || 0} Bloques</span>
                                                 <span className="tag-pill accent">
-                                                    {isDone ? 'COMPLETADA' : 'Fuerza / Hipertrofia'}
+                                                    {isDone ? 'COMPLETADA' : (isBlocked ? 'ESPERA A MAÑANA' : 'Fuerza / Hipertrofia')}
                                                 </span>
                                             </div>
                                         </div>
@@ -115,7 +134,7 @@ export function HomeHub({ onStart, dashboardData, history = [] }) {
                                             {isDone ? (
                                                 <FaCheckCircle style={{ color: '#BFFF00', fontSize: '1.8rem', opacity: 0.8 }} />
                                             ) : (
-                                                <div className="play-btn-neon">
+                                                <div className="play-btn-neon" style={{ opacity: isBlocked ? 0.3 : 1 }}>
                                                     <FaPlay />
                                                 </div>
                                             )}

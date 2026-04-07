@@ -1,0 +1,130 @@
+.admin-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.admin-modal-content {
+    background: #18181a;
+    border: 1px solid rgba(212, 240, 57, 0.3);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 450px;
+    padding: 2.5rem 2rem;
+    position: relative;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 240, 57, 0.05);
+    animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.admin-modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: transparent;
+    border: none;
+    color: #888;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    padding: 5px;
+}
+
+.admin-modal-close:hover {
+    color: var(--brand-neon, #d4f039);
+}
+
+.admin-modal-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.header-icon {
+    font-size: 2.5rem;
+    color: var(--brand-neon, #d4f039);
+    margin-bottom: 1rem;
+    filter: drop-shadow(0 0 10px rgba(212, 240, 57, 0.3));
+}
+
+.admin-modal-header h2 {
+    font-family: 'Oswald', sans-serif;
+    color: #fff;
+    font-size: 1.8rem;
+    margin: 0 0 0.5rem 0;
+    text-transform: uppercase;
+}
+
+.admin-modal-header p {
+    color: #aaa;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.admin-modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+
+.input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 15px;
+    color: #666;
+    font-size: 1.1rem;
+    transition: color 0.3s ease;
+}
+
+.input-group input {
+    width: 100%;
+    background: #0f0f10;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 12px 15px 12px 45px;
+    color: #fff;
+    font-family: 'Roboto', sans-serif;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: var(--brand-neon, #d4f039);
+    box-shadow: 0 0 0 2px rgba(212, 240, 57, 0.1);
+}
+
+.input-group input:focus + .input-icon,
+.input-group input:not(:placeholder-shown) + .input-icon {
+    color: var(--brand-neon, #d4f039);
+}
+
+.admin-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+@keyframes slideUpFade {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

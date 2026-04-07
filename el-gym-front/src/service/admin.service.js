@@ -38,5 +38,23 @@ getStudentProgress: async (alumnoId, token) => {
         
         if (!response.ok) throw new Error("Error al crear la nota");
         return await response.json();
+    },
+
+    // 4. Crear un nuevo perfil de Administrador (Protegido)
+    createAdmin: async (adminData, token) => {
+        const response = await fetch(`${API_URL}/auth/create-admin`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(adminData)
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || "Error al crear el nuevo administrador");
+        }
+        return data;
     }
 };

@@ -3,7 +3,8 @@ import { FaCalendarAlt, FaUser, FaDumbbell, FaCheckCircle, FaTimes, FaExclamatio
 import './ConfirmModal.css';
 
 export function ConfirmModal({ plan, title, message, type = 'info', isAlert = false, confirmText = 'Confirmar', onConfirm, onClose }) {
-    const [duracion, setDuracion] = useState('4 semanas');
+    // Iniciamos con 4 como número
+    const [duracion, setDuracion] = useState(4);
 
     const getIcon = () => {
         if (type === 'warning') return <FaExclamationCircle style={{ color: '#ff4444' }} />;
@@ -12,7 +13,6 @@ export function ConfirmModal({ plan, title, message, type = 'info', isAlert = fa
 
     return (
         <div className="modal-overlay" onClick={onClose}>
-            {/* stopPropagation evita que al hacer clic en la tarjeta se cierre el modal */}
             <div className="modal-confirm-card" onClick={(e) => e.stopPropagation()}>
 
                 <div className="modal-header-pro">
@@ -49,11 +49,12 @@ export function ConfirmModal({ plan, title, message, type = 'info', isAlert = fa
                             <select
                                 className="minimal-select"
                                 value={duracion}
-                                onChange={(e) => setDuracion(e.target.value)}
+                                onChange={(e) => setDuracion(Number(e.target.value))}
                             >
-                                <option value="2 semanas">2 semanas (Express)</option>
-                                <option value="4 semanas">4 semanas (Mensual)</option>
-                                <option value="8 semanas">8 semanas (Bimestral)</option>
+                                {/* Ahora mandamos los números limpios para el backend */}
+                                <option value={2}>2 semanas (Express)</option>
+                                <option value={4}>4 semanas (Mensual)</option>
+                                <option value={8}>8 semanas (Bimestral)</option>
                             </select>
                         </div>
                     </div>
@@ -61,6 +62,7 @@ export function ConfirmModal({ plan, title, message, type = 'info', isAlert = fa
 
                 <div className="modal-footer-pro">
                     {!isAlert && (
+                        // Pasamos la 'duracion' elegida a la función onConfirm
                         <button className="btn-modal-primary" onClick={() => onConfirm(plan ? duracion : undefined)} style={{ background: type === 'warning' ? '#ff4444' : '#BFFF00', color: '#111' }}>
                             {plan ? '¡Publicar ahora!' : confirmText}
                         </button>

@@ -1,15 +1,20 @@
-/* MainPrincipal.css — Los tokens se definen en styles/variables.css */
+/* ==========================================================================
+   MainPrincipal.css — Optimizado con Design Tokens de variables.css
+   ========================================================================== */
 
-/* --- CONFIGURACIÓN DE FUENTES Y BASE --- */
+/* --- CONFIGURACIÓN BASE --- */
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
 
-/* Evita el scroll horizontal fantasma */
-html, body {
+html,
+body {
     overflow-x: hidden;
     width: 100%;
     margin: 0;
     padding: 0;
+    background-color: var(--bg-dark);
+    font-family: var(--font-main, 'Roboto', sans-serif);
+    scroll-behavior: smooth;
 }
 
 .main-wrapper {
@@ -20,101 +25,92 @@ html, body {
 }
 
 /* =========================================
-   1. NAVBAR FLOTANTE
+   1. NAVBAR PREMIUM FLOTANTE
    ========================================= */
 .navbar-floating {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
-    height: 70px;
+    height: 80px;
     z-index: 9999;
-    background: rgba(10, 10, 10, 0.65);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-    border-bottom: 1px solid rgba(212, 240, 57, 0.08);
-    transition: background 0.4s ease, box-shadow 0.4s ease;
+    background: rgba(8, 8, 8, 0.75);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-bottom: 1px solid var(--border-glass, rgba(255, 255, 255, 0.08));
+    transition: var(--transition, all 0.3s ease);
 }
 
-.navbar-floating.menu-open {
-    background: rgba(10, 10, 10, 0.98);
+.navbar-floating.menu-active {
+    background: rgba(5, 5, 5, 0.98);
+    border-bottom-color: transparent;
 }
 
-/* Contenedor interno */
+/* Contenedor interno: Logo bien a la izquierda */
 .nav-container-wrapper {
-    max-width: 1400px;
+    max-width: 100%;
     margin: 0 auto;
     width: 100%;
     height: 100%;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 5%;
+    padding: 0 3%;
+    /* 🚨 Te pega el logo y botones a los extremos */
     box-sizing: border-box;
 }
 
-/* LOGO */
+/* Logo */
 .logo-container {
-    font-family: 'Oswald', sans-serif;
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--text-white);
-    font-style: italic;
+    display: flex;
+    align-items: center;
     cursor: pointer;
-    text-transform: uppercase;
-    letter-spacing: -1px;
     z-index: 10001;
-    flex-shrink: 0;
-    transition: opacity 0.2s ease;
 }
 
-.logo-container:hover {
+.nav-logo-img {
+    height: 80px;
+    width: auto;
+    object-fit: contain;
+    transition: var(--transition-fast, all 0.2s ease);
+    filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.5));
+}
+
+.logo-container:hover .nav-logo-img {
     opacity: 0.85;
+    transform: scale(0.98);
 }
 
-.logo-plus {
-    color: var(--brand-neon);
-    font-size: 2.2rem;
-    line-height: 0;
-    vertical-align: middle;
-}
-
-/* LINKS DE NAVEGACIÓN (desktop) */
+/* Links de Navegación */
 .nav-links {
     display: flex;
     align-items: center;
     gap: 2.5rem;
 }
 
-.nav-mobile-actions {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-}
-
 .nav-item {
     color: var(--text-white);
     text-decoration: none;
-    font-family: 'Oswald', sans-serif;
+    font-family: var(--font-heading, 'Oswald', sans-serif);
     text-transform: uppercase;
-    font-size: 0.88rem;
+    font-size: 0.9rem;
     letter-spacing: 1.5px;
-    transition: color 0.25s ease, text-shadow 0.25s ease;
-    cursor: pointer;
+    transition: var(--transition, all 0.3s ease);
     opacity: 0.8;
     position: relative;
+    cursor: pointer;
 }
 
 .nav-item::after {
     content: '';
     position: absolute;
-    bottom: -4px;
+    bottom: -6px;
     left: 0;
     width: 0;
     height: 2px;
     background: var(--brand-neon);
     transition: width 0.3s ease;
-    box-shadow: 0 0 8px rgba(212, 240, 57, 0.6);
+    box-shadow: 0 0 8px var(--accent-glow);
 }
 
 .nav-item:hover {
@@ -126,68 +122,191 @@ html, body {
     width: 100%;
 }
 
-/* Botón CTA especial */
-.nav-cta {
-    color: var(--brand-neon) !important;
-    border: 1px solid rgba(212, 240, 57, 0.4);
-    padding: 0.35rem 1rem;
-    border-radius: 4px;
-    opacity: 1 !important;
-    background: rgba(212, 240, 57, 0.05);
-    transition: background 0.25s ease, color 0.25s ease !important;
+/* Botones en Nav */
+.nav-mobile-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
 }
 
-.nav-cta:hover {
-    background: var(--brand-neon) !important;
-    color: #000 !important;
-    box-shadow: 0 0 14px rgba(212, 240, 57, 0.35);
-}
-
-.nav-cta::after { display: none; }
-
-/* Botón de Acceso (Admin/Alumno) */
 .nav-login-btn {
-    border: 1px solid rgba(212, 240, 57, 0.5) !important;
+    border: 1px solid var(--accent-strong) !important;
     color: var(--brand-neon) !important;
-    background: rgba(212, 240, 57, 0.05) !important;
-    padding: 0.4rem 1rem !important;
-    font-size: 0.8rem !important;
-    border-radius: 4px !important;
-    font-family: 'Oswald', sans-serif;
-    transition: background 0.25s ease, color 0.25s ease !important;
+    background: transparent !important;
+    padding: 0.45rem 1.2rem !important;
+    font-size: 0.85rem !important;
+    border-radius: var(--radius-sm, 6px) !important;
+    font-family: var(--font-heading) !important;
+    letter-spacing: 1px !important;
 }
 
 .nav-login-btn:hover {
     background: var(--brand-neon) !important;
-    color: #000 !important;
-    box-shadow: 0 0 14px rgba(212, 240, 57, 0.35);
+    color: var(--bg-pure-black) !important;
+    box-shadow: var(--shadow-accent) !important;
 }
 
-/* BOTÓN HAMBURGUESA — oculto en desktop */
+.nav-cta {
+    color: var(--bg-pure-black) !important;
+    background: var(--brand-neon) !important;
+    padding: 0.45rem 1.2rem !important;
+    border-radius: var(--radius-sm, 6px);
+    font-weight: 700;
+    box-shadow: 0 0 10px var(--accent-subtle);
+}
+
+.nav-cta:hover {
+    box-shadow: var(--shadow-accent);
+    transform: translateY(-2px);
+}
+
+.nav-cta::after {
+    display: none;
+}
+
+/* Menú Hamburguesa */
 .mobile-menu-btn {
     display: none;
-    background: none;
-    border: 1px solid rgba(212, 240, 57, 0.3);
-    border-radius: 6px;
+    background: rgba(212, 240, 57, 0.05);
+    border: 1px solid var(--accent-medium);
+    border-radius: var(--radius-sm, 6px);
     color: var(--brand-neon);
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     cursor: pointer;
-    padding: 0.4rem 0.6rem;
+    padding: 0.5rem 0.6rem;
     z-index: 10001;
-    transition: background 0.2s ease;
-    flex-shrink: 0;
+    transition: var(--transition);
 }
 
 .mobile-menu-btn:hover {
-    background: rgba(212, 240, 57, 0.1);
+    background: var(--accent-subtle);
 }
 
+
 /* =========================================
-   RESPONSIVE — MOBILE (max 768px)
+   2. HERO SECTION (PORTADA)
    ========================================= */
+.hero-fullscreen {
+    position: relative;
+    height: 100vh;
+    min-height: 600px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    transition: background-image 1.5s ease-in-out;
+    padding: 0 20px;
+}
+
+.hero-content {
+    z-index: 2;
+    max-width: 900px;
+    width: 100%;
+    margin-top: 60px;
+    animation: fadeInUp 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.hero-title {
+    font-family: var(--font-heading);
+    /* Texto fluido: mínimo 2.5rem, ideal 8vw, máximo 5.5rem */
+    font-size: clamp(2.5rem, 8vw, 5.5rem);
+    line-height: 1.05;
+    color: var(--text-white);
+    text-transform: uppercase;
+    font-style: italic;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 5px 20px rgba(0, 0, 0, 0.9);
+}
+
+.highlight-neon {
+    color: var(--brand-neon);
+    display: block;
+}
+
+.hero-subtitle {
+    font-family: var(--font-body);
+    color: var(--text-light);
+    font-size: clamp(1rem, 4vw, 1.4rem);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 3.5rem;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+    font-weight: 300;
+}
+
+.hero-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+
+/* =========================================
+   3. SECCIONES GENÉRICAS
+   ========================================= */
+.dark-section {
+    background-color: var(--bg-dark);
+    padding: 6rem 20px;
+    border-top: 1px solid var(--border-default);
+}
+
+.section-header {
+    text-align: center;
+    margin-bottom: 4rem;
+}
+
+.section-header h2 {
+    font-family: var(--font-heading);
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    color: var(--text-white);
+    text-transform: uppercase;
+    margin: 0;
+    letter-spacing: 1px;
+}
+
+.section-header span {
+    display: block;
+    width: 80px;
+    height: 4px;
+    background-color: var(--brand-neon);
+    margin: 15px auto 0;
+    border-radius: 2px;
+    box-shadow: 0 0 10px var(--accent-medium);
+}
+
+
+/* =========================================
+   4. RESPONSIVE EXTRACTO (MOBILE FIRST)
+   ========================================= */
+@media (max-width: 900px) {
+    .nav-links {
+        gap: 1.5rem;
+    }
+}
+
 @media (max-width: 768px) {
+
+    /* Navbar Ajustes */
     .navbar-floating {
-        height: 60px;
+        height: 70px;
     }
 
     .mobile-menu-btn {
@@ -196,27 +315,24 @@ html, body {
         justify-content: center;
     }
 
-    /* Menú full-screen que baja desde arriba */
+    /* Menú Desplegable Móvil */
     .nav-links {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
-        height: 100dvh; /* usa dvh para evitar el problema de la barra del navegador móvil */
-        background: rgba(8, 8, 8, 0.97);
+        height: 100dvh;
+        background: rgba(5, 5, 5, 0.98);
         backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
         flex-direction: column;
         justify-content: center;
         align-items: center;
         gap: 0;
         padding: 80px 2rem 2rem;
         box-sizing: border-box;
-        /* Transformación vertical para animación suave */
         transform: translateY(-100%);
         opacity: 0;
-        transition: transform 0.45s cubic-bezier(0.77, 0, 0.175, 1),
-                    opacity 0.35s ease;
+        transition: transform 0.45s cubic-bezier(0.77, 0, 0.175, 1), opacity 0.35s ease;
         z-index: 10000;
         pointer-events: none;
     }
@@ -227,176 +343,66 @@ html, body {
         pointer-events: all;
     }
 
-    /* Línea separadora entre cada link */
-    .nav-links .nav-item {
+    .nav-item {
         font-size: 1.8rem;
         letter-spacing: 3px;
         width: 100%;
         text-align: center;
-        padding: 1rem 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        opacity: 0.9;
+        padding: 1.2rem 0;
+        border-bottom: 1px solid var(--border-glass);
     }
 
-    .nav-links .nav-item::after {
-        display: none; /* Sin subrayado hover en mobile */
+    .nav-item::after {
+        display: none;
     }
 
-    .nav-links .nav-item:last-child {
+    .nav-item:last-child {
         border-bottom: none;
     }
 
-    /* Acciones al final del menú mobile */
+    /* Botones Mobile */
     .nav-mobile-actions {
         flex-direction: column;
         width: 100%;
-        gap: 1rem;
+        gap: 1.2rem;
         margin-top: 2rem;
         padding-top: 2rem;
-        border-top: 1px solid rgba(212, 240, 57, 0.15);
+        border-top: 1px solid var(--border-glass);
     }
 
     .nav-mobile-actions .nav-cta,
     .nav-login-btn {
         width: 100% !important;
         text-align: center;
-        padding: 0.9rem 1rem !important;
-        font-size: 1rem !important;
-        border-radius: 6px !important;
+        padding: 1rem !important;
+        font-size: 1.1rem !important;
     }
-}
-/* =========================================
-   2. HERO SECTION
-   ========================================= */
-.hero-fullscreen {
-    position: relative;
-    height: 100vh;
-    min-height: 600px; /* Evita que se colapse en pantallas apaisadas */
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    transition: background-image 1s ease-in-out;
-    padding: 0 1rem; /* Padding lateral de seguridad */
-}
 
-/* Overlay para mejorar lectura */
-.hero-fullscreen::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5); /* Oscurece la foto */
-    z-index: 0;
-}
-
-.hero-content {
-    z-index: 2;
-    max-width: 900px;
-    width: 100%;
-    margin-top: 60px; /* Compensa el espacio del navbar */
-}
-
-.hero-title {
-    font-family: 'Oswald', sans-serif;
-    /* CLAVE: clamp hace que la fuente escale fluidamente entre 2.5rem y 5rem */
-    font-size: clamp(2.5rem, 8vw, 5rem); 
-    line-height: 1;
-    color: var(--text-white);
-    text-transform: uppercase;
-    font-style: italic;
-    margin-bottom: 1.5rem;
-    text-shadow: 0 4px 10px rgba(0,0,0,0.8);
-}
-
-.highlight-neon {
-    color: var(--brand-neon);
-    display: block; /* En móvil a veces queda mejor en otra línea */
-}
-/* El hero tiene padding-top para no quedar tapado por el navbar fijo */
-@media (max-width: 768px) {
+    /* Hero Móvil Ajustes */
     .hero-fullscreen {
-        padding-top: 60px;
-    }
-}
-
-.hero-subtitle {
-    font-family: 'Roboto', sans-serif;
-    color: #e0e0e0;
-    font-size: clamp(1rem, 4vw, 1.3rem);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 2.5rem;
-    padding: 0 10px;
-}
-
-.hero-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 1.5rem;
-    flex-wrap: wrap; /* Permite que los botones bajen si no entran */
-}
-
-/* =========================================
-   SECCIONES GENÉRICAS
-   ========================================= */
-.dark-section {
-    background-color: var(--bg-dark);
-    padding: 4rem 1rem; /* Padding lateral importante para móvil */
-    border-top: 1px solid #222;
-}
-
-.section-header {
-    text-align: center;
-    margin-bottom: 3rem;
-}
-
-.section-header h2 {
-    font-family: 'Oswald', sans-serif;
-    font-size: clamp(2rem, 5vw, 3rem);
-    color: var(--text-white);
-    text-transform: uppercase;
-}
-
-.section-header span {
-    display: block;
-    width: 60px;
-    height: 4px;
-    background-color: var(--brand-neon);
-    margin: 10px auto 0;
-}
-
-/* =========================================
-   MEDIA QUERIES (RESPONSIVE EXTREMO)
-   ========================================= */
-
-@media (max-width: 768px) {
-    /* Ajustes Hero Móvil */
-    .hero-fullscreen {
-        height: auto;
-        min-height: 85vh;
-        padding-bottom: 3rem;
+        min-height: 85dvh;
+        padding-top: 70px;
+        /* Evita choque con el nav */
+        padding-bottom: 2rem;
     }
 
     .hero-content {
-        margin-top: 2rem;
+        margin-top: 0;
     }
 
     .hero-buttons {
         flex-direction: column;
         width: 100%;
-        max-width: 300px;
+        max-width: 350px;
         margin: 0 auto;
+        gap: 1rem;
     }
 
     .hero-buttons button {
         width: 100%;
+    }
+
+    .dark-section {
+        padding: 4rem 15px;
     }
 }

@@ -1,7 +1,9 @@
+// src/feactures/gym-main/components/Navbar/Navbar.jsx
 import React, { useState } from 'react';
+import { FaBars, FaTimes } from 'react-icons/fa';
 import { Button } from '../../../../Utils/Button';
 import { LoginSelector } from '../LoginSelector/LoginSelector';
-import { FaBars, FaTimes } from 'react-icons/fa'; // Necesitarás react-icons
+
 
 export function Navbar({ onScroll }) {
     const [showLogin, setShowLogin] = useState(false);
@@ -12,39 +14,38 @@ export function Navbar({ onScroll }) {
     const handleClick = (e, target) => {
         e.preventDefault();
         onScroll(target);
-        setIsMenuOpen(false); // Cerramos el menú al hacer clic en un link
+        setIsMenuOpen(false);
     };
 
     return (
         <>
-            <nav className={`navbar-floating ${isMenuOpen ? 'menu-open' : ''}`}>
+            <nav className={`navbar-floating ${isMenuOpen ? 'menu-active' : ''}`}>
                 <div className="nav-container-wrapper">
-                    {/* LOGO */}
+
+                    {/* LOGO ARRIBA A LA IZQUIERDA */}
                     <div className="logo-container" onClick={(e) => handleClick(e, 'inicio')}>
-                        FFIT <span className="logo-plus">+</span>
+                        <img
+                            src="/logo ffit wellness blanco y lima.PNG"
+                            alt="FFIT+ Logo"
+                            className="nav-logo-img"
+                        />
                     </div>
 
-                    {/* BOTÓN HAMBURGUESA (Solo móvil) */}
                     <button className="mobile-menu-btn" onClick={toggleMenu}>
                         {isMenuOpen ? <FaTimes /> : <FaBars />}
                     </button>
 
-                    {/* ENLACES DE NAVEGACIÓN */}
                     <div className={`nav-links ${isMenuOpen ? 'active' : ''}`}>
                         <a href="#inicio" className="nav-item" onClick={(e) => handleClick(e, 'inicio')}>Inicio</a>
                         <a href="#clases" className="nav-item" onClick={(e) => handleClick(e, 'clases')}>Clases</a>
                         <a href="#horarios" className="nav-item" onClick={(e) => handleClick(e, 'horarios')}>Horarios</a>
                         <a href="#nosotros" className="nav-item" onClick={(e) => handleClick(e, 'nosotros')}>Nosotros</a>
-                        
+
                         <div className="nav-mobile-actions">
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="nav-login-btn" 
-                                onClick={() => {
-                                    setShowLogin(true);
-                                    setIsMenuOpen(false);
-                                }}
+                            <Button
+                                variant="outline"
+                                className="nav-login-btn"
+                                onClick={() => { setShowLogin(true); setIsMenuOpen(false); }}
                             >
                                 Acceso
                             </Button>

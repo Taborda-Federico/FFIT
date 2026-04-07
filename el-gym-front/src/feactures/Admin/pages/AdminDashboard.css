@@ -43,6 +43,22 @@
     border-radius: 14px;
     padding: 10px 15px;
     display: flex; align-items: center; gap: 12px;
+    flex: 1; /* Para que ocupe el resto del espacio */
+}
+
+.admin-top-actions {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.btn-new-admin {
+    height: 100%;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
 }
 .minimal-select {
     appearance: none;

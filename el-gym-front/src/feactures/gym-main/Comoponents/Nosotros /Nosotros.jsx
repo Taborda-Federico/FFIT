@@ -38,7 +38,14 @@ export function Nosotros() {
 
             <div className="team-grid">
                 {team.map((coach) => (
-                    <div key={coach.id || coach._id} className="team-card">
+                    <a 
+                        key={coach.id || coach._id} 
+                        href={`https://instagram.com/${coach.instagram?.replace('@', '')}`}
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="team-card"
+                        style={{ textDecoration: 'none', display: 'block' }}
+                    >
                         <div className="team-card-bg" style={{ backgroundImage: `url(${coach.image})` }}></div>
                         <div className="team-overlay">
                             <div className="team-content">
@@ -54,16 +61,13 @@ export function Nosotros() {
                                 <p className="coach-bio">{coach.bio}</p>
                                 
                                 <div className="coach-actions">
-                                    <Button variant="outline" size="sm">
-                                        Clases
-                                    </Button>
-                                    <a href={`https://instagram.com/${coach.instagram}`} className="social-link" target="_blank" rel="noopener noreferrer">
-                                        Instagram
-                                    </a>
+                                    <span className="social-link" style={{ pointerEvents: 'none' }}>
+                                        Ir a Instagram
+                                    </span>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </a>
                 ))}
             </div>
         </div>

@@ -46,3 +46,30 @@ cron.schedule('0 9 * * *', async () => {
         console.error("Error en el robot de vencimientos:", error);
     }
 });
+cron.schedule('* * * * *', async () => {
+    console.log("🔄 Iniciando proceso de actualización semanal de planes...");
+
+    try {
+        const planesActivos = await Plan.find({
+            esPlantilla: false,
+            semanasRestantes: { $gt: 0 }
+        });
+
+        for (let plan of planesActivos) {
+            plan.semanasRestantes -= 1;
+
+            if (plan.semanasRestantes === 0) {
+                plan.notasGlobales += " [PLAN FINALIZADO]";
+            }
+
+            await plan.save();
+        }
+
+        console.log(`✅ Se actualizaron ${planesActivos.length} planes con éxito.`);
+    } catch (error) {
+        console.error("❌ Error en el proceso semanal de planes:", error);
+    }
+}, {
+    scheduled: true,
+    timezone: "America/Argentina/Buenos_Aires"
+});

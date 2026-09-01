@@ -2,3 +2,17 @@ node_modules/
 el-gym-front/node_modules/
 el-gym-back/node_modules/
 .env
+
+# Sesión de whatsapp-web.js: quedó trackeada en el historial por error (ver
+# reporte de este PR) — a partir de acá no se vuelve a versionar. Nota: esto
+# NO borra lo que ya está commiteado en el historial; eso requiere una
+# limpieza aparte (git filter-repo / BFG) que hay que decidir y correr con
+# cuidado, no es parte de este PR.
+el-gym-back/.wwebjs_auth/
+
+# Artefactos de test
+el-gym-back/coverage/
+el-gym-front/coverage/
+el-gym-front/test-results/
+el-gym-front/playwright-report/
+el-gym-front/blob-report/

@@ -30,8 +30,8 @@ function dashboardData(overrides = {}) {
     };
 }
 
-function historyWith(fechaIso, nombreSesion = 'Día 1') {
-    return [{ _id: 'log1', nombreSesion, createdAt: fechaIso }];
+function historyWith(fechaIso, nombreSesion = 'Día 1', sesionId) {
+    return [{ _id: 'log1', nombreSesion, sesionId, createdAt: fechaIso }];
 }
 
 function setNow(fechaIso) {
@@ -116,17 +116,35 @@ describe('HomeHub — bloqueo de "ya entrenaste hoy" (yaEntrenoHoy)', () => {
 });
 
 describe('HomeHub — nombres de sesión duplicados (colisión al agregar/borrar días en el builder)', () => {
-    it('BUG: dos sesiones con el mismo nombre en el plan — completar una las marca a AMBAS como hechas', () => {
+    const dosSesionesDuplicadas = {
+        sesiones: [
+            { _id: 's1', nombre: 'Día 3', bloques: [] },
+            { _id: 's2', nombre: 'Día 3', bloques: [] },
+        ]
+    };
+
+    it('ARREGLADO: dos sesiones con el mismo nombre — el log guarda el sesionId puntual y solo esa tarjeta queda COMPLETADA', () => {
         setNow(LUN);
-        const data = dashboardData({
-            sesiones: [
-                { _id: 's1', nombre: 'Día 3', bloques: [] },
-                { _id: 's2', nombre: 'Día 3', bloques: [] },
-            ]
-        });
-        render(<HomeHub dashboardData={data} history={historyWith(LUN, 'Día 3')} onStart={() => {}} />);
+        const data = dashboardData(dosSesionesDuplicadas);
+        // El log trae sesionId: 's1' — la sesión REAL que se entrenó — así
+        // que ya no hace falta adivinar por nombre. Ver docs/CAMBIOS.md.
+        render(<HomeHub dashboardData={data} history={historyWith(LUN, 'Día 3', 's1')} onStart={() => {}} />);
         const tarjetas = screen.getAllByText('Día 3').map(el => el.closest('.hub-session-card'));
         expect(tarjetas).toHaveLength(2);
+        expect(tarjetas[0]).toHaveTextContent('COMPLETADA');
+        expect(tarjetas[1]).not.toHaveTextContent('COMPLETADA');
+    });
+
+    it('logs VIEJOS sin sesionId (de antes de que este campo existiera) siguen matcheando por nombre — comportamiento anterior intacto para no perder historial ya registrado', () => {
+        setNow(LUN);
+        const data = dashboardData(dosSesionesDuplicadas);
+        // Sin sesionId (undefined): es exactamente como se guardaban todos
+        // los WorkoutLog antes de este fix. Se documenta la limitación
+        // conocida y aceptada para datos históricos: sin id, no hay forma
+        // de saber cuál de las dos sesiones duplicadas se entrenó
+        // realmente, así que — como pasaba siempre — se marcan las dos.
+        render(<HomeHub dashboardData={data} history={historyWith(LUN, 'Día 3')} onStart={() => {}} />);
+        const tarjetas = screen.getAllByText('Día 3').map(el => el.closest('.hub-session-card'));
         expect(tarjetas[0]).toHaveTextContent('COMPLETADA');
         expect(tarjetas[1]).toHaveTextContent('COMPLETADA');
     });

@@ -389,3 +389,38 @@ no-string se rechaza sin llegar a la query.
 249 backend en verde (243 frontend + 28 e2e sin cambios — este fix es puramente de backend).
 
 ---
+
+## 8 — Colisión de sesiones con el mismo nombre dentro de un plan
+
+**Qué pasaba:** nada, ni en el constructor de planes ni en el backend, impide que dos sesiones del MISMO
+plan queden con el mismo `nombre` (un admin copia una sesión para no rearmarla de cero y se olvida de
+renombrarla, por ejemplo — algo fácil de hacer sin querer). El problema es que `HomeHub.isSessionCompleted`
+decidía si una sesión estaba "hecha" comparando `WorkoutLog.nombreSesion === session.nombre`, un match por
+TEXTO. Si dos sesiones se llamaban igual, entrenar una las marcaba a las DOS como completadas — el alumno
+veía una sesión que nunca entrenó mostrando "COMPLETADA" y el ícono de check.
+
+**La solución:** cada sesión de un plan ya tenía, sin usarse para esto, un `_id` propio (Mongoose lo genera
+solo para cada elemento de `plan.sesiones`). Ahora, al terminar un entrenamiento, el frontend manda también
+ese `_id` (`sesionId`) junto con el nombre, y `WorkoutLog` lo guarda en un campo nuevo, OPCIONAL. En
+`HomeHub`, el matching pasa a ser: si el log tiene `sesionId`, comparar por ahí (preciso, sin ambigüedad
+posible); si no lo tiene, seguir comparando por nombre exactamente como antes.
+
+**Por qué esto no toca ni un dato existente:** el campo `sesionId` en `WorkoutLog` es `required: false` — los
+miles de entrenamientos ya registrados en la base siguen siendo válidos tal cual están, sin ningún campo
+nuevo. Para esos logs viejos, el comportamiento es IDÉNTICO al de antes (matching por nombre) — la mejora
+aplica únicamente hacia adelante, a los entrenamientos que se registren desde el deploy de este cambio. Es
+el mismo criterio que ya se usó en el fix de "semanas restantes" (ver #5): mejorar sin migrar ni reescribir
+historial.
+
+**Tests:** se agregó un test de backend que confirma que `sesionId` se persiste cuando llega un ObjectId
+válido, que se ignora sin romper el guardado si llega basura (defensa contra inyección), y que sigue
+funcionando sin él (compatibilidad con el comportamiento viejo). En el frontend, `HomeHub.test.jsx` invierte
+el test que documentaba el bug (ahora, con `sesionId`, solo la tarjeta correcta queda "COMPLETADA") y agrega
+uno nuevo que confirma que los logs viejos sin `sesionId` siguen usando el matching por nombre. Y un e2e
+nuevo (`session-collision.spec.js`) reproduce el escenario completo en un navegador real: dos sesiones
+"Día 3", se entrena la primera, solo esa queda "COMPLETADA" — la segunda queda bloqueada por "ya
+entrenaste hoy" (un mecanismo aparte), pero ya NO aparece como completada.
+
+252 backend, 245 frontend, 29 e2e — todo en verde.
+
+---

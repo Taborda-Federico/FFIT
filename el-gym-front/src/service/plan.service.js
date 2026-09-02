@@ -54,5 +54,31 @@ export const PlanService = {
         } catch (error) {
             throw error;
         }
+    },
+
+    // 4. Actualizar una plantilla EXISTENTE (edición real, no crea una copia)
+    actualizarPlantilla: async (plantillaId, planData, token) => {
+        const response = await fetch(`${API_URL}/planes/plantilla/${plantillaId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(planData)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message);
+        return data;
+    },
+
+    // 5. Eliminar una plantilla
+    eliminarPlantilla: async (plantillaId, token) => {
+        const response = await fetch(`${API_URL}/planes/plantilla/${plantillaId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message);
+        return data;
     }
 };

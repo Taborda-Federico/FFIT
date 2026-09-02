@@ -1,12 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { AdminDashboard } from '../src/feactures/Admin/pages/AdminDashboard';
 
-const { getStudentsMock, getPlantillasMock, publicarPlanMock, guardarPlantillaMock, authValue } = vi.hoisted(() => ({
+const { getStudentsMock, getPlantillasMock, publicarPlanMock, guardarPlantillaMock, actualizarPlantillaMock, eliminarPlantillaMock, authValue } = vi.hoisted(() => ({
     getStudentsMock: vi.fn(),
     getPlantillasMock: vi.fn(),
     publicarPlanMock: vi.fn(),
     guardarPlantillaMock: vi.fn(),
+    actualizarPlantillaMock: vi.fn(),
+    eliminarPlantillaMock: vi.fn(),
     // Referencia ESTABLE: si useAuth() devolviera un objeto nuevo en cada
     // render (como haría un mock ingenuo `() => ({...})`), el useEffect que
     // depende de `[user]` se re-dispararía en cada re-render del componente
@@ -19,7 +21,10 @@ const { getStudentsMock, getPlantillasMock, publicarPlanMock, guardarPlantillaMo
 vi.mock('../src/contex/AuthContext', () => ({ useAuth: () => authValue }));
 vi.mock('../src/service/user.service', () => ({ UserService: { getStudents: getStudentsMock } }));
 vi.mock('../src/service/plan.service', () => ({
-    PlanService: { getPlantillas: getPlantillasMock, publicarPlan: publicarPlanMock, guardarPlantilla: guardarPlantillaMock }
+    PlanService: {
+        getPlantillas: getPlantillasMock, publicarPlan: publicarPlanMock, guardarPlantilla: guardarPlantillaMock,
+        actualizarPlantilla: actualizarPlantillaMock, eliminarPlantilla: eliminarPlantillaMock
+    }
 }));
 
 beforeEach(() => {
@@ -27,6 +32,8 @@ beforeEach(() => {
     getPlantillasMock.mockReset().mockResolvedValue([]);
     publicarPlanMock.mockReset().mockResolvedValue({ plan: { titulo: 'X' } });
     guardarPlantillaMock.mockReset().mockResolvedValue({ plantilla: {} });
+    actualizarPlantillaMock.mockReset().mockResolvedValue({ plantilla: {} });
+    eliminarPlantillaMock.mockReset().mockResolvedValue({ message: 'ok' });
 });
 
 async function esperarCargaInicial() {
@@ -239,6 +246,149 @@ describe('AdminDashboard — cargar plantilla existente', () => {
         expect(screen.getByPlaceholderText(/TÍTULO/)).toHaveValue('Plantilla Fuerza');
         expect(screen.getByDisplayValue('Empuje')).toBeInTheDocument();
         expect(screen.queryByDisplayValue('Día 1')).not.toBeInTheDocument();
+    });
+});
+
+describe('AdminDashboard — NUEVO: Gestionar Plantillas (modal de búsqueda/edición/borrado)', () => {
+    const plantillaDemo = { _id: 'p1', titulo: 'Plantilla Fuerza', sesiones: [{ _id: 's1', nombre: 'Empuje', bloques: [] }] };
+
+    // El título de cada plantilla aparece en DOS lugares a la vez: la
+    // tarjeta del modal Y la <option> del <select> "Cargar Plantilla..."
+    // (que sigue existiendo sin cambios, ver arriba) — nunca se desmonta al
+    // abrir el modal. Por eso, cualquier búsqueda de texto de una plantilla
+    // tiene que quedar acotada al modal con `within(...)`, o `getByText`
+    // revienta con "Found multiple elements".
+    function modalPlantillas() {
+        return screen.getByRole('heading', { name: /Gestionar Plantillas/i }).closest('.plantillas-modal-card');
+    }
+
+    it('el botón "Plantillas" abre el modal con las plantillas ya cargadas', async () => {
+        getPlantillasMock.mockResolvedValue([plantillaDemo]);
+        render(<AdminDashboard />);
+        await esperarCargaInicial();
+        fireEvent.click(screen.getByText('Plantillas'));
+        await screen.findByRole('heading', { name: /Gestionar Plantillas/i });
+        expect(within(modalPlantillas()).getByText('Plantilla Fuerza')).toBeInTheDocument();
+    });
+
+    it('"Editar" en el modal carga la plantilla en el armador, muestra el banner de edición y cierra el modal', async () => {
+        getPlantillasMock.mockResolvedValue([plantillaDemo]);
+        render(<AdminDashboard />);
+        await esperarCargaInicial();
+        fireEvent.click(screen.getByText('Plantillas'));
+        fireEvent.click(await screen.findByTitle('Editar plantilla'));
+
+        // El modal se cierra: ya no hay un heading "Gestionar Plantillas".
+        expect(screen.queryByRole('heading', { name: /Gestionar Plantillas/i })).not.toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/TÍTULO/)).toHaveValue('Plantilla Fuerza');
+        expect(screen.getByDisplayValue('Empuje')).toBeInTheDocument();
+        expect(screen.getByText(/al guardar, se pisa la original/i)).toBeInTheDocument();
+        expect(screen.getByText('Guardar Cambios')).toBeInTheDocument();
+        expect(screen.queryByText('Guardar Plantilla')).not.toBeInTheDocument();
+    });
+
+    it('en modo edición, "Guardar Cambios" llama a actualizarPlantilla (PUT) — no a guardarPlantilla (POST)', async () => {
+        getPlantillasMock.mockResolvedValue([plantillaDemo]);
+        render(<AdminDashboard />);
+        await esperarCargaInicial();
+        fireEvent.click(screen.getByText('Plantillas'));
+        fireEvent.click(await screen.findByTitle('Editar plantilla'));
+        fireEvent.click(screen.getByText('Guardar Cambios'));
+
+        await waitFor(() => expect(actualizarPlantillaMock).toHaveBeenCalledWith('p1', expect.objectContaining({ titulo: 'Plantilla Fuerza' }), 'tok'));
+        expect(guardarPlantillaMock).not.toHaveBeenCalled();
+    });
+
+    it('"salir" del banner de edición vuelve a "Guardar Plantilla" (crea una nueva) sin borrar lo ya tipeado', async () => {
+        getPlantillasMock.mockResolvedValue([plantillaDemo]);
+        render(<AdminDashboard />);
+        await esperarCargaInicial();
+        fireEvent.click(screen.getByText('Plantillas'));
+        fireEvent.click(await screen.findByTitle('Editar plantilla'));
+        fireEvent.click(screen.getByTitle(/Salir del modo edición/));
+
+        expect(screen.queryByText(/al guardar, se pisa la original/i)).not.toBeInTheDocument();
+        expect(screen.getByText('Guardar Plantilla')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/TÍTULO/)).toHaveValue('Plantilla Fuerza'); // el contenido sigue ahí
+
+        fireEvent.click(screen.getByText('Guardar Plantilla'));
+        await waitFor(() => expect(guardarPlantillaMock).toHaveBeenCalled());
+        expect(actualizarPlantillaMock).not.toHaveBeenCalled();
+    });
+
+    it('"Borrar" pide confirmación antes de eliminar', async () => {
+        getPlantillasMock.mockResolvedValue([plantillaDemo]);
+        render(<AdminDashboard />);
+        await esperarCargaInicial();
+        fireEvent.click(screen.getByText('Plantillas'));
+        fireEvent.click(await screen.findByTitle('Eliminar plantilla'));
+
+        expect(await screen.findByText('Eliminar Plantilla')).toBeInTheDocument();
+        expect(screen.getByText(/¿Eliminar la plantilla "Plantilla Fuerza"\?/)).toBeInTheDocument();
+        expect(eliminarPlantillaMock).not.toHaveBeenCalled(); // todavía no confirmó nada
+    });
+
+    it('confirmar el borrado llama a eliminarPlantilla y la saca de la lista', async () => {
+        getPlantillasMock.mockResolvedValue([plantillaDemo]);
+        render(<AdminDashboard />);
+        await esperarCargaInicial();
+        fireEvent.click(screen.getByText('Plantillas'));
+        fireEvent.click(await screen.findByTitle('Eliminar plantilla'));
+        fireEvent.click(await screen.findByText('Sí, Eliminar'));
+
+        await waitFor(() => expect(eliminarPlantillaMock).toHaveBeenCalledWith('p1', 'tok'));
+        expect(screen.queryByText('Plantilla Fuerza')).not.toBeInTheDocument();
+    });
+
+    it('cancelar el borrado NO llama a eliminarPlantilla, y el modal de plantillas sigue abierto con todo intacto', async () => {
+        getPlantillasMock.mockResolvedValue([plantillaDemo]);
+        render(<AdminDashboard />);
+        await esperarCargaInicial();
+        fireEvent.click(screen.getByText('Plantillas'));
+        fireEvent.click(await screen.findByTitle('Eliminar plantilla'));
+        fireEvent.click(await screen.findByText('Cancelar'));
+
+        expect(eliminarPlantillaMock).not.toHaveBeenCalled();
+        expect(screen.queryByText('Eliminar Plantilla')).not.toBeInTheDocument(); // el confirm se cerró
+        // Cancelar el borrado no cierra el modal de gestión — sigue abierto,
+        // con la plantilla todavía en la lista.
+        expect(within(modalPlantillas()).getByText('Plantilla Fuerza')).toBeInTheDocument();
+    });
+
+    it('la búsqueda del modal es sensible a coincidencias parciales, sin importar mayúsculas', async () => {
+        getPlantillasMock.mockResolvedValue([plantillaDemo, { _id: 'p2', titulo: 'Cardio Intenso', sesiones: [] }]);
+        render(<AdminDashboard />);
+        await esperarCargaInicial();
+        fireEvent.click(screen.getByText('Plantillas'));
+        await screen.findByRole('heading', { name: /Gestionar Plantillas/i });
+        const modal = modalPlantillas();
+        expect(within(modal).getByText('Cardio Intenso')).toBeInTheDocument();
+
+        fireEvent.change(screen.getByPlaceholderText(/Buscar plantilla/), { target: { value: 'FUERZA' } });
+
+        expect(within(modal).getByText('Plantilla Fuerza')).toBeInTheDocument();
+        expect(within(modal).queryByText('Cardio Intenso')).not.toBeInTheDocument();
+    });
+
+    it('sin ninguna plantilla guardada, el modal muestra un estado vacío en vez de una lista en blanco', async () => {
+        getPlantillasMock.mockResolvedValue([]);
+        render(<AdminDashboard />);
+        await esperarCargaInicial();
+        fireEvent.click(screen.getByText('Plantillas'));
+        expect(await screen.findByText(/Todavía no guardaste ninguna plantilla/i)).toBeInTheDocument();
+    });
+
+    it('si eliminarPlantilla falla, muestra el error y NO saca la plantilla de la lista', async () => {
+        getPlantillasMock.mockResolvedValue([plantillaDemo]);
+        eliminarPlantillaMock.mockRejectedValue(new Error('No se pudo eliminar'));
+        render(<AdminDashboard />);
+        await esperarCargaInicial();
+        fireEvent.click(screen.getByText('Plantillas'));
+        fireEvent.click(await screen.findByTitle('Eliminar plantilla'));
+        fireEvent.click(await screen.findByText('Sí, Eliminar'));
+
+        expect(await screen.findByText('No se pudo eliminar')).toBeInTheDocument();
+        expect(within(modalPlantillas()).getByText('Plantilla Fuerza')).toBeInTheDocument();
     });
 });
 

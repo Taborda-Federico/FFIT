@@ -83,4 +83,48 @@ const getPlantillas = async (req, res) => {
     }
 };
 
-module.exports = { publicarPlan, guardarPlantilla, getPlantillas };
+// Actualiza una plantilla EXISTENTE (a diferencia de guardarPlantilla, que
+// siempre crea una nueva). Se agrega para el modal de "Gestionar
+// Plantillas": antes, la única forma de "editar" una plantilla era
+// cargarla en el armador y guardarla de nuevo, lo que en realidad creaba
+// una copia — nunca se pisaba la original. Con el tiempo eso es exactamente
+// lo que le llenó la lista de plantillas casi-duplicadas al cliente.
+const actualizarPlantilla = async (req, res) => {
+    try {
+        const { titulo, notasGlobales, sesiones } = req.body;
+
+        // Mismo patrón de scoping que deleteStudent/publicarPlan: se busca
+        // por _id Y adminId a la vez (no primero por _id y comprobando
+        // después) para que un admin no pueda ni enterarse de que existe
+        // una plantilla ajena con ese id, y muchísimo menos pisarla.
+        const plantilla = await Plan.findOne({ _id: req.params.id, adminId: req.user._id, esPlantilla: true });
+        if (!plantilla) {
+            return res.status(404).json({ message: 'Plantilla no encontrada o no autorizada' });
+        }
+
+        plantilla.titulo = titulo;
+        plantilla.notasGlobales = notasGlobales;
+        plantilla.sesiones = sesiones;
+        await plantilla.save();
+
+        res.json({ message: 'Plantilla actualizada con éxito', plantilla });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al actualizar la plantilla', error: error.message });
+    }
+};
+
+const eliminarPlantilla = async (req, res) => {
+    try {
+        const plantilla = await Plan.findOne({ _id: req.params.id, adminId: req.user._id, esPlantilla: true });
+        if (!plantilla) {
+            return res.status(404).json({ message: 'Plantilla no encontrada o no autorizada' });
+        }
+
+        await Plan.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Plantilla eliminada' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al eliminar la plantilla' });
+    }
+};
+
+module.exports = { publicarPlan, guardarPlantilla, getPlantillas, actualizarPlantilla, eliminarPlantilla };

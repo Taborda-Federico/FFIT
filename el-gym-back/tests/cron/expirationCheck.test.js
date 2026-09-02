@@ -79,7 +79,7 @@ describe('cron diario: aviso de vencimiento de cuota a 5 días', () => {
         expect(await Notification.countDocuments({ alumnoId: alumno._id })).toBe(0);
     });
 
-    it('BUG: si UN alumno tiene un email inválido que hace fallar sendMail, TODOS los siguientes en el mismo batch se quedan sin aviso', async () => {
+    it('ARREGLADO: si UN alumno tiene un email que hace fallar sendMail, el resto del batch igual recibe su aviso', async () => {
         const alumno1 = await alumnoConVencimientoEn(5, { nombre: 'Primero', email: 'primero@x.com', dni: 'd1' });
         const alumno2 = await alumnoConVencimientoEn(5, { nombre: 'Segundo (con email roto)', email: 'roto@x.com', dni: 'd2' });
         const alumno3 = await alumnoConVencimientoEn(5, { nombre: 'Tercero', email: 'tercero@x.com', dni: 'd3' });
@@ -87,14 +87,19 @@ describe('cron diario: aviso de vencimiento de cuota a 5 días', () => {
 
         await avisoMembresia.callback();
 
-        // El try/catch envuelve TODO el callback, no cada iteración del for.
-        // Un solo sendMail que rechaza corta el loop: los alumnos que venían
-        // DESPUÉS del que falló se quedan sin Notification ni intento de email,
-        // aunque no tuvieran nada de malo.
+        // Cada alumno se procesa dentro de su propio try/catch: el que falla
+        // no corta a los que vienen después en el mismo `for`.
         const notifAlumno1 = await Notification.countDocuments({ alumnoId: alumno1._id });
+        const notifAlumno2 = await Notification.countDocuments({ alumnoId: alumno2._id });
         const notifAlumno3 = await Notification.countDocuments({ alumnoId: alumno3._id });
-        expect(notifAlumno1).toBe(1); // el primero, antes del que rompe, sí se procesó
-        expect(notifAlumno3).toBe(0); // el tercero, después del que rompe, quedó sin avisar
+        expect(notifAlumno1).toBe(1); // antes del que rompe
+        expect(notifAlumno2).toBe(1); // el que rompe: sí llegó a crear la Notification, solo falló el email
+        expect(notifAlumno3).toBe(1); // después del que rompe: ya no se corta el loop
+
+        const enviados = nodemailer.__getSentMails().map(m => m.to);
+        expect(enviados).toContain(alumno1.email);
+        expect(enviados).toContain(alumno3.email);
+        expect(enviados).not.toContain(alumno2.email); // a este realmente le falló el envío
     });
 
     it('el rango de "5 días" cruza correctamente un fin de mes (ej. de 27 a 2 del mes siguiente)', async () => {

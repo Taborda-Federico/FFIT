@@ -33,13 +33,7 @@ test.describe('Panel de admin — gestión de socios', () => {
         await expect(fila.getByText('DNI: 40999888')).toBeVisible();
     });
 
-    test('BUG: DNI duplicado NO muestra el mensaje específico del backend, solo el genérico ("Error al registrar socio") — el modal queda abierto igual', async ({ page }) => {
-        // RegisterUserModal.jsx lee el error como `err.response?.data?.message`
-        // (forma típica de Axios). Pero UserService.createStudent usa fetch
-        // nativo y tira un Error común (`err.message`, sin `.response`), así
-        // que ese acceso siempre da undefined y cae al fallback genérico —
-        // el alumno nunca ve el motivo real ("DNI ya registrado" vs. "Email
-        // ya registrado" vs. cualquier otro 400).
+    test('ARREGLADO: DNI duplicado ahora muestra el mensaje específico del backend, no el genérico — y el modal queda abierto para reintentar', async ({ page }) => {
         const admin = await crearAdmin({ email: 'admin-dup@x.com' });
         await crearAlumno(admin.token, { dni: '11111111', email: 'ya-existe@x.com' });
         await loguearComoAdmin(page, admin);
@@ -52,9 +46,8 @@ test.describe('Panel de admin — gestión de socios', () => {
         await page.getByPlaceholder('Monto de Pago').fill('1000');
         await page.getByRole('button', { name: 'Finalizar Registro' }).click();
 
-        await expect(page.getByText('Error al registrar socio')).toBeVisible();
-        await expect(page.getByText(/ya están registrados/i)).not.toBeVisible();
-        // El modal sigue abierto y usable — eso sí funciona bien.
+        await expect(page.getByText(/ya están registrados/i)).toBeVisible();
+        await expect(page.getByText('Error al registrar socio')).not.toBeVisible();
         await expect(page.getByPlaceholder('Nombre y Apellido')).toBeVisible();
     });
 

@@ -7,12 +7,12 @@ import { cleanup } from '@testing-library/react';
 
 // SEGURIDAD DE LA SUITE: cada service del frontend (plan.service.js,
 // student.service.js, user.service.js, admin.service.js, auth.service.js,
-// landing.service.js, y api.config.js/gym.service.js) tiene hardcodeada
-// la URL de PRODUCCIÓN (https://ffit.onrender.com/api) — no hay ninguna
-// variable de entorno que la cambie para la mayoría de esos archivos (ver
-// hallazgos del reporte). Si un test se olvida de mockear `fetch`, NO debe
-// poder pegarle a la API real por accidente: acá lo dejamos fallando fuerte
-// por default, y cada test que sí necesite red lo pisa con su propio mock.
+// landing.service.js) tiene hardcodeada la URL de PRODUCCIÓN
+// (https://ffit.onrender.com/api) — no hay ninguna variable de entorno que
+// la cambie (ver hallazgos del reporte). Si un test se olvida de mockear
+// `fetch`, NO debe poder pegarle a la API real por accidente: acá lo
+// dejamos fallando fuerte por default, y cada test que sí necesite red lo
+// pisa con su propio mock.
 beforeEach(() => {
     global.fetch = vi.fn(() => {
         throw new Error(

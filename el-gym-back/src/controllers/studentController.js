@@ -116,22 +116,6 @@ const getMyHistory = async (req, res) => {
         res.status(500).json({ message: 'Error al cargar el historial' });
     }
 };
-const getStudentProgressForAdmin = async (req, res) => {
-    try {
-        const { alumnoId } = req.params;
-        // FIX IDOR
-        const alumno = await User.findOne({ _id: alumnoId, adminId: req.user._id });
-        if (!alumno) return res.status(403).json({ message: 'No autorizado' });
-
-        const historial = await WorkoutLog.find({ alumnoId }).sort({ createdAt: -1 }).limit(50);
-        const notas = await AdminNote.find({ alumnoId }).sort({ createdAt: -1 });
-
-        res.json({ historial, notas });
-    } catch (error) {
-        res.status(500).json({ message: 'Error al obtener progreso' });
-    }
-};
-
 const getMyNotifications = async (req, res) => {
     try {
         const notificaciones = await Notification.find({ alumnoId: req.user._id })
@@ -145,7 +129,18 @@ const getMyNotifications = async (req, res) => {
 
 const markNotificationRead = async (req, res) => {
     try {
-        await Notification.findByIdAndUpdate(req.params.id, { leida: true });
+        // Antes esto actualizaba por id sin chequear el dueño: cualquier
+        // alumno logueado podía marcar como leída la notificación de OTRO
+        // alumno con solo adivinar/probar su id (IDOR). Se filtra también
+        // por alumnoId para que solo se pueda tocar la propia.
+        const notificacion = await Notification.findOneAndUpdate(
+            { _id: req.params.id, alumnoId: req.user._id },
+            { leida: true },
+            { new: true }
+        );
+        if (!notificacion) {
+            return res.status(404).json({ message: 'Notificación no encontrada' });
+        }
         res.json({ message: 'Notificación marcada como leída' });
     } catch (error) {
         res.status(500).json({ message: 'Error al actualizar notificación' });

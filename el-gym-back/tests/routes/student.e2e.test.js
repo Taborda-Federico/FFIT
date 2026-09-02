@@ -289,8 +289,8 @@ describe('GET /api/student/history (getMyHistory)', () => {
     });
 });
 
-describe('Notificaciones del alumno — IDOR en markNotificationRead', () => {
-    it('BUG DE SEGURIDAD (IDOR): un alumno puede marcar como leída la notificación de OTRO alumno', async () => {
+describe('Notificaciones del alumno — markNotificationRead', () => {
+    it('ARREGLADO (era IDOR): un alumno YA NO puede marcar como leída la notificación de otro alumno', async () => {
         const { admin } = await createAdmin();
         const { student: victima } = await createStudentDirect(admin._id);
         const { token: tokenAtacante } = await createStudentDirect(admin._id);
@@ -303,9 +303,38 @@ describe('Notificaciones del alumno — IDOR en markNotificationRead', () => {
             .put(`/api/student/notifications/${notifDeLaVictima._id}/read`)
             .set('Authorization', `Bearer ${tokenAtacante}`);
 
-        expect(res.status).toBe(200); // el endpoint NO verifica dueño → responde OK
-        const notifActualizada = await Notification.findById(notifDeLaVictima._id);
-        expect(notifActualizada.leida).toBe(true); // y efectivamente la modificó
+        expect(res.status).toBe(404);
+        const notifSinTocar = await Notification.findById(notifDeLaVictima._id);
+        expect(notifSinTocar.leida).toBe(false); // sigue intacta, no se pudo tocar
+    });
+
+    it('un alumno SÍ puede marcar como leída su PROPIA notificación', async () => {
+        const { admin } = await createAdmin();
+        const { student, token } = await createStudentDirect(admin._id);
+        const propia = await Notification.create({
+            alumnoId: student._id, titulo: 'Para vos', mensaje: 'x', tipo: 'INFO'
+        });
+
+        const res = await request(app)
+            .put(`/api/student/notifications/${propia._id}/read`)
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toBe(200);
+        expect((await Notification.findById(propia._id)).leida).toBe(true);
+    });
+
+    it('marcar una notificación que no existe (id válido pero inexistente) → 404', async () => {
+        const { admin } = await createAdmin();
+        const { token } = await createStudentDirect(admin._id);
+        const res = await request(app)
+            .put('/api/student/notifications/507f1f77bcf86cd799439011/read')
+            .set('Authorization', `Bearer ${token}`);
+        expect(res.status).toBe(404);
+    });
+
+    it('sin token → 401', async () => {
+        const res = await request(app).put('/api/student/notifications/507f1f77bcf86cd799439011/read');
+        expect(res.status).toBe(401);
     });
 
     it('getMyNotifications: cada alumno ve solo las suyas, ordenadas y limitadas a 20', async () => {

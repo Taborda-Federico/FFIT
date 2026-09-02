@@ -17,9 +17,20 @@ export function HomeHub({ onStart, dashboardData, history = [] }) {
     const isSessionCompleted = (sessionName) => {
         if (!history || history.length === 0) return false;
         const hoy = new Date();
+        // getDay() devuelve 0=domingo...6=sábado. Antes esto se usaba
+        // directo como "días a restar", lo que arranca la semana en
+        // DOMINGO — al revés de cómo se cuenta la semana en el resto de la
+        // app (Horarios.jsx) y en la convención real en Argentina (lunes a
+        // domingo). Resultado: una sesión entrenada el domingo seguía
+        // marcada "completada" el lunes siguiente (para el alumno, ya
+        // debería ser una semana nueva), y a la inversa, una sesión del
+        // lunes "se olvidaba" un día antes de tiempo, el domingo. La
+        // fórmula de abajo convierte a "días desde el lunes" (lunes=0,
+        // ..., domingo=6), que sí arranca la semana en lunes.
         const diaDeLaSemana = hoy.getDay();
+        const diasDesdeElLunes = (diaDeLaSemana + 6) % 7;
         const inicioDeSemana = new Date(hoy);
-        inicioDeSemana.setDate(hoy.getDate() - diaDeLaSemana);
+        inicioDeSemana.setDate(hoy.getDate() - diasDesdeElLunes);
         inicioDeSemana.setHours(0, 0, 0, 0);
 
         const fechaPlan = plan && plan.createdAt ? new Date(plan.createdAt) : new Date(0);

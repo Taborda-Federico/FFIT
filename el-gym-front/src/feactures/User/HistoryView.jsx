@@ -5,6 +5,31 @@ import {
 } from 'react-icons/fa';
 import './HistoryView.css';
 
+// Convierte cualquier fecha a "AAAA-MM-DD" en hora LOCAL (no UTC). Antes acá
+// se usaba `toISOString().split('T')[0]` (que da la fecha en UTC) y después
+// se volvía a parsear ese string con `new Date(...)`, que SIEMPRE interpreta
+// un string "AAAA-MM-DD" como medianoche UTC — en un huso horario detrás de
+// UTC (como Argentina, UTC-3), esa medianoche UTC cae en la NOCHE ANTERIOR
+// en hora local, corriendo la cuenta un día. Con esta función, la fecha que
+// se guarda y la que se vuelve a leer están siempre en el mismo huso (el
+// local del navegador de quien está usando la app), sin ida y vuelta por UTC.
+function fechaLocalISO(fecha) {
+    const d = new Date(fecha);
+    const anio = d.getFullYear();
+    const mes = String(d.getMonth() + 1).padStart(2, '0');
+    const dia = String(d.getDate()).padStart(2, '0');
+    return `${anio}-${mes}-${dia}`;
+}
+
+// El constructor `new Date(anio, mes, dia)` (3+ argumentos numéricos)
+// siempre arma la fecha en hora LOCAL — a diferencia de `new Date('AAAA-MM-DD')`,
+// que la arma en UTC. Por eso los strings que salen de fechaLocalISO() se
+// tienen que volver a parsear con esto, nunca con `new Date(string)`.
+function parsearFechaLocal(fechaISO) {
+    const [anio, mes, dia] = fechaISO.split('-').map(Number);
+    return new Date(anio, mes - 1, dia);
+}
+
 export function HistoryView({ history = [] }) {
     const [selectedLog, setSelectedLog] = useState(null);
 
@@ -31,25 +56,24 @@ export function HistoryView({ history = [] }) {
     const calcularRacha = useMemo(() => {
         if (!history.length) return 0;
 
-        // Obtenemos fechas únicas (sin horas) y ordenadas de más reciente a más antigua
-        const fechasUnicas = [...new Set(history.map(h =>
-            new Date(h.createdAt).toISOString().split('T')[0]
-        ))].sort((a, b) => new Date(b) - new Date(a));
+        // Obtenemos fechas únicas (sin horas, en hora LOCAL) y ordenadas de
+        // más reciente a más antigua.
+        const fechasUnicas = [...new Set(history.map(h => fechaLocalISO(h.createdAt)))]
+            .sort((a, b) => parsearFechaLocal(b) - parsearFechaLocal(a));
 
         let racha = 0;
         let hoy = new Date();
         hoy.setHours(0, 0, 0, 0);
 
-        let fechaReferencia = new Date(fechasUnicas[0]);
-        fechaReferencia.setHours(0, 0, 0, 0);
+        const fechaReferencia = parsearFechaLocal(fechasUnicas[0]);
 
         // Si el último entreno fue hace más de 48h, la racha se rompió
         const diferenciaDiasHoy = (hoy - fechaReferencia) / (1000 * 60 * 60 * 24);
         if (diferenciaDiasHoy > 1) return 0;
 
         for (let i = 0; i < fechasUnicas.length; i++) {
-            const actual = new Date(fechasUnicas[i]);
-            const siguiente = fechasUnicas[i + 1] ? new Date(fechasUnicas[i + 1]) : null;
+            const actual = parsearFechaLocal(fechasUnicas[i]);
+            const siguiente = fechasUnicas[i + 1] ? parsearFechaLocal(fechasUnicas[i + 1]) : null;
 
             racha++;
 

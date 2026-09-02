@@ -138,9 +138,17 @@ const changePassword = async (req, res) => {
         if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
 
         const { currentPassword, newPassword } = req.body;
-        
+
         if (!(await user.matchPassword(currentPassword))) {
             return res.status(401).json({ message: 'La contraseña actual es incorrecta' });
+        }
+
+        // El mínimo de 6 caracteres antes solo existía en ProfileView.jsx
+        // (frontend) — pegándole directo a este endpoint no había ningún
+        // freno del lado del servidor, que es donde tiene que estar la
+        // validación real (el frontend se puede saltear).
+        if (!newPassword || newPassword.length < 6) {
+            return res.status(400).json({ message: 'La nueva contraseña debe tener al menos 6 caracteres' });
         }
 
         user.password = newPassword;

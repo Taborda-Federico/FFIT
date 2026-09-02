@@ -22,25 +22,37 @@ cron.schedule('0 9 * * *', async () => {
         });
 
         for (let user of usuariosPorVencer) {
-            await Notification.create({
-                alumnoId: user._id,
-                titulo: 'Aviso de Vencimiento',
-                mensaje: 'A tu cuota le quedan 5 días para vencer. Recuerda renovarla para no perder tu progreso.',
-                tipo: 'ALERTA'
-            });
+            // Antes, el try/catch de afuera envolvía TODO el callback: si un
+            // solo alumno tenía un email inválido (o el proveedor de mail
+            // rechazaba justo esa dirección), sendMail tiraba, el catch de
+            // afuera atrapaba el error UNA vez, y el `for` se cortaba ahí —
+            // todos los alumnos que venían después en el mismo batch se
+            // quedaban sin Notification y sin email, aunque no tuvieran nada
+            // de malo. Con un try/catch propio POR ALUMNO, una falla queda
+            // contenida a ese alumno y el resto del batch sigue procesándose.
+            try {
+                await Notification.create({
+                    alumnoId: user._id,
+                    titulo: 'Aviso de Vencimiento',
+                    mensaje: 'A tu cuota le quedan 5 días para vencer. Recuerda renovarla para no perder tu progreso.',
+                    tipo: 'ALERTA'
+                });
 
-            await transporter.sendMail({
-                from: `"Administración FFIT+" <${process.env.EMAIL_USER}>`,
-                to: user.email,
-                subject: 'Aviso Importante: Tu membresía vence en 5 días ⚠️',
-                html: `
-                    <h2>Hola ${user.nombre},</h2>
-                    <p>Te recordamos que tu plan de entrenamiento actual en FFIT+ vencerá en exactamente <strong>5 días</strong>.</p>
-                    <p>Si deseas continuar con tus rutinas sin interrupciones, por favor contacta a administración o realiza el pago correspondiente.</p>
-                    <p>¡Gracias por ser parte de nuestro equipo!</p>
-                `
-            });
-            console.log(`📧 Alerta de vencimiento enviada a: ${user.email}`);
+                await transporter.sendMail({
+                    from: `"Administración FFIT+" <${process.env.EMAIL_USER}>`,
+                    to: user.email,
+                    subject: 'Aviso Importante: Tu membresía vence en 5 días ⚠️',
+                    html: `
+                        <h2>Hola ${user.nombre},</h2>
+                        <p>Te recordamos que tu plan de entrenamiento actual en FFIT+ vencerá en exactamente <strong>5 días</strong>.</p>
+                        <p>Si deseas continuar con tus rutinas sin interrupciones, por favor contacta a administración o realiza el pago correspondiente.</p>
+                        <p>¡Gracias por ser parte de nuestro equipo!</p>
+                    `
+                });
+                console.log(`📧 Alerta de vencimiento enviada a: ${user.email}`);
+            } catch (errorAlumno) {
+                console.error(`❌ No se pudo avisar a ${user.email} (id ${user._id}):`, errorAlumno.message);
+            }
         }
     } catch (error) {
         console.error("Error en el robot de vencimientos:", error);

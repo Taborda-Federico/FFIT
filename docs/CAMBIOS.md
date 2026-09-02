@@ -120,3 +120,60 @@ en silencio y el formulario sigue funcionando exactamente como antes — no pers
 rompe nada.
 
 ---
+
+## 3 — Un hueco de seguridad real (IDOR) y cinco archivos de código muerto
+
+### El IDOR: un alumno podía marcar como leída la notificación de otro alumno
+
+**Qué pasaba:** `PUT /api/student/notifications/:id/read` actualizaba la notificación buscándola solo por
+`id`, sin chequear que fuera del alumno que hacía el pedido. Cualquier alumno logueado, probando ids (los
+de Mongo son bastante predecibles: tienen un componente de timestamp), podía marcar como leída una
+notificación ajena — por ejemplo, silenciar en secreto el aviso de "tu cuota vence en 5 días" de otro
+alumno.
+
+**La solución:** el `findByIdAndUpdate` pasó a ser un `findOneAndUpdate` que filtra también por
+`alumnoId: req.user._id`. Si la notificación no existe O no es del alumno que pide, devuelve 404 — mismo
+criterio que ya se usaba en el resto del backend para casos de "no es tuyo" (`renewSubscription`,
+`deleteStudent`, etc., todos devuelven 404 en vez de un 403 que confirmaría que el id existe).
+
+**Tests:** se dio vuelta el test que antes documentaba el bug (ahora confirma que da 404 y que la
+notificación de la víctima queda intacta), y se agregaron dos más: que un alumno sí puede marcar como
+leída su propia notificación, y que un id inexistente también da 404.
+
+### Código muerto borrado
+
+Cinco archivos que ya no hacía nada nadie, confirmados inalcanzables antes de tocarlos (se re-verificó con
+grep que ninguno se importaba desde ningún lugar real de la app, y se corrió `npm run build` después de
+borrarlos para confirmar que el bundle sigue compilando limpio):
+
+- **`AdminRegister.jsx`** (frontend) — un "modo dios" de admin puramente client-side: con solo tipear
+  cualquier cosa en dos campos, guardaba `role: 'GOD_MODE'` en `localStorage` sin preguntarle nada al
+  servidor. Nunca estuvo conectado a ninguna ruta de `App.jsx`, así que hoy no se podía llegar a esta
+  pantalla desde ningún link — pero seguía viviendo en el código, a una línea de distancia de que alguien
+  lo conectara sin saber lo que hacía.
+- **`UserContext.js`** (frontend) — una segunda implementación completa de login/sesión, con su propia
+  clave de `localStorage` (`gym_session`, distinta de la real, `ffit_user`). Ningún archivo la importaba.
+- **`AdminFinanceDashboard.jsx` + `gym.service.js` + `api.config.js`** (frontend) — una pantalla de
+  Finanzas totalmente armada (ingresos, pagos pendientes, recibos), pero la ruta `/admin/finanzas` en
+  `App.jsx` renderizaba un `<div>Finanzas</div>` fijo en vez de esta pantalla, y aunque se conectara
+  fallaría igual: sus casi 25 llamadas apuntan a rutas (`/api/pagos`, `/api/stats`, `/api/attendance`,
+  `/api/exercises`, `/api/templates`...) que nunca existieron en el backend.
+- **`studentController.getStudentProgressForAdmin`** (backend) — una segunda copia, rota (usaba
+  `AdminNote` sin importarlo), de algo que ya está bien hecho en `adminController.getStudentProgress`
+  (conectado a `/api/admin/student-progress/:id`). Ni siquiera estaba exportada del archivo — imposible de
+  alcanzar de ninguna forma.
+
+**Por qué borrar en vez de arreglar:** en los cuatro casos había una versión real y en uso haciendo lo
+mismo (el login real usa `AuthContext.jsx`; el progreso de alumno usa `adminController.js`), o directamente
+no había ningún backend real detrás (Finanzas). Dejar dos formas de hacer lo mismo — una viva, una fantasma
+— es una fuente de bugs futuros esperando pasar (alguien edita la copia equivocada y se pregunta por qué
+"no pasa nada").
+
+**Riesgo para la app en producción:** el código muerto, cero — no cambia nada de lo que ya andaba. El
+arreglo del IDOR sí cambia comportamiento real: antes de este cambio, `PUT .../read` con el id de la
+notificación de OTRO alumno respondía 200; ahora responde 404. Si algún cliente actual dependiera
+accidentalmente de ese comportamiento (no debería — no hay ninguna razón legítima para que el frontend le
+pegue a un id que no es del alumno logueado), dejaría de funcionar esa llamada puntual; el resto de la app
+no se ve afectado.
+
+---

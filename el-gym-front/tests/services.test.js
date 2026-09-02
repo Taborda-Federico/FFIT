@@ -12,7 +12,7 @@ function mockFetchOnce(body, ok = true, status = ok ? 200 : 400) {
     });
 }
 
-describe('Todos los services (menos api.config.js) apuntan a producción hardcodeada, sin variable de entorno', () => {
+describe('Todos los services apuntan a producción hardcodeada, sin variable de entorno', () => {
     it('plan.service.js pega contra la URL de producción real, aunque no se haya configurado nada (no lee import.meta.env)', async () => {
         mockFetchOnce([]);
         await PlanService.getPlantillas('tok');
@@ -130,32 +130,7 @@ describe('landing.service.js', () => {
     });
 });
 
-describe('api.config.js (apiFetch) — desconectado del resto de la app', () => {
-    it('BUG: lee el token de localStorage["token"], pero AuthContext SIEMPRE guarda en localStorage["ffit_user"] — apiFetch nunca encuentra un token real', async () => {
-        localStorage.setItem('ffit_user', JSON.stringify({ token: 'un-token-real-de-verdad' }));
-        // Ningún código de la app escribe jamás en localStorage['token'].
-        expect(localStorage.getItem('token')).toBeNull();
-
-        mockFetchOnce({});
-        const { apiFetch } = await import('../src/service/api.config.js');
-        await apiFetch('/lo-que-sea');
-        const opts = global.fetch.mock.calls[0][1];
-        expect(opts.headers.Authorization).toBeUndefined();
-    });
-
-    it('un fetch fallido (respuesta no-ok) lanza un Error con el message del body, igual que los demás services', async () => {
-        global.fetch = vi.fn().mockResolvedValue({ ok: false, json: () => Promise.resolve({ message: 'Boom' }) });
-        const { apiFetch } = await import('../src/service/api.config.js');
-        await expect(apiFetch('/algo')).rejects.toThrow('Boom');
-    });
-});
-
-describe('gym.service.js — apunta a un backend paralelo que no existe', () => {
-    it('cada método de GymService termina en una URL bajo /api/ que no coincide con NINGUNA ruta real del backend (ver tests del backend, deadCode.e2e.test.js)', async () => {
-        mockFetchOnce({});
-        const { GymService } = await import('../src/service/gym.service.js');
-        await GymService.getAdminStats();
-        expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/stats/dashboard'), expect.anything());
-        // Confirmado en el backend (deadCode.e2e.test.js): GET /api/stats/dashboard → 404.
-    });
-});
+// api.config.js y gym.service.js se borraron (ver docs/CAMBIOS.md #3): eran
+// un cliente de API paralelo, 100% desconectado del resto de la app, que
+// solo consumía AdminFinanceDashboard.jsx (una pantalla que App.jsx nunca
+// llegaba a renderizar). Ya no hay nada que testear ahí.

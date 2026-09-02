@@ -1,0 +1,233 @@
+/* PlantillasModal.css — Los tokens se definen en styles/variables.css.
+   .modal-overlay se comparte por nombre con ConfirmModal.css/RegisterUserModal.css
+   (mismo patrón ya usado en el resto de la app); se copian los valores de
+   ConfirmModal porque este modal se apila justo con el de confirmación de
+   borrado y conviene que el fondo no "salte" entre uno y otro. */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(12px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    padding: 15px;
+}
+
+.plantillas-modal-card {
+    background: var(--bg-surface, #0f0f0f);
+    padding: 30px;
+    border-radius: var(--radius-xl, 28px);
+    border: 1px solid var(--border-glass-light, rgba(255, 255, 255, 0.1));
+    width: 100%;
+    max-width: 560px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: var(--shadow-modal, 0 25px 50px -12px rgba(0, 0, 0, 0.8));
+}
+
+.close-modal-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: transparent;
+    border: none;
+    color: var(--text-faint, #555);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: var(--transition-fast, 0.3s);
+    padding: 8px;
+    line-height: 1;
+}
+
+.close-modal-btn:hover { color: var(--color-error, #ff4444); }
+
+.text-neon { color: var(--color-accent, #d4f039); }
+
+.modal-header {
+    margin-bottom: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.modal-header h2 {
+    font-family: var(--font-heading, 'Oswald', sans-serif);
+    font-size: 1.6rem;
+    margin-bottom: 5px;
+    color: var(--text-white, #fff);
+}
+
+.modal-header p {
+    color: var(--text-subtle, #666);
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+/* --- BUSCADOR --- */
+.plantillas-search-box {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-default, #222);
+    border-radius: 14px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+    flex-shrink: 0;
+    transition: var(--transition-fast, 0.2s);
+}
+
+.plantillas-search-box:focus-within {
+    border-color: var(--color-accent, #d4f039);
+    background: rgba(212, 240, 57, 0.05);
+}
+
+.plantillas-search-box svg { color: var(--color-accent, #d4f039); opacity: 0.8; flex-shrink: 0; }
+
+.plantillas-search-box input {
+    background: transparent;
+    border: none;
+    color: var(--text-white, #fff);
+    width: 100%;
+    outline: none;
+    font-size: 0.95rem;
+}
+
+/* --- LISTA --- */
+.plantillas-list {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    /* Un poco de aire a los costados para que la scrollbar no pise las tarjetas */
+    margin: 0 -6px;
+    padding: 0 6px;
+}
+
+.plantilla-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--bg-black, #080808);
+    border: 1px solid var(--border-default, #222);
+    border-radius: 16px;
+    padding: 14px 16px;
+    transition: var(--transition-fast, 0.2s);
+}
+
+.plantilla-row:hover { border-color: var(--border-medium, #333); }
+
+.plantilla-row-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex: 1;
+}
+
+.plantilla-icon {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    background: var(--accent-faint, rgba(212, 240, 57, 0.05));
+    color: var(--color-accent, #d4f039);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.plantilla-texts {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.plantilla-titulo {
+    font-weight: 700;
+    color: var(--text-light, #eee);
+    font-size: 0.95rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.plantilla-meta {
+    font-size: 0.7rem;
+    color: var(--text-muted, #aaa);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.plantilla-row-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.btn-action-plantilla {
+    width: 38px;
+    height: 38px;
+    background: #000;
+    border: 1px solid var(--border-soft, #151515);
+    color: var(--text-dark, #333);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: var(--transition-fast, 0.2s);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.btn-action-plantilla:hover {
+    border-color: var(--color-accent, #d4f039);
+    color: var(--color-accent, #d4f039);
+}
+
+.btn-action-plantilla.btn-borrar:hover {
+    border-color: var(--color-error, #ff4444);
+    color: var(--color-error, #ff4444);
+}
+
+/* --- ESTADOS VACÍOS --- */
+.plantillas-empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--text-dim, #888);
+}
+
+.plantillas-empty-state svg { opacity: 0.4; margin-bottom: 12px; }
+.plantillas-empty-state p { margin: 0; font-size: 0.9rem; }
+
+/* --- RESPONSIVIDAD (MÓVIL) --- */
+@media (max-width: 500px) {
+    .plantillas-modal-card {
+        padding: 22px 16px;
+        max-height: 90vh;
+    }
+
+    .modal-header h2 { font-size: 1.4rem; }
+
+    /* Targets de toque ≥44px, la app se usa mayormente en celular */
+    .btn-action-plantilla {
+        width: 44px;
+        height: 44px;
+    }
+
+    .plantilla-row {
+        flex-wrap: wrap;
+        padding: 14px;
+    }
+
+    .plantilla-row-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}

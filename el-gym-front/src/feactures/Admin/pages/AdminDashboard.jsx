@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import {
     FaTrash, FaPlus, FaCloudUploadAlt, FaSave, FaUserEdit,
     FaLink, FaInfoCircle, FaDumbbell, FaHistory, FaLayerGroup,
-    FaClock, FaCalendarPlus, FaSearch, FaWhatsapp, FaCheckCircle, FaSpinner
+    FaClock, FaCalendarPlus, FaSearch, FaWhatsapp, FaCheckCircle, FaSpinner,
+    FaClipboardList, FaPencilAlt, FaTimes
 } from 'react-icons/fa';
 import { Button } from '../../../Utils/Button';
 import { ConfirmModal } from '../../../Utils/ConfirmModal';
 import { Toast } from '../../../Utils/Toast';
+import { PlantillasModal } from './PlantillasModal';
 import './AdminDashboard.css';
 
 import { useAuth } from '../../../contex/AuthContext';
@@ -55,6 +57,18 @@ export function AdminDashboard() {
 
     const [alumnosDb, setAlumnosDb] = useState([]);
     const [plantillasDb, setPlantillasDb] = useState([]);
+
+    // Estado del modal de "Gestionar Plantillas" (pedido de un cliente real:
+    // con muchas plantillas guardadas, el <select> de "Cargar Plantilla..."
+    // se vuelve inmanejable — necesitaba un lugar para buscarlas y borrar
+    // las que ya no usa). `editingPlantillaId`, cuando no es null, indica que
+    // el plan que se está armando ahora mismo vino de "Editar" en ese modal:
+    // mientras esté seteado, "Guardar Plantilla" ACTUALIZA esa plantilla en
+    // vez de crear una copia nueva (algo que antes no existía — la única
+    // forma de "editar" era cargarla y guardar, lo que en realidad duplicaba).
+    const [showPlantillasModal, setShowPlantillasModal] = useState(false);
+    const [confirmDeletePlantilla, setConfirmDeletePlantilla] = useState(null);
+    const [editingPlantillaId, setEditingPlantillaId] = useState(null);
 
     const notify = (msg, type = 'success') => setToast({ msg, type });
 
@@ -116,14 +130,63 @@ export function AdminDashboard() {
                     bloques: s.bloques.filter(b => b.ejercicios && b.ejercicios.length > 0)
                 }))
             };
-            await PlanService.guardarPlantilla(planLimpio, user.token);
-            notify("Plantilla guardada en la nube con éxito");
+            // Si el plan que se está armando vino de "Editar" en el modal de
+            // plantillas (editingPlantillaId seteado), se ACTUALIZA esa misma
+            // plantilla en la base en vez de crear una nueva — es justamente
+            // lo que faltaba y hacía que la lista de plantillas se llenara de
+            // copias casi idénticas.
+            if (editingPlantillaId) {
+                await PlanService.actualizarPlantilla(editingPlantillaId, planLimpio, user.token);
+                notify("Plantilla actualizada con éxito");
+            } else {
+                await PlanService.guardarPlantilla(planLimpio, user.token);
+                notify("Plantilla guardada en la nube con éxito");
+            }
             const updatedPlantillas = await PlanService.getPlantillas(user.token);
             setPlantillasDb(updatedPlantillas);
         } catch (error) {
             notify(error.message, "error");
         } finally {
             setIsProcessing(false);
+        }
+    };
+
+    // Carga una plantilla existente en el armador para EDITARLA (a
+    // diferencia de handleCargarPlantilla / el <select> de arriba, que sigue
+    // funcionando exactamente igual que siempre: carga una COPIA de
+    // arranque, sin marcarla para actualizar nada).
+    const handleEditarPlantilla = (plantilla) => {
+        setPlan({
+            ...planVacio(),
+            titulo: plantilla.titulo,
+            sesiones: plantilla.sesiones
+        });
+        setEditingPlantillaId(plantilla._id);
+        setShowPlantillasModal(false);
+        notify(`Editando plantilla "${plantilla.titulo}"`);
+    };
+
+    // "Salir" del modo edición: el contenido armado en pantalla NO se borra
+    // (el profe puede seguir tocándolo), simplemente deja de estar atado a
+    // la plantilla original — la próxima vez que toque "Guardar Plantilla"
+    // va a crear una nueva, como el comportamiento de siempre.
+    const handleSalirEdicion = () => {
+        setEditingPlantillaId(null);
+    };
+
+    const handleConfirmEliminarPlantilla = async () => {
+        if (!confirmDeletePlantilla) return;
+        try {
+            await PlanService.eliminarPlantilla(confirmDeletePlantilla._id, user.token);
+            setPlantillasDb(prev => prev.filter(p => p._id !== confirmDeletePlantilla._id));
+            if (editingPlantillaId === confirmDeletePlantilla._id) {
+                setEditingPlantillaId(null);
+            }
+            notify(`Plantilla "${confirmDeletePlantilla.titulo}" eliminada`);
+        } catch (error) {
+            notify(error.message || "Error al eliminar la plantilla", "error");
+        } finally {
+            setConfirmDeletePlantilla(null);
         }
     };
 
@@ -163,6 +226,7 @@ export function AdminDashboard() {
             // que es el único momento en que corresponde borrarlo.
             try { localStorage.removeItem(claveDraft(user?._id)); } catch { /* nada que limpiar */ }
             setPlan(planVacio());
+            setEditingPlantillaId(null);
         } catch (error) {
             notify(error.message, "error");
         } finally {
@@ -209,6 +273,29 @@ export function AdminDashboard() {
             {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
             {showConfirm && <ConfirmModal plan={plan} onClose={() => setShowConfirm(false)} onConfirm={handlePublicarPlan} />}
+
+            {showPlantillasModal && (
+                <PlantillasModal
+                    plantillas={plantillasDb}
+                    onClose={() => setShowPlantillasModal(false)}
+                    onEditar={handleEditarPlantilla}
+                    onEliminar={(plantilla) => setConfirmDeletePlantilla(plantilla)}
+                />
+            )}
+
+            {/* Modal de confirmación de borrado — se monta DESPUÉS del de
+                plantillas para quedar por encima en el stacking (mismo
+                z-index, gana el último en el DOM). */}
+            {confirmDeletePlantilla && (
+                <ConfirmModal
+                    title="Eliminar Plantilla"
+                    type="warning"
+                    confirmText="Sí, Eliminar"
+                    message={`¿Eliminar la plantilla "${confirmDeletePlantilla.titulo}"? Esta acción no se puede deshacer.`}
+                    onConfirm={handleConfirmEliminarPlantilla}
+                    onClose={() => setConfirmDeletePlantilla(null)}
+                />
+            )}
 
             {successWhatsApp && (
                 <div style={{
@@ -281,6 +368,14 @@ export function AdminDashboard() {
                             {plantillasDb.map(p => <option key={p._id} value={p._id}>{p.titulo}</option>)}
                         </select>
                     </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="btn-gestionar-plantillas"
+                        onClick={() => setShowPlantillasModal(true)}
+                    >
+                        <FaClipboardList /> <span>Plantillas</span>
+                    </Button>
                 </div>
             </div>
 
@@ -296,6 +391,16 @@ export function AdminDashboard() {
                     value={plan.titulo}
                     onChange={(e) => setPlan({ ...plan, titulo: e.target.value })}
                 />
+
+                {editingPlantillaId && (
+                    <div className="editing-plantilla-banner">
+                        <FaPencilAlt />
+                        <span>Editando una plantilla guardada — al guardar, se pisa la original.</span>
+                        <button className="btn-salir-edicion" onClick={handleSalirEdicion} title="Salir del modo edición (guardar como nueva)">
+                            <FaTimes />
+                        </button>
+                    </div>
+                )}
             </section>
 
             <div className="sesiones-list">
@@ -408,7 +513,7 @@ export function AdminDashboard() {
                     disabled={isProcessing}
                 >
                     {isProcessing ? <FaSpinner className="spin" /> : <FaSave />}
-                    <span>{isProcessing ? 'Guardando...' : 'Guardar Plantilla'}</span>
+                    <span>{isProcessing ? 'Guardando...' : (editingPlantillaId ? 'Guardar Cambios' : 'Guardar Plantilla')}</span>
                 </Button>
                 <Button
                     variant="primary"

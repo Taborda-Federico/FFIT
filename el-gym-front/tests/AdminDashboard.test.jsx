@@ -241,3 +241,88 @@ describe('AdminDashboard — cargar plantilla existente', () => {
         expect(screen.queryByDisplayValue('Día 1')).not.toBeInTheDocument();
     });
 });
+
+describe('AdminDashboard — persistencia del borrador (arreglo del bug reportado por un cliente real)', () => {
+    it('escribir en el plan lo guarda en localStorage al toque', async () => {
+        render(<AdminDashboard />);
+        await esperarCargaInicial();
+        fireEvent.change(screen.getByPlaceholderText(/TÍTULO/), { target: { value: 'Plan Sin Terminar' } });
+        await waitFor(() => {
+            const guardado = JSON.parse(localStorage.getItem('ffit_admin_plan_draft_anon'));
+            expect(guardado.titulo).toBe('Plan Sin Terminar');
+        });
+    });
+
+    it('desmontar la pantalla (simula navegar a otra pestaña) y volver a montarla recupera el borrador tal cual quedó', async () => {
+        const { unmount } = render(<AdminDashboard />);
+        await esperarCargaInicial();
+        fireEvent.change(screen.getByPlaceholderText(/TÍTULO/), { target: { value: 'Plan A Medio Hacer' } });
+        fireEvent.click(screen.getByText('Serie'));
+        fireEvent.change(screen.getByPlaceholderText('Ejercicio'), { target: { value: 'Sentadilla' } });
+        await waitFor(() => expect(JSON.parse(localStorage.getItem('ffit_admin_plan_draft_anon')).titulo).toBe('Plan A Medio Hacer'));
+
+        // Esto es exactamente lo que le pasaba al cliente: se desmonta el
+        // componente (como al navegar a "Alumnos" o "Seguimiento") y se
+        // vuelve a montar (como al volver a "Planes").
+        unmount();
+        render(<AdminDashboard />);
+        await esperarCargaInicial();
+
+        expect(screen.getByPlaceholderText(/TÍTULO/)).toHaveValue('Plan A Medio Hacer');
+        expect(screen.getByDisplayValue('Sentadilla')).toBeInTheDocument();
+    });
+
+    it('un F5 (recargar la página) también se comporta como un remount que recupera el borrador', async () => {
+        // jsdom no tiene un F5 real, pero un refresh de página ES, para
+        // React, exactamente esto: el árbol entero se desmonta y se vuelve
+        // a montar desde cero con un `render` nuevo.
+        const { unmount } = render(<AdminDashboard />);
+        await esperarCargaInicial();
+        fireEvent.change(screen.getByPlaceholderText(/TÍTULO/), { target: { value: 'Sobrevive al F5' } });
+        await waitFor(() => expect(localStorage.getItem('ffit_admin_plan_draft_anon')).toContain('Sobrevive al F5'));
+        unmount();
+
+        render(<AdminDashboard />);
+        await esperarCargaInicial();
+        expect(screen.getByPlaceholderText(/TÍTULO/)).toHaveValue('Sobrevive al F5');
+    });
+
+    it('publicar con éxito borra el borrador — un remount posterior arranca en blanco, no con el plan ya publicado', async () => {
+        getStudentsMock.mockResolvedValue([{ _id: 'a1', nombre: 'Ana', email: 'a@x.com' }]);
+        const { unmount } = render(<AdminDashboard />);
+        await esperarCargaInicial();
+        fireEvent.change(screen.getByPlaceholderText(/Buscar alumno/), { target: { value: 'Ana' } });
+        fireEvent.click(screen.getByText(/Ana/));
+        fireEvent.change(screen.getByPlaceholderText(/TÍTULO/), { target: { value: 'Plan Ya Publicado' } });
+        fireEvent.click(screen.getByText('Publicar a Alumno'));
+        fireEvent.click(await screen.findByText('¡Publicar ahora!'));
+        await waitFor(() => expect(publicarPlanMock).toHaveBeenCalled());
+
+        expect(localStorage.getItem('ffit_admin_plan_draft_anon')).toBeNull();
+
+        unmount();
+        render(<AdminDashboard />);
+        await esperarCargaInicial();
+        expect(screen.getByPlaceholderText(/TÍTULO/)).toHaveValue('');
+    });
+
+    it('guardar como plantilla NO borra el borrador (el profe puede seguir editando el mismo plan después)', async () => {
+        const { unmount } = render(<AdminDashboard />);
+        await esperarCargaInicial();
+        fireEvent.change(screen.getByPlaceholderText(/TÍTULO/), { target: { value: 'Plantilla En Progreso' } });
+        fireEvent.click(screen.getByText('Guardar Plantilla'));
+        await waitFor(() => expect(guardarPlantillaMock).toHaveBeenCalled());
+
+        unmount();
+        render(<AdminDashboard />);
+        await esperarCargaInicial();
+        expect(screen.getByPlaceholderText(/TÍTULO/)).toHaveValue('Plantilla En Progreso');
+    });
+
+    it('un borrador con JSON corrupto en localStorage no rompe la pantalla — arranca en blanco', async () => {
+        localStorage.setItem('ffit_admin_plan_draft_anon', '{esto no es JSON válido');
+        expect(() => render(<AdminDashboard />)).not.toThrow();
+        await esperarCargaInicial();
+        expect(screen.getByPlaceholderText(/TÍTULO/)).toHaveValue('');
+    });
+});

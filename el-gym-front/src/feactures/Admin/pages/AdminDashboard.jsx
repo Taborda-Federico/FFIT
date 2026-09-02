@@ -15,16 +15,37 @@ import { PlanService } from '../../../service/plan.service';
 
 const generateId = () => Date.now().toString() + Math.random().toString(36).substr(2, 5);
 
+const planVacio = () => ({
+    alumno: '',
+    alumnoId: null,
+    celular: '',
+    titulo: '',
+    sesiones: [{ id: generateId(), nombre: 'Día 1', bloques: [] }]
+});
+
+// Clave de localStorage donde se guarda el plan que se está armando, para no
+// perderlo si el profe navega a otra pestaña del panel o recarga la página
+// a mitad de camino (antes esto no se guardaba en ningún lado: alcanzaba con
+// tocar "Alumnos" o "Seguimiento" un segundo para perder todo lo tipeado).
+// Se separa por admin (según su _id) para que, en una compu compartida por
+// varios profes, el borrador de uno no se mezcle con el de otro.
+const claveDraft = (adminId) => `ffit_admin_plan_draft_${adminId || 'anon'}`;
+
+function cargarDraft(adminId) {
+    try {
+        const guardado = localStorage.getItem(claveDraft(adminId));
+        return guardado ? JSON.parse(guardado) : null;
+    } catch {
+        // JSON corrupto o localStorage no disponible: seguimos con un plan
+        // en blanco en vez de romper la pantalla.
+        return null;
+    }
+}
+
 export function AdminDashboard() {
     const { user } = useAuth();
 
-    const [plan, setPlan] = useState({
-        alumno: '',
-        alumnoId: null,
-        celular: '',
-        titulo: '',
-        sesiones: [{ id: generateId(), nombre: 'Día 1', bloques: [] }]
-    });
+    const [plan, setPlan] = useState(() => cargarDraft(user?._id) || planVacio());
 
     const [showConfirm, setShowConfirm] = useState(false);
     const [toast, setToast] = useState(null);
@@ -54,6 +75,22 @@ export function AdminDashboard() {
         };
         cargarDatos();
     }, [user]);
+
+    // Persistencia del borrador: cada cambio en el plan (agregar un día,
+    // escribir un ejercicio, elegir un alumno...) se guarda al toque. Si la
+    // pantalla se desmonta —por navegar a otra pestaña del sidebar o por un
+    // F5— y se vuelve a "Planes", se recupera exactamente donde había
+    // quedado. Mismo patrón que ya se usaba del lado del alumno para no
+    // perder un entrenamiento a medio hacer (ver UserDashboard.jsx).
+    useEffect(() => {
+        try {
+            localStorage.setItem(claveDraft(user?._id), JSON.stringify(plan));
+        } catch {
+            // localStorage lleno o no disponible (ej. modo incógnito con
+            // storage bloqueado): no es motivo para romper el armado del
+            // plan, simplemente no persiste esta vez.
+        }
+    }, [plan, user]);
 
     const handleCargarPlantilla = (plantillaId) => {
         if (!plantillaId) return;
@@ -121,13 +158,11 @@ export function AdminDashboard() {
                 link: linkWhatsApp
             });
 
-            setPlan({
-                alumno: '',
-                alumnoId: null,
-                celular: '',
-                titulo: '',
-                sesiones: [{ id: generateId(), nombre: 'Día 1', bloques: [] }]
-            });
+            // El plan ya quedó publicado del lado del servidor — recién acá
+            // termina el ciclo de vida de ESTE borrador en particular, así
+            // que es el único momento en que corresponde borrarlo.
+            try { localStorage.removeItem(claveDraft(user?._id)); } catch { /* nada que limpiar */ }
+            setPlan(planVacio());
         } catch (error) {
             notify(error.message, "error");
         } finally {

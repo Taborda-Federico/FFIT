@@ -129,6 +129,54 @@ describe('POST /api/auth/login', () => {
         expect(enLaBase.email).toBe('MayusMinus@x.com');
     });
 
+    it('ARREGLADO (bug real en producción): con DOS cuentas cuyo email difiere solo en mayúsculas, loguearse con el casing EXACTO de una de ellas siempre entra con ESA cuenta, no con la otra', async () => {
+        // Reproduce el incidente real: un admin con "Roberto@x.com" no
+        // podía entrar como admin porque el login (con el match
+        // case-insensitive de esta mañana, sin priorizar el exacto)
+        // encontraba a veces la OTRA cuenta con el mismo email en otro
+        // casing — acá, una cuenta de alumno, sin rol admin.
+        const passwordAdmin = 'passwordDelAdmin123';
+        const passwordAlumno = 'passwordDelAlumno123';
+        const admin = await User.create({ nombre: 'Admin Real', email: 'Roberto@x.com', password: passwordAdmin, role: 'admin' });
+        await User.create({
+            nombre: 'Cuenta Vieja', email: 'roberto@x.com', password: passwordAlumno, role: 'user',
+            dni: 'colision-1', fechaVencimiento: new Date()
+        });
+
+        const res = await request(app).post('/api/auth/login').send({ email: 'Roberto@x.com', password: passwordAdmin });
+        expect(res.status).toBe(200);
+        expect(res.body.role).toBe('admin');
+        expect(res.body._id).toBe(admin._id.toString());
+    });
+
+    it('mismo escenario, pero logueándose con el casing EXACTO de la cuenta de alumno: entra como alumno, no como admin', async () => {
+        const passwordAdmin = 'passwordDelAdmin123';
+        const passwordAlumno = 'passwordDelAlumno123';
+        await User.create({ nombre: 'Admin Real', email: 'Roberto2@x.com', password: passwordAdmin, role: 'admin' });
+        const alumno = await User.create({
+            nombre: 'Cuenta Vieja', email: 'roberto2@x.com', password: passwordAlumno, role: 'user',
+            dni: 'colision-2', fechaVencimiento: new Date()
+        });
+
+        const res = await request(app).post('/api/auth/login').send({ email: 'roberto2@x.com', password: passwordAlumno });
+        expect(res.status).toBe(200);
+        expect(res.body.role).toBe('user');
+        expect(res.body._id).toBe(alumno._id.toString());
+    });
+
+    it('con dos cuentas de distinto casing, un TERCER casing (que no matchea ninguna exacto) cae al fallback case-insensitive y trae la más VIEJA de las dos', async () => {
+        const passwordVieja = 'passwordVieja12345';
+        const vieja = await User.create({ nombre: 'La Más Vieja', email: 'Ambiguo@x.com', password: passwordVieja, role: 'admin' });
+        await new Promise(r => setTimeout(r, 5));
+        await User.create({ nombre: 'La Más Nueva', email: 'AMBIGUO@x.com', password: 'otraPassword123', role: 'admin' });
+
+        // "ambiguo@x.com" (todo minúscula) no matchea ninguna de las dos
+        // exactamente — cae al fallback, que desempata por más vieja.
+        const res = await request(app).post('/api/auth/login').send({ email: 'ambiguo@x.com', password: passwordVieja });
+        expect(res.status).toBe(200);
+        expect(res.body._id).toBe(vieja._id.toString());
+    });
+
     it('un email que no es un string (ej. un operador de Mongo) se rechaza con 401, no se lo deja llegar a la query', async () => {
         const res = await request(app).post('/api/auth/login').send({ email: { $gt: '' }, password: 'x' });
         expect(res.status).toBe(401);

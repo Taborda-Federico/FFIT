@@ -41,34 +41,35 @@ function setNow(fechaIso) {
 beforeEach(() => { vi.useFakeTimers(); });
 afterEach(() => { vi.useRealTimers(); });
 
-describe('HomeHub — bug del límite de semana domingo-vs-lunes en isSessionCompleted', () => {
-    it('BUG: una sesión entrenada el DOMINGO sigue marcada "COMPLETADA" al día siguiente, LUNES (nueva semana calendario Lun-Dom)', () => {
+describe('HomeHub — ARREGLADO: isSessionCompleted ahora cuenta la semana desde el lunes, no desde el domingo', () => {
+    it('una sesión entrenada el DOMINGO ya NO sigue marcada "COMPLETADA" el lunes siguiente (nueva semana lunes-primero)', () => {
         setNow(LUN);
         render(<HomeHub dashboardData={dashboardData()} history={historyWith(DOM)} onStart={() => {}} />);
         const tarjetaDia1 = screen.getByText('Día 1').closest('.hub-session-card');
-        expect(tarjetaDia1).toHaveTextContent('COMPLETADA');
-        // Con semana lunes-primero (la convención real en Argentina), el
-        // lunes ya debería ser una semana nueva y la sesión debería estar
-        // libre de nuevo — pero isSessionCompleted usa getDay() con semana
-        // domingo-primero, así que el domingo y el lunes siguiente caen en
-        // el MISMO "bucket" de semana.
+        expect(tarjetaDia1).not.toHaveTextContent('COMPLETADA');
+        // Antes del arreglo, isSessionCompleted usaba getDay() como "días a
+        // restar" directo, lo que arranca la semana en domingo — el domingo
+        // y el lunes siguiente caían en el mismo "bucket". Con la semana
+        // contada desde el lunes (la convención real en Argentina), el
+        // lunes ya es una semana nueva y la sesión vuelve a estar libre.
     });
 
-    it('control: lunes y sábado de la MISMA ventana domingo-sábado sí conservan el check correctamente', () => {
-        // Acá el bug NO se manifiesta: la ventana domingo-sábado que contiene
-        // al lunes (dom 4 a sáb 10) todavía no "resetó" el sábado 10 — recién
-        // resetea al llegar el domingo 11 (ver el test siguiente).
+    it('lunes y sábado de la MISMA semana lunes-domingo conservan el check correctamente', () => {
         setNow(SAB_SIG);
         render(<HomeHub dashboardData={dashboardData()} history={historyWith(LUN)} onStart={() => {}} />);
         const tarjetaDia1 = screen.getByText('Día 1').closest('.hub-session-card');
         expect(tarjetaDia1).toHaveTextContent('COMPLETADA');
     });
 
-    it('BUG (dirección opuesta): una sesión entrenada el LUNES aparece "sin completar" al llegar el DOMINGO siguiente, aunque en una semana lunes-primero seguiría siendo la misma semana', () => {
+    it('una sesión entrenada el LUNES sigue "completada" el DOMINGO siguiente — ES la misma semana lunes-domingo', () => {
         setNow(DOM_SIG);
         render(<HomeHub dashboardData={dashboardData()} history={historyWith(LUN)} onStart={() => {}} />);
         const tarjetaDia1 = screen.getByText('Día 1').closest('.hub-session-card');
-        expect(tarjetaDia1).not.toHaveTextContent('COMPLETADA');
+        expect(tarjetaDia1).toHaveTextContent('COMPLETADA');
+        // Antes del arreglo esto daba "no completada" (el bug lo hacía
+        // resetear un día antes de tiempo). Jan 5 (lunes) a Jan 11 (domingo)
+        // es UNA sola semana lunes-primero, así que el check tiene que
+        // seguir en pie durante los 7 días completos.
     });
 
     it('control: dentro de la MISMA ventana domingo-sábado, el check SÍ persiste correctamente (martes marcado, visto el sábado)', () => {

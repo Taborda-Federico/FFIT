@@ -56,23 +56,22 @@ describe('HistoryView — cálculo de racha (calcularRacha)', () => {
         expect(screen.getByText('0 d')).toBeInTheDocument();
     });
 
-    it('BUG DE ZONA HORARIA: entrenar AYER debería mantener la racha viva, pero da 0 en un huso horario detrás de UTC (ej. Argentina)', () => {
-        // calcularRacha mezcla dos formas de fecha: obtiene el string de fecha
-        // en UTC (`toISOString().split('T')[0]`) y después lo vuelve a parsear
-        // con `new Date('YYYY-MM-DD')` — que SIEMPRE se interpreta como
-        // medianoche UTC. En un huso horario negativo respecto a UTC (Argentina
-        // es UTC-3, y este entorno de tests corre en America/Cordoba), esa
-        // medianoche UTC cae en la TARDE/NOCHE del día local ANTERIOR. El
-        // `.setHours(0,0,0,0)` que sigue no corrige eso: solo pone en 00:00 el
-        // día (ya corrido) en el que cayó. Resultado: "fechaReferencia" queda
-        // un día antes de lo real, y la validación "¿el último entreno fue
-        // hace más de 48hs?" se vuelve más estricta de lo que debería —
-        // entrenar AYER (que debería mantener viva la racha) la rompe.
+    it('ARREGLADO (era bug de zona horaria): entrenar AYER mantiene la racha viva', () => {
+        // Antes, calcularRacha mezclaba dos formas de fecha: obtenía el
+        // string de fecha en UTC (`toISOString().split('T')[0]`) y después
+        // lo volvía a parsear con `new Date('AAAA-MM-DD')` — que SIEMPRE se
+        // interpreta como medianoche UTC. En un huso horario negativo
+        // respecto a UTC (Argentina es UTC-3, y esta suite corre fijada a
+        // America/Argentina/Buenos_Aires — ver vite.config.js), esa
+        // medianoche UTC caía en la noche del día local ANTERIOR, corriendo
+        // un día la validación "¿el último entreno fue hace más de 48hs?".
+        // Ahora fechaLocalISO/parsearFechaLocal trabajan siempre en hora
+        // local, sin ida y vuelta por UTC.
         render(<HistoryView history={[log(AYER), log(ANTEAYER)]} />);
-        expect(screen.getByText('0 d')).toBeInTheDocument();
+        expect(screen.getByText('2 d')).toBeInTheDocument();
     });
 
-    it('en cambio, un entreno de HOY sí conserva la racha (el corrimiento de -1 día "coincide" con el margen para el caso de hoy)', () => {
+    it('un entreno de HOY también conserva la racha', () => {
         render(<HistoryView history={[log(HOY), log(AYER)]} />);
         expect(screen.getByText('2 d')).toBeInTheDocument();
     });

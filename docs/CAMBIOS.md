@@ -478,3 +478,38 @@ chequear que el armador de planes y este modal no tengan scroll horizontal ni co
 viewports de celular real).
 
 ---
+
+## 10 — HOTFIX: el arreglo de "email case-insensitive" (#7) rompió el acceso de un admin real
+
+**Qué pasó:** horas después de mergear el fix de email case-insensitive (sección 7), un cliente avisó que
+una de sus cuentas admin más importantes dejó de poder entrar al panel — el login funcionaba (la
+contraseña era aceptada), pero el sistema le decía "no sos administrador".
+
+**La causa exacta era la que se había anotado como riesgo aceptado en la sección 7**, y se dio en la
+práctica: en la base hay (al menos) dos cuentas cuyo email difiere solo en mayúsculas — la cuenta admin
+real, y otra cuenta con el mismo email en otro casing. Antes del fix de la sección 7, el login buscaba por
+coincidencia EXACTA, así que cada una encontraba siempre su propia cuenta, sin cruzarse nunca. Al pasar a
+una búsqueda case-insensitive sin más cuidado, un `findOne` con ese regex puede devolver CUALQUIERA de las
+dos cuentas que matcheen — Mongo no garantiza cuál gana cuando hay más de un documento posible. El admin
+terminaba logueado con la cuenta equivocada.
+
+**El arreglo:** en vez de buscar directo con el regex case-insensitive, el login ahora prueba PRIMERO una
+coincidencia EXACTA (el comportamiento de toda la vida, que identifica sin ambigüedad la cuenta correcta
+cuando existe una con ese casing preciso) — y solo si NINGUNA cuenta tiene ese casing exacto, recién ahí cae
+al case-insensitive (que sigue resolviendo el caso original de la sección 7: alguien que escribe su email
+con otro casing al que quedó guardado). Como red de seguridad extra, si todavía en ese fallback hay más de
+una cuenta candidata, se prefiere la más vieja (`createdAt` más antiguo) — la más probable de ser la cuenta
+real original.
+
+Este orden — exacto primero, insensible como fallback — es estrictamente más seguro que lo que había antes
+de HOY (el bug de la sección 7 nunca hubiera existido con este orden desde el principio) y no requiere
+ningún cambio de datos ni migración: es puramente un cambio en el ORDEN en que se prueban las búsquedas.
+
+**Tests:** se agregaron 3 casos que reproducen el incidente real con dos cuentas de casing distinto —
+logueándose con el casing exacto de CADA una de las dos, siempre entra con la cuenta correcta (nunca con la
+otra) — más un tercer test para el caso residual (un casing que no matchea ninguna de las dos exacto, cae al
+fallback y trae la más vieja, de forma determinística).
+
+264 backend en verde (no se tocó nada de frontend en este hotfix).
+
+---

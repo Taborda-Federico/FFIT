@@ -70,19 +70,35 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        // Antes esto era `User.findOne({ email })`: comparación exacta y
-        // case-sensitive. Si el email quedó guardado con mayúsculas (lo
-        // carga un admin, o el propio alumno se registra escribiendo el
-        // teclado con autocapitalización) pero la persona después inicia
-        // sesión escribiendo todo en minúscula — el caso más común — el
-        // login fallaba con "Email o contraseña incorrectos" aunque la
-        // contraseña fuera perfecta. Ver src/utils/email.js para el porqué
-        // de este enfoque (sin migrar el dato guardado).
-        const emailRegex = regexEmailExactoInsensible(email);
-        if (!emailRegex) {
-            return res.status(401).json({ message: 'Email o contraseña incorrectos' });
+        // ARREGLADO — esto rompió una cuenta admin real en producción, ver
+        // docs/CAMBIOS.md #10. Hasta esta mañana, acá se buscaba DIRECTO con
+        // el regex case-insensitive de abajo. El problema: si en la base
+        // hay DOS cuentas cuyo email difiere solo en mayúsculas (una vieja
+        // o de prueba, y la cuenta real), un findOne con ese regex puede
+        // devolver CUALQUIERA de las dos — Mongo no garantiza cuál de los
+        // dos matches gana. Eso fue exactamente lo que pasó: un admin real
+        // logueaba bien (la contraseña era correcta), pero terminaba
+        // autenticado con la cuenta EQUIVOCADA, así que el sistema le
+        // decía "no sos admin".
+        //
+        // La solución: probar PRIMERO el match exacto — el comportamiento
+        // de toda la vida, que identifica sin ambigüedad la cuenta
+        // correcta apenas exista una con ese casing exacto — y recién si
+        // NINGUNA cuenta tiene ese casing exacto, caer al case-insensible
+        // (que sigue resolviendo el caso que se quiso arreglar hoy: un
+        // email cargado con otro casing que el que la persona escribe).
+        let user = typeof email === 'string' ? await User.findOne({ email }) : null;
+        if (!user) {
+            const emailRegex = regexEmailExactoInsensible(email);
+            if (emailRegex) {
+                // .sort() como red de seguridad adicional: si llegado este
+                // punto TODAVÍA hay más de una cuenta candidata (dos
+                // casings distintos, ninguno igual al tipeado), se prefiere
+                // la más vieja — la más probable de ser la cuenta real
+                // original, no una duplicada creada después.
+                user = await User.findOne({ email: emailRegex }).sort({ createdAt: 1 });
+            }
         }
-        const user = await User.findOne({ email: emailRegex });
 
         if (user && (await user.matchPassword(password))) {
             res.json({

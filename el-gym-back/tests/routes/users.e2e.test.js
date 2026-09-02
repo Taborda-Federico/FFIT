@@ -88,13 +88,24 @@ describe('POST /api/users (createStudent)', () => {
             const guardado = await User.findById(res.body._id);
             expect(guardado[campo]).toBeFalsy();
         } else {
-            // Puede dar 500 (ValidationError, ej. falta nombre) o 400: cuando
-            // el campo ausente es email o dni, `{ $or: [{ email: undefined }, ...] }`
-            // termina siendo una cláusula sin filtro real, que matchea CUALQUIER
-            // usuario ya existente en la colección (como el admin del beforeEach)
-            // y el endpoint responde "ya existe" en vez de una validación clara.
+            // Puede dar 500 (ValidationError, ej. falta nombre) o 400. Los dos
+            // caminos a 400 son distintos: si falta "email", se rechaza
+            // explícitamente ANTES de armar la query (no es un string válido
+            // — ver src/utils/email.js). Si falta "dni", en cambio, sigue
+            // siendo la misma cláusula sin filtro real de antes
+            // (`{ $or: [..., { dni: undefined }] }` matchea CUALQUIER usuario
+            // ya existente, como el admin del beforeEach) — ese caso puntual
+            // no se tocó en este batch.
             expect([400, 500]).toContain(res.status);
         }
+    });
+
+    it('ARREGLADO: el chequeo de duplicado de email en el alta de alumnos ignora mayúsculas/minúsculas', async () => {
+        await request(app).post('/api/users').set('Authorization', `Bearer ${token}`)
+            .send({ ...payloadBase(), email: 'Duplicado@x.com' });
+        const res = await request(app).post('/api/users').set('Authorization', `Bearer ${token}`)
+            .send({ ...payloadBase(), dni: '999', email: 'duplicado@x.com' });
+        expect(res.status).toBe(400);
     });
 
     it('email o DNI duplicado (secuencial, no concurrente) → 400, mensaje claro', async () => {

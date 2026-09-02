@@ -346,3 +346,46 @@ y el posterior al que falla ahora sí reciben su aviso).
 245 backend en verde, 243 frontend, 28 e2e — sin tocar nada de lo visible cuando todo sale bien.
 
 ---
+
+## 7 — El login (y el alta de socios) dejan de ser sensibles a mayúsculas en el email
+
+**Qué pasaba:** el email se guarda en la base tal cual lo escribió quien lo cargó — no hay ningún
+`lowercase: true` en el schema de `User`. Para Mongo, `"Juan@Gmail.com"` y `"juan@gmail.com"` son dos
+strings distintos. En la práctica esto rompía el login real: un admin carga el email de un alumno con
+mayúsculas (autocompletado del teclado, copiar y pegar de una tarjeta de socio, etc.), y el alumno —
+escribiendo su propio email en minúsculas, lo más común en un celular — se encontraba con "Email o
+contraseña incorrectos" a pesar de tener la contraseña perfecta. Mismo problema, en sentido inverso, en el
+alta de un socio o admin nuevo: el chequeo de "¿ya existe este email?" tampoco veía que `"Dup@x.com"` y
+`"dup@x.com"` eran la misma persona, así que dejaba crear dos cuentas para el mismo email real.
+
+**La solución — por qué NO se tocó el dato guardado ni el schema:** la opción más obvia sería agregar
+`lowercase: true` al campo `email` del modelo, o un índice único "case-insensitive" (`collation`) en Mongo.
+Cualquiera de las dos requiere saber de antemano que, en la base real (meses de uso), no existen ya dos
+cuentas cuyos emails difieren solo en mayúsculas — algo que no puedo verificar sin acceso directo a esa
+base. Si existieran y se migrara igual, se podría chocar contra el índice único existente y romper cuentas
+de gente que hoy usa la app. En cambio, se creó un helper (`src/utils/email.js`) que arma un regex
+"ignorando mayúsculas" SOLO al momento de buscar (login, chequeo de duplicados en `register-admin`,
+`create-admin` y el alta de alumnos) — el dato en la base no se toca para nada, cero riesgo de romper
+cuentas existentes. Efecto colateral aceptado y documentado: si en la base YA existieran dos cuentas reales
+que solo difieren en mayúsculas (algo que no tengo forma de confirmar de antemano), el login ahora
+encontraría la primera que matchee en vez de fallar — un caso borde raro, mejor que el estado actual donde
+ninguna de las dos podía loguearse de forma confiable con el casing "equivocado".
+
+**De paso, un endurecimiento de seguridad:** el helper rechaza explícitamente (con 400/401) cualquier
+`email` que no sea un string — por ejemplo, un operador de Mongo como `{ $gt: '' }` mandado a mano en el
+body. Antes, ese tipo de payload dependía de que Mongoose lo casteara mal y tirara un error para no colar
+(ver `tests/security/nosqlInjection.e2e.test.js`); ahora se corta explícitamente antes de que el valor
+llegue a formar parte de ninguna query.
+
+**Dónde se aplicó:** `POST /api/auth/login`, `POST /api/auth/register-admin`, `POST /api/auth/create-admin`
+y `POST /api/users` (alta de alumnos) — los cuatro lugares donde se compara o busca por email. El `dni` no
+se tocó (no tiene el mismo problema de mayúsculas).
+
+**Tests:** se invirtió el test que documentaba el bug de login case-sensitive, se agregó uno que confirma
+que el dato guardado en la base NO cambia de forma después de un login con otro casing, uno para el
+chequeo de duplicados de `register-admin` y otro para el alta de alumnos, y uno que confirma que un email
+no-string se rechaza sin llegar a la query.
+
+249 backend en verde (243 frontend + 28 e2e sin cambios — este fix es puramente de backend).
+
+---

@@ -72,3 +72,51 @@ mi máquina" y un runner limpio — por eso vale la pena documentarlo):
 Con estos ajustes, los tres jobs (backend, frontend, e2e) quedaron en verde en GitHub Actions.
 
 ---
+
+## 2 — El constructor de planes ya no se borra al navegar a otra pestaña (ni con F5)
+
+**El bug, tal como lo reportó un cliente real:** "hago los planes y por ahí hago otras cosas, y si pasa un
+tiempo después no me deja cargar la rutina, la tengo que rehacer toda."
+
+**Qué pasaba:** el formulario de armado de planes (`AdminDashboard.jsx`) guardaba todo lo que se iba
+tipeando —títulos, días, bloques, ejercicios— únicamente en memoria de React (`useState`), sin persistirlo
+en ningún lado. Apenas la pantalla se desmontaba, ese estado se perdía para siempre. Y se desmontaba con
+cualquiera de estas dos cosas:
+
+1. Recargar la página (F5).
+2. **Tocar cualquier otra pestaña del menú** ("Alumnos", "Editor Web", "Seguimiento") y volver a "Planes"
+   — aunque no se tocara F5 en ningún momento. Esto es, casi seguro, lo que le pasaba al cliente: ir a
+   mirar el DNI o el progreso de un alumno mientras se arma su plan es un gesto normal de cualquier
+   profesor, y bastaba con eso.
+
+El lado del **alumno** ya tenía esta protección desde antes (`UserDashboard.jsx` guarda el entrenamiento
+activo en `localStorage` para no perderlo si se recarga la página a mitad de una serie) — el lado del
+**profesor** nunca la tuvo.
+
+**La solución:** el plan que se está armando ahora se guarda en `localStorage` cada vez que cambia algo
+(`useEffect` que corre en cada cambio de `plan`), bajo la clave `ffit_admin_plan_draft_<id del admin>`
+(separado por admin, para que en una compu compartida por varios profes el borrador de uno no se mezcle
+con el de otro). Al montar la pantalla, en vez de arrancar siempre en blanco, primero busca si hay un
+borrador guardado y lo recupera — mismo patrón que ya se usaba del lado del alumno, aplicado acá. El
+borrador se borra en un solo momento: cuando el plan se publica con éxito (ahí sí termina el ciclo de vida
+de *ese* borrador en particular). Guardar como plantilla **no** lo borra — el profe puede seguir editando
+el mismo plan después de guardar una copia de referencia.
+
+**Por qué no se agregó ningún aviso tipo "recuperamos tu borrador"**: se pidió explícitamente no tocar
+nada visible en esta etapa. La recuperación es silenciosa, igual que ya lo es del lado del alumno.
+
+**Tests:**
+- 6 tests nuevos en `AdminDashboard.test.jsx`: se guarda al tipear, sobrevive a un desmontaje/remontaje
+  (navegación), sobrevive a un remontaje que simula un F5, se borra al publicar con éxito, NO se borra al
+  guardar plantilla, y un JSON corrupto en `localStorage` no rompe la pantalla.
+- 2 tests e2e nuevos en `admin-plan-builder.spec.js`, en un navegador real: uno navega de verdad por el
+  menú (Planes → Alumnos → Planes) y confirma que el plan sigue ahí; el otro hace un `page.reload()` real
+  (el equivalente exacto de un F5) y confirma lo mismo.
+
+**Riesgo para la app en producción:** bajo. Es un cambio puramente aditivo (nada se deja de guardar en el
+servidor como antes; solo se agrega una copia de seguridad en el navegador mientras se arma el plan). Si
+`localStorage` no está disponible (modo incógnito con storage bloqueado, por ejemplo), el guardado falla
+en silencio y el formulario sigue funcionando exactamente como antes — no persiste el borrador, pero no se
+rompe nada.
+
+---

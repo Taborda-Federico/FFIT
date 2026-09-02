@@ -424,3 +424,57 @@ entrenaste hoy" (un mecanismo aparte), pero ya NO aparece como completada.
 252 backend, 245 frontend, 29 e2e — todo en verde.
 
 ---
+
+## 9 — NUEVO: modal "Gestionar Plantillas" (buscar, editar y borrar)
+
+A diferencia de las secciones anteriores, esto no es el arreglo de un bug — es una funcionalidad nueva,
+pedida directamente por el cliente: con el tiempo acumuló muchas plantillas guardadas, y el único lugar
+para verlas era el `<select>` "Cargar Plantilla..." de arriba del armador — inmanejable para elegir algo
+puntual, y sin ninguna forma de borrar las que ya no usa.
+
+**Qué se agregó:**
+
+- Un botón nuevo, "Plantillas", al lado del selector de siempre (que sigue exactamente igual — nada de lo
+  que ya funcionaba se tocó). Abre un modal con: un buscador que filtra en vivo por título, y en cada
+  plantilla, un botón de Editar y uno de Borrar.
+- **Borrar**: pide confirmación (reutilizando el mismo `ConfirmModal` que ya usa el panel de alumnos para
+  "eliminar socio" — mismo look, mismo patrón de doble confirmación) y después elimina la plantilla.
+- **Editar**: acá había una decisión de diseño importante. Antes, la ÚNICA forma de "editar" una plantilla
+  era cargarla en el armador y volver a guardarla — pero "Guardar Plantilla" siempre creaba una plantilla
+  NUEVA, nunca pisaba la original. Es decir, lo que el admin probablemente interpretaba como "corregir" una
+  plantilla en realidad la duplicaba silenciosamente — un sospechoso directo de por qué había "demasiadas"
+  plantillas acumuladas. Ahora "Editar" carga la plantilla en el armador y muestra un aviso claro
+  ("Editando una plantilla guardada — al guardar, se pisa la original"), con una "×" para salir del modo
+  edición sin perder lo ya tipeado (por si el admin en realidad quería partir de esa plantilla para armar
+  una distinta, no reemplazarla). Mientras está en modo edición, el botón cambia de "Guardar Plantilla" a
+  "Guardar Cambios" y actualiza la plantilla existente en vez de crear una copia.
+
+**Backend — dos endpoints nuevos, ambos con el mismo scoping por `adminId` que ya usa el resto de la API**
+(un admin no puede ver, editar ni borrar una plantilla de otro):
+
+- `PUT /api/planes/plantilla/:id` — actualiza título/notas/sesiones de una plantilla existente.
+- `DELETE /api/planes/plantilla/:id` — la elimina.
+
+Ninguno de los dos toca el modelo `Plan` ni requiere migración — son operaciones nuevas sobre documentos que
+ya existen, con la misma forma de siempre.
+
+**Por qué esto es seguro para lo que ya existe:** borrar una plantilla NO afecta a los planes ya publicados
+a partir de ella (son documentos independientes en la base — un plan publicado es una copia de las sesiones
+en el momento de publicar, no una referencia viva a la plantilla). El `<select>` "Cargar Plantilla..." del
+armador sigue funcionando exactamente igual que siempre, para no romper el hábito ya aprendido por quien usa
+la app a diario — el modal nuevo es un complemento, no un reemplazo.
+
+**Diseño responsivo:** la lista de plantillas usa el mismo patrón de tarjetas que ya usa la tabla de
+alumnos en mobile (botones de al menos 44px de alto, sin depender de hover). Probado en un navegador real a
+320px y 375px de ancho, con y sin modal de confirmación de borrado encima.
+
+**Tests:** 261 backend (12 nuevos: `PUT`/`DELETE` camino feliz, IDOR de cada uno, id inexistente, y que un
+plan real — no plantilla — no se pueda tocar por esta ruta), 266 frontend (12 nuevos en `AdminDashboard.test.jsx`
+para todo el flujo de edición/borrado/salida del modo edición, más 11 en un archivo nuevo dedicado,
+`PlantillasModal.test.jsx`, para el componente aislado), y 35 e2e (2 nuevos en `admin-plan-builder.spec.js`
+que reproducen el flujo completo en un navegador real — incluyendo que editar y guardar efectivamente pisa
+la original y no duplica — más 4 nuevos en `admin-plan-builder-responsive.spec.js`, un archivo dedicado a
+chequear que el armador de planes y este modal no tengan scroll horizontal ni controles cortados en
+viewports de celular real).
+
+---

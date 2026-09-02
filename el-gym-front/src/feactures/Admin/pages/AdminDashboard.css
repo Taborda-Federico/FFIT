@@ -91,6 +91,26 @@
     align-items: center;
 }
 
+/* Botón que abre el modal de "Gestionar Plantillas" — mismo look que el
+   selector de plantillas de al lado (fondo, borde), para que se lea como
+   parte del mismo grupo de controles. */
+.btn-gestionar-plantillas {
+    background: var(--black-soft);
+    border: 1.5px solid var(--border);
+    color: var(--neon);
+    white-space: nowrap;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 12px;
+}
+
+.btn-gestionar-plantillas:hover {
+    border-color: var(--neon);
+    background: rgba(212, 240, 57, 0.05);
+}
+
 .btn-new-admin {
     height: 100%;
     white-space: nowrap;
@@ -164,6 +184,38 @@
 .input-plan-title:focus {
     border-color: var(--accent, #d4f039);
 }
+
+/* Banner que avisa "estás editando una plantilla guardada, no armando una
+   nueva" — sin esto, guardar pisaría la original sin que quede claro por
+   qué (antes, Guardar Plantilla SIEMPRE creaba una copia; ahora puede
+   actualizar una existente si se llegó acá vía "Editar" en el modal). */
+.editing-plantilla-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 15px;
+    padding: 10px 14px;
+    background: rgba(212, 240, 57, 0.06);
+    border: 1px solid rgba(212, 240, 57, 0.25);
+    border-radius: 12px;
+    color: var(--neon);
+    font-size: 0.8rem;
+}
+
+.editing-plantilla-banner span { flex: 1; }
+
+.btn-salir-edicion {
+    background: transparent;
+    border: none;
+    color: var(--text-dim, #888);
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.btn-salir-edicion:hover { color: #fff; }
 
 .input-row-alumno {
     display: flex;

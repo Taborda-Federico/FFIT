@@ -188,14 +188,88 @@ describe('GET /api/planes/plantillas (getPlantillas)', () => {
     });
 });
 
-describe('No existen endpoints de edición/borrado de plan ni de plantilla', () => {
-    it('no hay ninguna ruta PUT/DELETE bajo /api/planes/ para editar o borrar un plan existente', async () => {
+describe('NUEVO: PUT /api/planes/plantilla/:id (actualizarPlantilla)', () => {
+    it('sin token → 401', async () => {
+        const res = await request(app).put('/api/planes/plantilla/000000000000000000000000').send({});
+        expect(res.status).toBe(401);
+    });
+
+    it('camino feliz: pisa título y sesiones de la plantilla existente (no crea una nueva)', async () => {
         const { token, admin } = await createAdmin();
-        const plan = await createPlanDirect(admin._id, null, { esPlantilla: true });
-        const put = await request(app).put(`/api/planes/${plan._id}`).set('Authorization', `Bearer ${token}`).send({ titulo: 'Editado' });
-        const del = await request(app).delete(`/api/planes/${plan._id}`).set('Authorization', `Bearer ${token}`);
-        // No existen: Express responde 404 (no matchea ninguna ruta definida).
-        expect(put.status).toBe(404);
-        expect(del.status).toBe(404);
+        const plantilla = await createPlanDirect(admin._id, null, { esPlantilla: true, titulo: 'Original' });
+        const res = await request(app).put(`/api/planes/plantilla/${plantilla._id}`).set('Authorization', `Bearer ${token}`).send({
+            titulo: 'Editada', sesiones: [buildSesion({ nombre: 'Nuevo Día' })]
+        });
+        expect(res.status).toBe(200);
+        expect(await Plan.countDocuments({ esPlantilla: true, adminId: admin._id })).toBe(1); // sigue siendo UNA sola, no se duplicó
+        const enLaBase = await Plan.findById(plantilla._id);
+        expect(enLaBase.titulo).toBe('Editada');
+        expect(enLaBase.sesiones[0].nombre).toBe('Nuevo Día');
+    });
+
+    it('IDOR: un admin no puede editar la plantilla de OTRO admin (404, no revela que existe)', async () => {
+        const { admin: adminA } = await createAdmin();
+        const { token: tokenB } = await createAdmin();
+        const plantillaDeA = await createPlanDirect(adminA._id, null, { esPlantilla: true, titulo: 'De A' });
+
+        const res = await request(app).put(`/api/planes/plantilla/${plantillaDeA._id}`).set('Authorization', `Bearer ${tokenB}`).send({ titulo: 'Hackeada' });
+        expect(res.status).toBe(404);
+        expect((await Plan.findById(plantillaDeA._id)).titulo).toBe('De A'); // intacta
+    });
+
+    it('un plan REAL (esPlantilla:false, ya asignado a un alumno) no se puede "editar" por esta ruta', async () => {
+        const { token, admin } = await createAdmin();
+        const { student } = await createStudentDirect(admin._id);
+        const planReal = await createPlanDirect(admin._id, student._id, { titulo: 'Plan de un alumno' });
+
+        const res = await request(app).put(`/api/planes/plantilla/${planReal._id}`).set('Authorization', `Bearer ${token}`).send({ titulo: 'Hackeado' });
+        expect(res.status).toBe(404);
+    });
+
+    it('id inexistente → 404', async () => {
+        const { token } = await createAdmin();
+        const res = await request(app).put('/api/planes/plantilla/000000000000000000000000').set('Authorization', `Bearer ${token}`).send({ titulo: 'X' });
+        expect(res.status).toBe(404);
+    });
+});
+
+describe('NUEVO: DELETE /api/planes/plantilla/:id (eliminarPlantilla)', () => {
+    it('sin token → 401', async () => {
+        const res = await request(app).delete('/api/planes/plantilla/000000000000000000000000');
+        expect(res.status).toBe(401);
+    });
+
+    it('camino feliz: borra la plantilla', async () => {
+        const { token, admin } = await createAdmin();
+        const plantilla = await createPlanDirect(admin._id, null, { esPlantilla: true });
+        const res = await request(app).delete(`/api/planes/plantilla/${plantilla._id}`).set('Authorization', `Bearer ${token}`);
+        expect(res.status).toBe(200);
+        expect(await Plan.findById(plantilla._id)).toBeNull();
+    });
+
+    it('IDOR: un admin no puede borrar la plantilla de OTRO admin', async () => {
+        const { admin: adminA } = await createAdmin();
+        const { token: tokenB } = await createAdmin();
+        const plantillaDeA = await createPlanDirect(adminA._id, null, { esPlantilla: true });
+
+        const res = await request(app).delete(`/api/planes/plantilla/${plantillaDeA._id}`).set('Authorization', `Bearer ${tokenB}`);
+        expect(res.status).toBe(404);
+        expect(await Plan.findById(plantillaDeA._id)).not.toBeNull(); // sigue existiendo
+    });
+
+    it('borrar una plantilla NO afecta a los planes reales ya publicados a partir de ella (son documentos independientes)', async () => {
+        const { token, admin } = await createAdmin();
+        const { student } = await createStudentDirect(admin._id);
+        const plantilla = await createPlanDirect(admin._id, null, { esPlantilla: true });
+        const planPublicado = await createPlanDirect(admin._id, student._id, { titulo: 'Ya publicado' });
+
+        await request(app).delete(`/api/planes/plantilla/${plantilla._id}`).set('Authorization', `Bearer ${token}`);
+        expect(await Plan.findById(planPublicado._id)).not.toBeNull();
+    });
+
+    it('id inexistente → 404', async () => {
+        const { token } = await createAdmin();
+        const res = await request(app).delete('/api/planes/plantilla/000000000000000000000000').set('Authorization', `Bearer ${token}`);
+        expect(res.status).toBe(404);
     });
 });

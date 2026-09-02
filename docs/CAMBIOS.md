@@ -228,3 +228,56 @@ momento del deploy para quien esté mirando la app justo ese lunes. No hay ningu
 entrenamiento del domingo sigue en el Historial tal cual quedó guardado.
 
 ---
+
+## 5 — El doble decremento de "semanas restantes" del plan
+
+Este es el arreglo en el que más cuidado había que tener con los datos que ya existen: la app lleva meses
+en uso y todos los planes activos ahora mismo ya vienen "arrastrando" este bug. Antes de tocar nada, la
+pregunta que había que responder era: **¿esto puede hacer que algún plan pierda datos, o que el número que
+ve un alumno salte de forma rara e inexplicable?** La respuesta, con el diseño elegido, es no — se explica
+abajo por qué.
+
+**Qué pasaba:** había DOS mecanismos separados descontándole vida al mismo plan:
+
+1. El cron semanal (`cron/expirationCheck.js`, domingo 23:59) resta 1 a `plan.vencimiento` — esto SIEMPRE
+   estuvo bien hecho, decrementa exactamente 1 por cada semana real que pasa. `plan.vencimiento`, tal cual
+   está guardado en la base HOY para cualquier plan activo, es un número correcto y confiable.
+2. `getStudentDashboard` (se ejecutaba en cada carga de pantalla del alumno) volvía a calcular una fecha de
+   expiración DESDE CERO, como `createdAt + vencimiento_ACTUAL × 7 días` — el problema es que usaba el
+   `vencimiento` que el cron YA había reducido, como si fuera el total original del plan. Cada semana que
+   pasaba, el plan perdía casi el doble de vida útil de lo prometido (medido: un plan de 4 semanas se
+   autodesactivaba a las 2).
+
+**La solución:** se borra el mecanismo 2 por completo. `getStudentDashboard` ahora es una simple lectura:
+muestra `plan.vencimiento` tal cual está guardado, sin recalcular nada ni volver a escribir en la base. El
+cron pasa a ser el ÚNICO lugar que decrementa `vencimiento`, desactiva el plan al llegar a 0, y (nuevo)
+también crea el aviso de "tu plan está por vencer" cuando queda justo 1 semana — ese aviso antes lo
+disparaba el propio dashboard, con el riesgo de duplicarse si dos pedidos llegaban al mismo tiempo (dos
+pestañas abiertas, por ejemplo); ahora corre una sola vez por semana, en un solo lugar, sin condición de
+carrera posible.
+
+**Por qué esto es seguro para los datos que ya existen — sin ninguna migración:**
+
+- `plan.vencimiento` en la base, para cualquier plan activo, YA es el número correcto de "semanas
+  restantes" (el cron nunca tuvo el bug — el bug estaba en cómo el dashboard lo interpretaba). No hace
+  falta tocar ni un documento existente: el arreglo es puramente "dejar de recalcular mal", no "corregir
+  un valor guardado".
+- Los planes que el bug YA desactivó antes de este arreglo (los que se autodesactivaron a mitad de camino)
+  **se dejan como están** — no se reactivan. Reactivar algo que lleva días o semanas marcado como
+  finalizado sería un cambio más raro y más visible que dejarlo tal cual quedó; el arreglo es para que esto
+  no le siga pasando a los planes activos de ahora en adelante, no para deshacer el pasado.
+- Efecto visible esperado, y por qué es aceptable: un plan que YA tuvo al menos una corrida del cron va a
+  mostrar, desde el momento del deploy, un número de "semanas restantes" más alto que el que mostraba el
+  día anterior (porque el cálculo viejo achicaba de más). Es un ajuste único, siempre a favor del alumno
+  (más semanas, nunca menos), y no involucra ningún dato perdido — el número anterior estaba mal, el nuevo
+  está bien.
+
+**Tests:** se dio vuelta toda la sección que documentaba el bug (la "curva" ahora es lineal:
+4 → 3 → 2 → 1 → 0, no 4 → 2 → 0), se agregó un test que confirma que un `GET` al dashboard ya no escribe
+nada en la base (ni siquiera bajo pedidos concurrentes), y los tests del aviso de "plan por vencer" se
+movieron de `student.e2e.test.js` a `cron/expirationCheck.test.js`, que es donde vive esa lógica ahora.
+
+244 backend en verde (242 frontend + 28 e2e sin cambios, no se tocó nada del lado del frontend — la forma
+de la respuesta del dashboard es idéntica, solo cambia cómo se calcula el número adentro).
+
+---

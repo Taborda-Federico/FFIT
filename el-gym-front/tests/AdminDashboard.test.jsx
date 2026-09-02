@@ -138,7 +138,7 @@ describe('AdminDashboard — buscar y seleccionar alumno', () => {
         expect(screen.getByText(/Asignado a:/).parentElement).toHaveTextContent('Federico Gómez');
     });
 
-    it('BUG: el alumno tiene `telefono` pero AdminDashboard lo guarda como `celular` (nunca existe esa propiedad)', async () => {
+    it('ARREGLADO: el teléfono del alumno (`telefono`) SÍ llega al link de WhatsApp', async () => {
         getStudentsMock.mockResolvedValue([{ _id: 'a1', nombre: 'Federico Gómez', email: 'f@x.com', telefono: '1122334455' }]);
         render(<AdminDashboard />);
         await esperarCargaInicial();
@@ -149,11 +149,11 @@ describe('AdminDashboard — buscar y seleccionar alumno', () => {
         await waitFor(() => expect(screen.getByText(/Verifica los detalles/)).toBeInTheDocument());
         fireEvent.click(screen.getByText('¡Publicar ahora!'));
         await waitFor(() => expect(publicarPlanMock).toHaveBeenCalled());
-        // El link de WhatsApp que se arma después de publicar cae al genérico
-        // (sin número) porque plan.celular quedó undefined — nunca se leyó
-        // `a.telefono`, que es el nombre real del campo.
+        // Antes, el link de WhatsApp caía siempre al genérico (sin número)
+        // porque se leía `a.celular` (que nunca existe en el modelo de
+        // alumno) en vez de `a.telefono`.
         const linkWa = await screen.findByText(/Avisar ahora/);
-        expect(linkWa.closest('a').href).toBe('https://wa.me/?text=' + encodeURIComponent(
+        expect(linkWa.closest('a').href).toBe('https://wa.me/1122334455?text=' + encodeURIComponent(
             `¡Hola Federico Gómez! 🏋️‍♂️ Ya te subí tu nueva rutina: *Plan X* (4 semanas). ¡Entra a la app para verla! 🔥`
         ));
     });

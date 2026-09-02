@@ -1,9 +1,10 @@
 import { test, expect, crearAdmin, crearAlumno, publicarPlan, seedWorkout, loguearComoAlumno } from './fixtures.js';
 
-// Reproduce EN UN NAVEGADOR REAL (no jsdom) el bug de límite de semana
-// domingo-vs-lunes de HomeHub.isSessionCompleted. Usamos page.clock para
-// controlar la fecha del BROWSER con precisión, exactamente como haría un
-// alumno real un lunes a la mañana.
+// ARREGLADO (ver docs/CAMBIOS.md #4): reproduce EN UN NAVEGADOR REAL (no
+// jsdom) que el límite de semana de HomeHub.isSessionCompleted ahora
+// arranca en lunes, no en domingo. Usamos page.clock para controlar la
+// fecha del BROWSER con precisión, exactamente como haría un alumno real
+// un lunes a la mañana.
 //
 // OJO: el plan se crea contra el backend e2e real (Mongo real, reloj real,
 // sin virtualizar) — su `createdAt` es "ahora mismo" en la fecha real de
@@ -23,8 +24,8 @@ function proximoDomingoYLunes() {
     return { domingo, lunesSiguiente };
 }
 
-test.describe('Bug real: "Día 1" entrenado el domingo sigue apareciendo COMPLETADA el lunes siguiente', () => {
-    test('reproducción en navegador real, con fechas de sistema controladas', async ({ page }) => {
+test.describe('Semana lunes-primero en HomeHub (arreglo del bug de "los días")', () => {
+    test('"Día 1" entrenado el domingo YA NO sigue apareciendo COMPLETADA el lunes siguiente — vuelve a estar disponible', async ({ page }) => {
         const { domingo, lunesSiguiente } = proximoDomingoYLunes();
         const admin = await crearAdmin({ email: 'admin-diasemana@x.com' });
         const alumno = await crearAlumno(admin.token, { nombre: 'Alumno Semana', email: 'alumno-semana@x.com' });
@@ -39,25 +40,38 @@ test.describe('Bug real: "Día 1" entrenado el domingo sigue apareciendo COMPLET
         // El alumno entrena "Día 1" el domingo a la noche.
         await seedWorkout(alumno._id, 'Día 1', domingo.toISOString());
 
-        // Es lunes a la mañana. El alumno abre la app para entrenar "Día 1"
-        // de nuevo (para él, es una semana nueva).
+        // Es lunes a la mañana. Para el alumno arranca una semana nueva.
         await page.clock.install({ time: lunesSiguiente });
         await loguearComoAlumno(page, alumno);
 
         const tarjetaDia1 = page.locator('.hub-session-card', { hasText: 'Día 1' });
-        await expect(tarjetaDia1).toContainText('COMPLETADA');
-        // ↑ Esto es exactamente el bug: para un alumno que arranca la semana
-        // el lunes, "Día 1" debería estar disponible de nuevo — pero como
-        // isSessionCompleted usa una semana domingo-primero, todavía lo ve
-        // como "hecho" y no puede volver a entrenarlo hasta el próximo domingo.
+        await expect(tarjetaDia1).not.toContainText('COMPLETADA');
 
-        // Confirmamos además que el click no dispara el entrenamiento (queda
-        // bloqueado como "ya hecho", visualmente clickeable pero sin efecto).
+        // Y ahora sí puede volver a entrenarlo: el click dispara la sesión.
         await tarjetaDia1.click();
-        await expect(page.getByText('ENTRENAMIENTO ACTIVO')).not.toBeVisible();
+        await expect(page.getByText('ENTRENAMIENTO ACTIVO')).toBeVisible();
     });
 
-    test('control: "Día 2" (nunca entrenado) SÍ está disponible el lunes, confirmando que el bug es específico del solapamiento de semana, no un bloqueo general', async ({ page }) => {
+    test('en cambio, "Día 1" entrenado el LUNES sigue completado hasta el domingo siguiente (misma semana lunes-domingo)', async ({ page }) => {
+        const { lunesSiguiente } = proximoDomingoYLunes();
+        const domingoDeEsaSemana = new Date(lunesSiguiente);
+        domingoDeEsaSemana.setDate(lunesSiguiente.getDate() + 6);
+        domingoDeEsaSemana.setHours(21, 0, 0, 0);
+
+        const admin = await crearAdmin({ email: 'admin-diasemana3@x.com' });
+        const alumno = await crearAlumno(admin.token, { nombre: 'Alumno Semana 3', email: 'alumno-semana3@x.com' });
+        await publicarPlan(admin.token, alumno._id, {
+            titulo: 'Plan Semanal', sesiones: [{ nombre: 'Día 1', bloques: [{ tipo: 'standard', descanso: 30, ejercicios: [{ nombre: 'Sentadilla', series: 3, reps: '10' }] }] }],
+        });
+        await seedWorkout(alumno._id, 'Día 1', lunesSiguiente.toISOString());
+
+        await page.clock.install({ time: domingoDeEsaSemana });
+        await loguearComoAlumno(page, alumno);
+
+        await expect(page.locator('.hub-session-card', { hasText: 'Día 1' })).toContainText('COMPLETADA');
+    });
+
+    test('control: "Día 2" (nunca entrenado) está disponible el lunes, sin importar lo que haya pasado con "Día 1"', async ({ page }) => {
         const { domingo, lunesSiguiente } = proximoDomingoYLunes();
         const admin = await crearAdmin({ email: 'admin-diasemana2@x.com' });
         const alumno = await crearAlumno(admin.token, { nombre: 'Alumno Semana 2', email: 'alumno-semana2@x.com' });

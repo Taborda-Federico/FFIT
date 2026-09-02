@@ -46,4 +46,19 @@ confirmar que el cambio en `db.js` no rompió nada — 240 + 239 tests en verde.
 **Riesgo para la app en producción:** ninguno. No se tocó ni un archivo de `src/` de ninguno de los dos
 paquetes.
 
+**Ajustes tras la primera corrida real en GitHub Actions** (siempre pasa algo distinto entre "funciona en
+mi máquina" y un runner limpio — por eso vale la pena documentarlo):
+
+- El job `e2e` fallaba al instante: `actions/setup-node` con `cache: npm` busca un `package-lock.json` en
+  la raíz del repo por defecto, pero cada app tiene el suyo en su propia carpeta. Se le pasó
+  `cache-dependency-path` apuntando a los dos lockfiles.
+- El job `frontend` fallaba en un solo test: el que documenta el bug de zona horaria de la racha
+  (`HistoryView.test.jsx`, "BUG DE ZONA HORARIA"). Ese test asume que la máquina corre en el huso horario
+  de Argentina — algo cierto en esta computadora de desarrollo, pero los runners de GitHub Actions usan
+  UTC por defecto, y ese bug específicamente **no se manifiesta** en UTC (solo en husos detrás de UTC).
+  Se fijó el huso horario de toda la suite de tests del frontend a `America/Argentina/Buenos_Aires`
+  (`vite.config.js`, opción `test.env.TZ`) — no es solo un parche para que CI pase: como la app es para un
+  gimnasio real en Argentina, tiene sentido que los tests corran siempre en ese huso, sin importar en qué
+  máquina se ejecuten.
+
 ---

@@ -216,6 +216,40 @@ describe('POST /api/student/workout (saveWorkoutLog)', () => {
         });
         expect(res.status).toBe(500);
     });
+
+    it('NUEVO: si el frontend manda sesionId (el _id de la sesión puntual del plan), queda guardado en el log', async () => {
+        const { admin } = await createAdmin();
+        const { student, token } = await createStudentDirect(admin._id);
+        const plan = await createPlanDirect(admin._id, student._id, { sesiones: [buildSesion({ nombre: 'Día 1' })] });
+        const idDeLaSesion = plan.sesiones[0]._id.toString();
+
+        const res = await request(app).post('/api/student/workout').set('Authorization', `Bearer ${token}`).send({
+            nombreSesion: 'Día 1', sesionId: idDeLaSesion
+        });
+        expect(res.status).toBe(201);
+        const guardado = await WorkoutLog.findById(res.body.log._id);
+        expect(guardado.sesionId.toString()).toBe(idDeLaSesion);
+    });
+
+    it('sin sesionId (como se guardaban todos los logs antes de este campo existir) → se guarda igual, sin ese campo', async () => {
+        const { admin } = await createAdmin();
+        const { token } = await createStudentDirect(admin._id);
+        const res = await request(app).post('/api/student/workout').set('Authorization', `Bearer ${token}`).send({ nombreSesion: 'Día 1' });
+        expect(res.status).toBe(201);
+        const guardado = await WorkoutLog.findById(res.body.log._id);
+        expect(guardado.sesionId).toBeUndefined();
+    });
+
+    it('un sesionId que no es un ObjectId válido (ej. basura o un intento de inyección) se ignora en vez de romper el guardado', async () => {
+        const { admin } = await createAdmin();
+        const { token } = await createStudentDirect(admin._id);
+        const res = await request(app).post('/api/student/workout').set('Authorization', `Bearer ${token}`).send({
+            nombreSesion: 'Día 1', sesionId: 'esto-no-es-un-object-id'
+        });
+        expect(res.status).toBe(201);
+        const guardado = await WorkoutLog.findById(res.body.log._id);
+        expect(guardado.sesionId).toBeUndefined();
+    });
 });
 
 describe('GET /api/student/history (getMyHistory)', () => {

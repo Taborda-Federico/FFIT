@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const { regexEmailExactoInsensible } = require('../utils/email');
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
@@ -14,7 +15,15 @@ exports.registerAdmin = async (req, res) => {
     }
 
     try {
-        const userExists = await User.findOne({ email });
+        // Chequeo de duplicado ignorando mayúsculas/minúsculas (ver
+        // src/utils/email.js) — evita, de acá en más, crear dos cuentas
+        // admin que sean el mismo email para cualquier persona real
+        // ("Juan@x.com" y "juan@x.com" ya no se consideran distintas).
+        const emailRegex = regexEmailExactoInsensible(email);
+        if (!emailRegex) {
+            return res.status(400).json({ message: 'Email inválido' });
+        }
+        const userExists = await User.findOne({ email: emailRegex });
         if (userExists) return res.status(400).json({ message: 'El usuario ya existe' });
 
         const user = await User.create({
@@ -36,7 +45,11 @@ exports.createAdmin = async (req, res) => {
     const { nombre, email, password } = req.body;
 
     try {
-        const userExists = await User.findOne({ email });
+        const emailRegex = regexEmailExactoInsensible(email);
+        if (!emailRegex) {
+            return res.status(400).json({ message: 'Email inválido' });
+        }
+        const userExists = await User.findOne({ email: emailRegex });
         if (userExists) return res.status(400).json({ message: 'El usuario ya existe' });
 
         const user = await User.create({
@@ -57,7 +70,19 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const user = await User.findOne({ email });
+        // Antes esto era `User.findOne({ email })`: comparación exacta y
+        // case-sensitive. Si el email quedó guardado con mayúsculas (lo
+        // carga un admin, o el propio alumno se registra escribiendo el
+        // teclado con autocapitalización) pero la persona después inicia
+        // sesión escribiendo todo en minúscula — el caso más común — el
+        // login fallaba con "Email o contraseña incorrectos" aunque la
+        // contraseña fuera perfecta. Ver src/utils/email.js para el porqué
+        // de este enfoque (sin migrar el dato guardado).
+        const emailRegex = regexEmailExactoInsensible(email);
+        if (!emailRegex) {
+            return res.status(401).json({ message: 'Email o contraseña incorrectos' });
+        }
+        const user = await User.findOne({ email: emailRegex });
 
         if (user && (await user.matchPassword(password))) {
             res.json({

@@ -1,12 +1,20 @@
 const User = require('../models/User');
 const Plan = require('../models/Plan');
 const transporter = require('../config/mailer');
+const { regexEmailExactoInsensible } = require('../utils/email');
 
 const createStudent = async (req, res) => {
     const { nombre, dni, email, peso, altura, domicilio } = req.body;
 
     try {
-        const userExists = await User.findOne({ $or: [{ email }, { dni }] });
+        // El email se compara ignorando mayúsculas/minúsculas (ver
+        // src/utils/email.js) — el DNI queda como comparación exacta, tal
+        // como estaba, porque no tiene el mismo problema de casing.
+        const emailRegex = regexEmailExactoInsensible(email);
+        if (!emailRegex) {
+            return res.status(400).json({ message: 'Email inválido' });
+        }
+        const userExists = await User.findOne({ $or: [{ email: emailRegex }, { dni }] });
         if (userExists) {
             return res.status(400).json({ message: 'El correo o DNI ya están registrados en el sistema.' });
         }

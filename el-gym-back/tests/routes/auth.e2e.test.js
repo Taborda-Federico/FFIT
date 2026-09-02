@@ -36,6 +36,15 @@ describe('POST /api/auth/register-admin', () => {
         expect(res.status).toBe(400);
     });
 
+    it('ARREGLADO: el chequeo de duplicado también ignora mayúsculas/minúsculas — "Dup@x.com" bloquea un segundo registro con "dup@x.com"', async () => {
+        await createAdmin({ email: 'Dup@x.com' });
+        const res = await request(app).post('/api/auth/register-admin').send({
+            nombre: 'Otro', email: 'dup@x.com', password: 'x123456',
+            adminSecret: process.env.ADMIN_REGISTRATION_SECRET
+        });
+        expect(res.status).toBe(400);
+    });
+
     it('sin password → 500 (Mongoose ValidationError sin manejo específico)', async () => {
         const res = await request(app).post('/api/auth/register-admin').send({
             nombre: 'Sin pass', email: 'sinpass@x.com',
@@ -100,13 +109,30 @@ describe('POST /api/auth/login', () => {
         expect(res.body.message).toMatch(/incorrectos/i);
     });
 
-    it('BUG: el login es case-sensitive en el email — "Test@X.com" y "test@x.com" no son intercambiables', async () => {
+    it('ARREGLADO: el login ya no es case-sensitive en el email — "CaseSensible@x.com" y "casesensible@x.com" son la misma cuenta', async () => {
         await createAdmin({ email: 'CaseSensible@x.com', password: 'secreta123' });
         const res = await request(app).post('/api/auth/login').send({ email: 'casesensible@x.com', password: 'secreta123' });
         // Un usuario que registró "CaseSensible@x.com" y escribe su email en
         // minúsculas (comportamiento normalísimo, ej. autocapitalize del
-        // celular) recibe "credenciales incorrectas" en vez de loguear.
+        // celular) ahora sí loguea con éxito. El dato guardado en la base
+        // NO se toca (sigue siendo "CaseSensible@x.com" tal cual se creó) —
+        // solo la búsqueda ignora mayúsculas/minúsculas (ver src/utils/email.js).
+        expect(res.status).toBe(200);
+        expect(res.body.token).toBeDefined();
+    });
+
+    it('el email guardado en la base no cambia de forma después de un login case-insensitive', async () => {
+        const { admin } = await createAdmin({ email: 'MayusMinus@x.com', password: 'secreta123' });
+        await request(app).post('/api/auth/login').send({ email: 'mayusminus@x.com', password: 'secreta123' });
+        const User = require('../../src/models/User');
+        const enLaBase = await User.findById(admin._id);
+        expect(enLaBase.email).toBe('MayusMinus@x.com');
+    });
+
+    it('un email que no es un string (ej. un operador de Mongo) se rechaza con 401, no se lo deja llegar a la query', async () => {
+        const res = await request(app).post('/api/auth/login').send({ email: { $gt: '' }, password: 'x' });
         expect(res.status).toBe(401);
+        expect(res.body.token).toBeUndefined();
     });
 
     it('email y password ausentes → 401 (no 500, aunque no haya validación explícita)', async () => {

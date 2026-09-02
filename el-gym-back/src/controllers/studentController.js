@@ -12,38 +12,23 @@ const getStudentDashboard = async (req, res) => {
         const diasRestantes = Math.ceil((vencimientoCuota - hoy) / (1000 * 60 * 60 * 24));
 
 
+        // "Semanas restantes" del plan: se lee directo de plan.vencimiento,
+        // el contador que mantiene el cron semanal (ver cron/expirationCheck.js).
+        // Antes, ACÁ TAMBIÉN se recalculaba una fecha de expiración propia a
+        // partir de createdAt + vencimiento*7 días — pero como esa cuenta
+        // usaba el vencimiento YA decrementado por el cron como si fuera el
+        // total original, el plan perdía casi el doble de semanas de vida
+        // por cada semana real que pasaba (ver docs/CAMBIOS.md #5). Con un
+        // solo lugar (el cron) escribiendo `vencimiento` y `activo`, esta
+        // ruta pasa a ser una simple LECTURA: un GET ya no modifica nada de
+        // la base (evita además la condición de carrera de antes, donde dos
+        // pedidos simultáneos podían duplicar la notificación de "por vencer").
         const planActivo = await Plan.findOne({
             alumnoId: user._id,
             esPlantilla: false,
             activo: true
-        }).sort({ createdAt: -1 }); const totalWorkouts = await WorkoutLog.countDocuments({ alumnoId: user._id });
-
-        let planFinal = null;
-        if (planActivo) {
-            const vencimientoEnSemanas = planActivo.vencimiento || 4;
-            const fechaExpiracion = new Date(planActivo.createdAt);
-            fechaExpiracion.setDate(fechaExpiracion.getDate() + (vencimientoEnSemanas * 7));
-            const diasRestantesPlan = Math.ceil((fechaExpiracion - hoy) / (1000 * 60 * 60 * 24));
-            
-            if (diasRestantesPlan <= 0) {
-                planActivo.activo = false;
-                await planActivo.save();
-            } else {
-                planFinal = planActivo;
-                planFinal.semanasRestantesDinamicas = Math.ceil(diasRestantesPlan / 7);
-                
-                if (diasRestantesPlan <= 7 && !planActivo.avisoVencimientoEnviado) {
-                    await Notification.create({
-                        alumnoId: user._id,
-                        titulo: '¡Tu plan está por vencer! ⚠️',
-                        mensaje: `Te quedan ${diasRestantesPlan} días de tu plan "${planActivo.titulo}". ¡Hablá con tu profe para renovarlo antes de quedarte sin rutina!`,
-                        tipo: 'PLAN'
-                    });
-                    planActivo.avisoVencimientoEnviado = true;
-                    await planActivo.save();
-                }
-            }
-        }
+        }).sort({ createdAt: -1 });
+        const totalWorkouts = await WorkoutLog.countDocuments({ alumnoId: user._id });
 
         res.json({
             user: {
@@ -59,12 +44,12 @@ const getStudentDashboard = async (req, res) => {
             },
             stats: { sesionesCompletadas: totalWorkouts, racha: 0 },
 
-            plan: planFinal ? {
-                _id: planFinal._id,
-                titulo: planFinal.titulo,
-                semanasRestantes: planFinal.semanasRestantesDinamicas,
-                sesiones: planFinal.sesiones,
-                createdAt: planFinal.createdAt
+            plan: planActivo ? {
+                _id: planActivo._id,
+                titulo: planActivo.titulo,
+                semanasRestantes: planActivo.vencimiento,
+                sesiones: planActivo.sesiones,
+                createdAt: planActivo.createdAt
             } : null
         });
     } catch (error) {

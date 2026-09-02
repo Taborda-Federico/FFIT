@@ -61,14 +61,13 @@ describe('GET /api/student/dashboard — estado de cuota', () => {
     });
 });
 
-describe('GET /api/student/dashboard — EL BUG DEL DOBLE DECREMENTO en "semanas restantes" del plan', () => {
-    // Hay DOS mecanismos independientes que erosionan `plan.vencimiento`:
-    //  (A) El cron semanal (cron/expirationCheck.js) resta 1 cada domingo 23:59.
-    //  (B) getStudentDashboard recalcula "semanasRestantesDinamicas" como
-    //      (createdAt + vencimiento_ACTUAL*7 días) - hoy, usando el valor YA
-    //      decrementado por (A) como si fuera el total original.
-    // Resultado: cada semana que pasa, el plan pierde ~2 semanas de vida útil
-    // en vez de 1. Estos tests lo muestran con números concretos.
+describe('GET /api/student/dashboard — ARREGLADO: ya no hay doble decremento en "semanas restantes"', () => {
+    // Antes había DOS mecanismos independientes erosionando `plan.vencimiento`:
+    // el cron semanal (resta 1 cada domingo) y este mismo endpoint (que
+    // recalculaba una fecha de expiración propia usando el vencimiento YA
+    // decrementado por el cron como si fuera el total original). Ahora el
+    // dashboard solo LEE plan.vencimiento — el cron es la única fuente de
+    // verdad. Ver docs/CAMBIOS.md #5 para el detalle completo.
 
     async function crearPlanConNSemanasTranscurridas(vencimientoInicial, semanasTranscurridas) {
         const { admin } = await createAdmin();
@@ -82,95 +81,52 @@ describe('GET /api/student/dashboard — EL BUG DEL DOBLE DECREMENTO en "semanas
         return { token, planId: plan._id };
     }
 
-    it('semana 0 (recién publicado, cron nunca corrió): semanasRestantes = 4, como se esperaría', async () => {
+    it('semana 0 (recién publicado, cron nunca corrió): semanasRestantes = 4', async () => {
         const { token } = await crearPlanConNSemanasTranscurridas(4, 0);
         const res = await request(app).get('/api/student/dashboard').set('Authorization', `Bearer ${token}`);
         expect(res.body.plan.semanasRestantes).toBe(4);
     });
 
-    it('BUG: después de 1 semana real Y 1 corrida del cron, el dashboard NO muestra 3 semanas restantes — muestra 2', async () => {
+    it('después de 1 semana real y 1 corrida del cron, semanasRestantes = 3 (no 2)', async () => {
         const { token } = await crearPlanConNSemanasTranscurridas(4, 1);
         const res = await request(app).get('/api/student/dashboard').set('Authorization', `Bearer ${token}`);
-        // Expectativa ingenua/correcta: 4 semanas totales - 1 transcurrida = 3.
-        // Comportamiento real: el cron ya dejó vencimiento=3, y el dashboard
-        // calcula la fecha de expiración como createdAt + 3*7 días — pero ya
-        // pasaron 7 de esos 21 días, así que quedan 14 días = 2 semanas.
-        expect(res.body.plan.semanasRestantes).toBe(2);
-        expect(res.body.plan.semanasRestantes).not.toBe(3);
+        expect(res.body.plan.semanasRestantes).toBe(3);
     });
 
-    it('BUG: después de 2 semanas reales y 2 corridas del cron, "quedan" 0 semanas (el plan ya se autodesactivó) en vez de 2', async () => {
+    it('después de 2 semanas reales y 2 corridas del cron, semanasRestantes = 2 (el plan sigue activo, no se autodesactivó a mitad de camino)', async () => {
         const { token, planId } = await crearPlanConNSemanasTranscurridas(4, 2);
         const res = await request(app).get('/api/student/dashboard').set('Authorization', `Bearer ${token}`);
-        // Un plan de 4 semanas se muere a la MITAD de su duración prometida.
-        expect(res.body.plan).toBeNull();
-        const planEnDb = await Plan.findById(planId);
-        expect(planEnDb.activo).toBe(false);
+        expect(res.body.plan).not.toBeNull();
+        expect(res.body.plan.semanasRestantes).toBe(2);
+        expect((await Plan.findById(planId)).activo).toBe(true);
     });
 
-    it('control: si el cron NUNCA corre (solo pasa tiempo real), el cálculo del dashboard es internamente consistente', async () => {
-        // Aísla la variable: sin la interacción de (A), el mecanismo (B) solo
-        // no tiene el bug de "doble descuento" — esto confirma que el problema
-        // es específicamente la COMBINACIÓN de los dos mecanismos, no cada
-        // uno por separado.
-        const { admin } = await createAdmin();
-        const { student, token } = await createStudentDirect(admin._id);
-        await createPlanDirect(admin._id, student._id, {
-            vencimiento: 4,
-            createdAt: new Date(Date.now() - 7 * DIA_MS) // 1 semana real transcurrida, cron NUNCA corrió
-        });
-        const res = await request(app).get('/api/student/dashboard').set('Authorization', `Bearer ${token}`);
-        expect(res.body.plan.semanasRestantes).toBe(3); // esto SÍ da el valor "correcto"
-    });
-
-    it('la curva completa semana a semana: 4 → 2 → 0 (huecos), no 4 → 3 → 2 → 1 como se esperaría', async () => {
+    it('la curva completa semana a semana ahora es lineal: 4 → 3 → 2 → 1 → 0 (desactivado)', async () => {
         const puntos = [];
-        for (let semanas = 0; semanas <= 2; semanas++) {
+        for (let semanas = 0; semanas <= 4; semanas++) {
             const { token } = await crearPlanConNSemanasTranscurridas(4, semanas);
             const res = await request(app).get('/api/student/dashboard').set('Authorization', `Bearer ${token}`);
             puntos.push(res.body.plan ? res.body.plan.semanasRestantes : 0);
         }
-        expect(puntos).toEqual([4, 2, 0]);
-    });
-});
-
-describe('GET /api/student/dashboard — notificación de plan por vencer', () => {
-    it('crea una notificación PLAN cuando quedan <= 7 días, y marca avisoVencimientoEnviado', async () => {
-        const { admin } = await createAdmin();
-        const { student, token } = await createStudentDirect(admin._id);
-        await createPlanDirect(admin._id, student._id, {
-            vencimiento: 1, // 1 semana = 7 días, createdAt hoy → quedan ~7 días
-        });
-        await request(app).get('/api/student/dashboard').set('Authorization', `Bearer ${token}`);
-        const notifs = await Notification.find({ alumnoId: student._id, tipo: 'PLAN' });
-        expect(notifs).toHaveLength(1);
+        expect(puntos).toEqual([4, 3, 2, 1, 0]);
     });
 
-    it('NO duplica la notificación en una segunda llamada secuencial (el flag avisoVencimientoEnviado protege)', async () => {
+    it('un GET al dashboard ya NO modifica la base de datos — se puede llamar muchas veces seguidas sin efecto alguno', async () => {
         const { admin } = await createAdmin();
         const { student, token } = await createStudentDirect(admin._id);
-        await createPlanDirect(admin._id, student._id, { vencimiento: 1 });
+        const plan = await createPlanDirect(admin._id, student._id, { vencimiento: 1 });
+        const updatedAtAntes = (await Plan.findById(plan._id)).updatedAt;
+
         await request(app).get('/api/student/dashboard').set('Authorization', `Bearer ${token}`);
         await request(app).get('/api/student/dashboard').set('Authorization', `Bearer ${token}`);
-        const notifs = await Notification.find({ alumnoId: student._id, tipo: 'PLAN' });
-        expect(notifs).toHaveLength(1);
-    });
-
-    it('RACE CONDITION: dos requests CONCURRENTES al filo del umbral pueden crear notificaciones duplicadas', async () => {
-        const { admin } = await createAdmin();
-        const { student, token } = await createStudentDirect(admin._id);
-        await createPlanDirect(admin._id, student._id, { vencimiento: 1 });
-
         await Promise.all([
             request(app).get('/api/student/dashboard').set('Authorization', `Bearer ${token}`),
             request(app).get('/api/student/dashboard').set('Authorization', `Bearer ${token}`),
         ]);
 
-        const notifs = await Notification.find({ alumnoId: student._id, tipo: 'PLAN' });
-        // Documentamos el resultado real: como la lectura de avisoVencimientoEnviado
-        // y su guardado no son atómicos, dos requests simultáneas ALCANZAN a
-        // pasar el `if` antes de que cualquiera de las dos guarde el flag.
-        expect(notifs.length).toBeGreaterThanOrEqual(1);
+        const planDespues = await Plan.findById(plan._id);
+        expect(planDespues.updatedAt.getTime()).toBe(updatedAtAntes.getTime());
+        expect(await Notification.countDocuments({ alumnoId: student._id })).toBe(0);
     });
 });
 

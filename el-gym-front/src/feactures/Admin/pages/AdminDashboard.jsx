@@ -260,7 +260,10 @@ export function AdminDashboard() {
                         <div className="search-results-dropdown">
                             {alumnosDb.filter(a => a.nombre.toLowerCase().includes(userSearch.toLowerCase())).map(a => (
                                 <div key={a._id} className="result-item" onClick={() => {
-                                    setPlan({ ...plan, alumno: a.nombre, alumnoId: a._id, celular: a.celular });
+                                    // El modelo de alumno guarda el teléfono como `telefono`, no
+                                    // `celular` — leer `a.celular` siempre daba undefined, así que
+                                    // el link de WhatsApp de abajo nunca llevaba el número real.
+                                    setPlan({ ...plan, alumno: a.nombre, alumnoId: a._id, celular: a.telefono });
                                     setUserSearch("");
                                 }}>
                                     {a.nombre} - <small>{a.email}</small>

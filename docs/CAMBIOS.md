@@ -177,3 +177,54 @@ pegue a un id que no es del alumno logueado), dejaría de funcionar esa llamada 
 no se ve afectado.
 
 ---
+
+## 4 — Los tres bugs de "los días de la semana"
+
+Los tres arreglos de esta sección son cambios de **cálculo en pantalla**, no de datos: ningún
+`WorkoutLog`, `Plan` ni nada guardado en Mongo se toca, se borra ni se reescribe. Se sigue leyendo
+exactamente el mismo historial de entrenamientos que ya existe (con meses de uso real detrás) — lo único
+que cambia es cómo se interpreta la fecha al decidir qué mostrar. Para un alumno esto se siente como "algo
+que se veía raro ahora se ve bien", no como que algo desapareció.
+
+### HomeHub.jsx: la semana ahora se cuenta desde el lunes, no desde el domingo
+
+**Qué pasaba:** `isSessionCompleted` usaba `hoy.getDay()` (0=domingo...6=sábado) directo como "días a
+restar" para encontrar el inicio de la semana — eso arranca la semana en domingo. El resto de la app
+(`Horarios.jsx`, la grilla pública de clases) y la convención real en Argentina cuentan la semana de lunes
+a domingo. Resultado: una sesión entrenada el domingo seguía marcada "COMPLETADA" el lunes siguiente (para
+el alumno ya debería ser una semana nueva), y a la inversa, una sesión del lunes se "olvidaba" un día antes
+de tiempo, el domingo.
+
+**La solución:** se cambió la fórmula de "días a restar" de `diaDeLaSemana` a `(diaDeLaSemana + 6) % 7`,
+que da 0 para el lunes, 1 para el martes, ..., 6 para el domingo — o sea, cuenta la semana desde el lunes.
+
+### HistoryView.jsx: la racha ya no se corta por una mezcla de UTC y hora local
+
+**Qué pasaba** (ver reporte de auditoría para el detalle técnico completo): `calcularRacha` sacaba la
+fecha de cada entrenamiento en UTC y después la volvía a interpretar como si fuera hora local, corriendo
+un día la validación de "¿entrenaste hace más de 48hs?" — específicamente en husos horarios detrás de UTC,
+como Argentina. Entrenar ayer podía mostrar racha en 0 en vez de mantenerla.
+
+**La solución:** dos funciones nuevas, `fechaLocalISO` y `parsearFechaLocal`, que arman y leen las fechas
+siempre en hora local, sin ningún paso intermedio por UTC.
+
+### AdminDashboard.jsx: el link de WhatsApp ahora sí lleva el número del alumno
+
+**Qué pasaba:** al elegir un alumno de la búsqueda, se guardaba `a.celular` — un campo que no existe en el
+modelo de alumno (se llama `telefono`) — así que el link de WhatsApp después de publicar un plan siempre
+caía al genérico, sin ningún contacto preseleccionado.
+
+**La solución:** una línea: leer `a.telefono` en vez de `a.celular`.
+
+**Tests:** se dieron vuelta los tests que documentaban los tres bugs (ahora confirman el comportamiento
+correcto) y se agregó uno nuevo (`HomeHub`: una sesión del lunes sigue completada hasta el domingo de esa
+misma semana). Los tests e2e de "días de la semana" se corrieron además con el huso horario del sistema
+forzado a UTC, para confirmar que el arreglo no depende de en qué máquina corra.
+
+**Riesgo para la app en producción:** bajo, con un matiz a tener en cuenta el día que esto se despliegue:
+un alumno que haya entrenado el domingo y entre a la app el lunes va a ver esa sesión "liberada" de nuevo
+(antes la veía bloqueada) — es exactamente el comportamiento correcto, pero es un cambio visible en el
+momento del deploy para quien esté mirando la app justo ese lunes. No hay ninguna pérdida de datos: el
+entrenamiento del domingo sigue en el Historial tal cual quedó guardado.
+
+---

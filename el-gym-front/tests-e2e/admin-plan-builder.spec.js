@@ -70,4 +70,38 @@ test.describe('Constructor de planes (armado real, de punta a punta)', () => {
         await expect(page.getByPlaceholder('TÍTULO DE LA RUTINA')).toHaveValue('Plantilla E2E');
         await expect(page.locator('input[value="Sentadilla"]')).toBeVisible();
     });
+
+    test('ARREGLO DE UN BUG REPORTADO POR UN CLIENTE REAL: navegar a otra pestaña del panel a mitad de armar un plan y volver ya no lo borra', async ({ page }) => {
+        const admin = await crearAdmin({ email: 'admin-plan4@x.com' });
+        await loguearComoAdmin(page, admin);
+        await page.goto('/admin/planes');
+
+        await page.getByPlaceholder('TÍTULO DE LA RUTINA').fill('Plan Que No Se Debe Perder');
+        await page.getByRole('button', { name: 'Serie', exact: true }).click();
+        await page.getByPlaceholder('Ejercicio').first().fill('Peso Muerto');
+
+        // Exactamente el gesto que describió el cliente: "hago el plan y por
+        // ahí hago otra cosa" — por ejemplo, ir a revisar la lista de
+        // alumnos antes de terminar de escribir el plan.
+        await page.getByRole('link', { name: 'Alumnos' }).click();
+        await expect(page).toHaveURL(/\/admin$/);
+
+        await page.getByRole('link', { name: 'Planes' }).click();
+        await expect(page).toHaveURL(/\/admin\/planes/);
+
+        await expect(page.getByPlaceholder('TÍTULO DE LA RUTINA')).toHaveValue('Plan Que No Se Debe Perder');
+        await expect(page.getByPlaceholder('Ejercicio').first()).toHaveValue('Peso Muerto');
+    });
+
+    test('lo mismo pero recargando la página (F5) en vez de navegar por el menú', async ({ page }) => {
+        const admin = await crearAdmin({ email: 'admin-plan5@x.com' });
+        await loguearComoAdmin(page, admin);
+        await page.goto('/admin/planes');
+
+        await page.getByPlaceholder('TÍTULO DE LA RUTINA').fill('Sobrevive a un F5 de verdad');
+        await page.waitForTimeout(200); // le da tiempo al useEffect de persistir antes del reload
+
+        await page.reload();
+        await expect(page.getByPlaceholder('TÍTULO DE LA RUTINA')).toHaveValue('Sobrevive a un F5 de verdad');
+    });
 });

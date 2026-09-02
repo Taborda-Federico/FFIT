@@ -73,29 +73,36 @@ describe('RegisterUserModal — el frontend SÍ junta y envía todos los campos 
         expect(onClose).toHaveBeenCalled();
     });
 
-    it('si el server rechaza, NO cierra el modal (eso funciona bien)', async () => {
+    it('si el server rechaza, NO cierra el modal', async () => {
         const onClose = vi.fn();
         createStudentMock.mockRejectedValue(new Error('El correo o DNI ya están registrados'));
         render(<RegisterUserModal onClose={onClose} onSave={() => {}} />);
         llenarFormularioCompleto();
         fireEvent.click(screen.getByText('Finalizar Registro'));
-        await screen.findByText(/Error al registrar socio/);
+        await screen.findByText(/ya están registrados/);
         expect(onClose).not.toHaveBeenCalled();
     });
 
-    it('BUG (confirmado con e2e real contra el backend real): el mensaje específico del backend NUNCA se muestra, siempre cae al genérico "Error al registrar socio"', async () => {
-        // UserService.createStudent usa fetch nativo y tira `new Error(data.message)`
-        // — un Error común, SIN `.response`. Pero este componente lee el
-        // mensaje como `err.response?.data?.message` (forma de Axios), que
-        // acá siempre da undefined. Por eso, sin importar qué diga el
-        // backend (DNI duplicado, email duplicado, campo faltante...), el
-        // alumno-operador siempre ve el mismo texto genérico.
+    it('ARREGLADO: el mensaje específico del backend (ej. "DNI ya registrado") ahora sí se muestra, no el genérico', async () => {
+        // Antes, este componente leía el mensaje como
+        // `err.response?.data?.message` (forma de Axios), pero
+        // UserService.createStudent usa fetch nativo y tira un Error común
+        // (`err.message`) — así que siempre caía al texto genérico sin
+        // importar qué dijera el backend. Ahora lee `err.message` directo.
         createStudentMock.mockRejectedValue(new Error('El correo o DNI ya están registrados en el sistema.'));
         render(<RegisterUserModal onClose={() => {}} onSave={() => {}} />);
         llenarFormularioCompleto();
         fireEvent.click(screen.getByText('Finalizar Registro'));
+        expect(await screen.findByText('El correo o DNI ya están registrados en el sistema.')).toBeInTheDocument();
+        expect(screen.queryByText('Error al registrar socio')).not.toBeInTheDocument();
+    });
+
+    it('si el Error no trae mensaje, cae al genérico "Error al registrar socio"', async () => {
+        createStudentMock.mockRejectedValue(new Error());
+        render(<RegisterUserModal onClose={() => {}} onSave={() => {}} />);
+        llenarFormularioCompleto();
+        fireEvent.click(screen.getByText('Finalizar Registro'));
         expect(await screen.findByText('Error al registrar socio')).toBeInTheDocument();
-        expect(screen.queryByText(/ya están registrados/i)).not.toBeInTheDocument();
     });
 
     it('mientras está enviando, deshabilita los botones y muestra "Registrando..."', async () => {

@@ -82,43 +82,40 @@ describe('authMiddleware.protect', () => {
         expect(req.user.password).toBeUndefined();
     });
 
-    it('BUG: "Authorization: Bearer" sin ningún token después → responde 401 DOS VECES (llama a res.status dos veces)', async () => {
+    it('ARREGLADO: "Authorization: Bearer" sin ningún token después → responde 401 UNA sola vez', async () => {
         // req.headers.authorization === 'Bearer' (sin espacio ni token).
         // 'Bearer'.split(' ')[1] === undefined → jwt.verify(undefined, ...) tira
-        // sincrónicamente dentro del try → responde 401 en el catch. Pero como
-        // `token` sigue siendo undefined después del try/catch, el código
-        // sigue de largo hasta el `if (!token)` final y responde 401 OTRA VEZ.
-        // En Express real esto dispara "Cannot set headers after they are sent".
+        // sincrónicamente dentro del try → responde 401 en el catch. Antes,
+        // como `token` seguía siendo undefined después del try/catch, la
+        // ejecución seguía de largo hasta el `if (!token)` final y respondía
+        // 401 OTRA VEZ (en Express real, "Cannot set headers after they are
+        // sent"). Ahora el `return` corta la ejecución en el catch.
         const req = { headers: { authorization: 'Bearer' } };
         const res = mockRes();
         const next = jest.fn();
         await protect(req, res, next);
-        expect(res.status).toHaveBeenCalledTimes(2);
+        expect(res.status).toHaveBeenCalledTimes(1);
         expect(next).not.toHaveBeenCalled();
     });
 
-    it('BUG (variante): "Authorization: Bearer " con espacio de más y nada después → también responde 401 dos veces', async () => {
+    it('ARREGLADO (variante): "Authorization: Bearer " con espacio de más y nada después → también responde una sola vez', async () => {
         const req = { headers: { authorization: 'Bearer ' } };
         const res = mockRes();
         const next = jest.fn();
         await protect(req, res, next);
-        expect(res.status).toHaveBeenCalledTimes(2);
+        expect(res.status).toHaveBeenCalledTimes(1);
     });
 
-    it('BUG: token válido pero el usuario ya no existe en la DB (fue borrado) → req.user queda null y IGUAL llama a next()', async () => {
+    it('ARREGLADO: token válido pero el usuario ya no existe en la DB (fue borrado) → 401 claro, no deja pasar con req.user null', async () => {
         const { admin: adminUser, token } = await createAdmin();
         await User.findByIdAndDelete(adminUser._id);
         const req = { headers: { authorization: `Bearer ${token}` } };
         const res = mockRes();
         const next = jest.fn();
         await protect(req, res, next);
-        // El middleware NO valida que req.user exista antes de seguir: esto
-        // deja pasar la request con req.user = null hacia el controller, que
-        // no todos manejan con gracia (ver studentController tests: termina
-        // en un 500 genérico en vez de un 401 claro).
-        expect(req.user).toBeNull();
-        expect(next).toHaveBeenCalledTimes(1);
-        expect(res.status).not.toHaveBeenCalled();
+        expect(next).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(401);
+        expect(res.body.message).toMatch(/ya no existe/i);
     });
 });
 
@@ -142,7 +139,7 @@ describe('authMiddleware.admin', () => {
         expect(next).not.toHaveBeenCalled();
     });
 
-    it('req.user es null (usuario borrado, ver test de arriba) → 401, no explota con TypeError', () => {
+    it('req.user es null → 401, no explota con TypeError (defensivo: hoy protect() ya corta antes de llegar acá, ver arriba)', () => {
         const req = { user: null };
         const res = mockRes();
         const next = jest.fn();

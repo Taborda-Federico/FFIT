@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const Plan = require('../models/Plan');
 const Notification = require('../models/Notification');
@@ -78,11 +79,18 @@ const saveWorkoutLog = async (req, res) => {
             });
         }
 
-        const { nombreSesion, duracion, ejercicios } = req.body;
+        const { nombreSesion, duracion, ejercicios, sesionId } = req.body;
 
         const newLog = await WorkoutLog.create({
             alumnoId: req.user._id,
             nombreSesion,
+            // Opcional: si el frontend lo manda (ver HomeHub/UserDashboard),
+            // queda guardada la referencia a la sesión puntual del plan que
+            // se entrenó, para poder matchear por id y no solo por nombre
+            // (ver comentario en models/WorkoutLog.js). Si no llega o no es
+            // un ObjectId válido, se guarda sin este campo — igual que
+            // siempre se guardó, sin romper nada.
+            sesionId: mongoose.isValidObjectId(sesionId) ? sesionId : undefined,
             duracion,
             ejercicios: ejercicios
         });

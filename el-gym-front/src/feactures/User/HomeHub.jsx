@@ -14,7 +14,7 @@ export function HomeHub({ onStart, dashboardData, history = [] }) {
     const hoyString = new Date().toDateString();
     const yaEntrenoHoy = history.some(log => new Date(log.createdAt).toDateString() === hoyString);
 
-    const isSessionCompleted = (sessionName) => {
+    const isSessionCompleted = (session) => {
         if (!history || history.length === 0) return false;
         const hoy = new Date();
         // getDay() devuelve 0=domingo...6=sábado. Antes esto se usaba
@@ -37,11 +37,22 @@ export function HomeHub({ onStart, dashboardData, history = [] }) {
 
         return history.some(log => {
             const fechaLog = new Date(log.createdAt);
-            return (
-                log.nombreSesion === sessionName &&
-                fechaLog >= inicioDeSemana &&
-                fechaLog >= fechaPlan
-            );
+            if (fechaLog < inicioDeSemana || fechaLog < fechaPlan) return false;
+
+            // Si el log guarda el id de la sesión puntual que se entrenó
+            // (sesionId — ver docs/CAMBIOS.md), matchear por ahí es mucho
+            // más preciso que por nombre: dos sesiones del mismo plan
+            // podrían haber quedado con el mismo `nombre` por error (nada
+            // lo impide al armar el plan), y ahí el matching por texto
+            // marcaba como "hecha" a las dos con un solo entrenamiento.
+            // Los logs viejos (de antes de este campo existir) no tienen
+            // sesionId — para esos se sigue matcheando por nombre, EXACTO
+            // como funcionaba antes, para no perder el historial ya
+            // registrado.
+            if (log.sesionId) {
+                return String(log.sesionId) === String(session._id);
+            }
+            return log.nombreSesion === session.nombre;
         });
     };
 
@@ -108,7 +119,7 @@ export function HomeHub({ onStart, dashboardData, history = [] }) {
                     {plan && plan.sesiones && plan.sesiones.length > 0 ? (
                         plan.sesiones.map((session, index) => {
                             // Variables de estado del día
-                            const isDone = isSessionCompleted(session.nombre);
+                            const isDone = isSessionCompleted(session);
                             const isBlocked = isDone || (!isDone && yaEntrenoHoy);
 
                             return (

@@ -90,6 +90,18 @@ describe('UserDashboard — flujo completo de entrenamiento', () => {
         expect(payload.duracion).toBe('5m');
     });
 
+    it('NUEVO: al guardar, manda el sesionId de la sesión puntual que se entrenó (no solo el nombre)', async () => {
+        render(<UserDashboard />);
+        await esperarCarga();
+        fireEvent.click(screen.getByText('Día 1').closest('.hub-session-card'));
+        fireEvent.click(screen.getByText(/FINALIZAR ENTRENAMIENTO/));
+        await waitFor(() => expect(saveWorkoutMock).toHaveBeenCalled());
+        // 's1' es el _id de la sesión en el mock de arriba — con esto,
+        // HomeHub puede distinguir dos sesiones que compartan `nombre`
+        // (ver docs/CAMBIOS.md y HomeHub.test.jsx).
+        expect(saveWorkoutMock.mock.calls[0][0].sesionId).toBe('s1');
+    });
+
     it('BUG MENOR: un entrenamiento de menos de 1 minuto (o instantáneo) se reporta igual como "1m" (piso artificial)', async () => {
         render(<UserDashboard />);
         await esperarCarga();

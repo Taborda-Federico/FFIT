@@ -1,21 +1,27 @@
 // tests/helpers/db.js
 //
 // Cada archivo de test levanta su propia instancia de mongodb-memory-server
-// (usando el mongod real del sistema — ver MONGOMS_SYSTEM_BINARY en
-// package.json — así no descarga nada ni toca Mongo real). Se elige "una
-// instancia por archivo" en vez de una global compartida porque es más
-// simple y evita bugs de estado compartido entre archivos que corren en
-// procesos/sandboxes separados de Jest.
+// (nunca toca Mongo real). Se elige "una instancia por archivo" en vez de
+// una global compartida porque es más simple y evita bugs de estado
+// compartido entre archivos que corren en procesos/sandboxes separados de
+// Jest.
+const fs = require('fs');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const mongoose = require('mongoose');
 
 let mongod;
 
 async function connect() {
-    // version explícita = la del mongod real del sistema (ver package.json,
-    // MONGOMS_SYSTEM_BINARY): evita el warning de "posible conflicto de
-    // versión" en cada corrida, sin cambiar qué binario termina usando.
-    mongod = await MongoMemoryServer.create({ binary: { version: '7.0.25' } });
+    // Si hay un mongod instalado en el sistema (como en esta máquina de
+    // desarrollo), lo reusamos para no descargar nada. Si no existe (por
+    // ejemplo en un runner de CI limpio), mongodb-memory-server descarga su
+    // propio binario automáticamente — por eso esto NUNCA se hardcodea en
+    // package.json, tiene que funcionar en cualquier máquina sin setup previo.
+    const systemMongod = process.env.MONGOMS_SYSTEM_BINARY || '/usr/bin/mongod';
+    const opts = fs.existsSync(systemMongod)
+        ? { binary: { systemBinary: systemMongod } }
+        : {};
+    mongod = await MongoMemoryServer.create(opts);
     const uri = mongod.getUri();
     await mongoose.connect(uri);
 }

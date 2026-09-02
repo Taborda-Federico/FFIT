@@ -52,12 +52,12 @@ describe('GET /api/student/dashboard — estado de cuota', () => {
         expect((await request(app).get('/api/student/dashboard').set('Authorization', `Bearer ${tokenVencido}`)).body.user.estado).toBe('VENCIDO');
     });
 
-    it('BUG: usuario borrado con token todavía válido → 500 genérico en vez de un 401 claro', async () => {
+    it('ARREGLADO: usuario borrado con token todavía válido → 401 claro (antes daba 500 genérico)', async () => {
         const { admin } = await createAdmin();
         const { student, token } = await createStudentDirect(admin._id);
         await User.findByIdAndDelete(student._id);
         const res = await request(app).get('/api/student/dashboard').set('Authorization', `Bearer ${token}`);
-        expect(res.status).toBe(500);
+        expect(res.status).toBe(401);
     });
 });
 
@@ -326,13 +326,19 @@ describe('PUT /api/student/change-password', () => {
         expect(login.status).toBe(200);
     });
 
-    it('BUG: no hay ninguna validación server-side de longitud mínima — acepta una contraseña de 1 solo caracter', async () => {
+    it('ARREGLADO: una contraseña nueva de menos de 6 caracteres se rechaza también del lado del servidor', async () => {
         const { admin } = await createAdmin();
         const { token } = await createStudentDirect(admin._id, { dni: '777' });
         const res = await request(app).put('/api/student/change-password').set('Authorization', `Bearer ${token}`)
             .send({ currentPassword: '777', newPassword: 'x' });
-        // El frontend exige mínimo 6 caracteres, pero es SOLO client-side:
-        // pegándole directo a la API (como hace este test) no hay ningún freno.
+        expect(res.status).toBe(400);
+    });
+
+    it('una contraseña nueva de exactamente 6 caracteres sí se acepta (el límite es "al menos 6")', async () => {
+        const { admin } = await createAdmin();
+        const { token } = await createStudentDirect(admin._id, { dni: '778' });
+        const res = await request(app).put('/api/student/change-password').set('Authorization', `Bearer ${token}`)
+            .send({ currentPassword: '778', newPassword: '123456' });
         expect(res.status).toBe(200);
     });
 });

@@ -281,3 +281,68 @@ movieron de `student.e2e.test.js` a `cron/expirationCheck.test.js`, que es donde
 de la respuesta del dashboard es idéntica, solo cambia cómo se calcula el número adentro).
 
 ---
+
+## 6 — Cuatro robusteces sueltas: mensajes de error, doble respuesta HTTP, contraseñas cortas y emails en cascada
+
+Este batch junta cuatro arreglos chicos e independientes entre sí — no tocan datos existentes, ninguno
+cambia lo que un usuario ve cuando todo sale bien, solo lo que pasa cuando algo sale mal.
+
+**1. `RegisterUserModal.jsx` mostraba "undefined" en vez del mensaje real del backend.**
+
+El código leía `err.response?.data?.message`, un patrón de Axios — pero este frontend usa `fetch`, no
+Axios, así que `err.response` nunca existe. Cuando el backend rechazaba un registro (por ejemplo, DNI
+duplicado) con un mensaje específico, el modal mostraba un genérico "Error al registrar socio" en vez del
+mensaje real ("Ese DNI o email ya están registrados"). Se cambió a `err.message`, que es donde el `throw`
+del `fetch` wrapper efectivamente deja el texto. Efecto: el admin ahora ve el motivo real del rechazo y
+puede corregirlo sin adivinar.
+
+**2. `authMiddleware.protect` podía responder dos veces a la misma request, y dejaba pasar tokens de usuarios borrados.**
+
+Dos problemas en el mismo archivo:
+
+- Un header `Authorization: Bearer` sin nada después del espacio hace que `jwt.verify(undefined, ...)` tire
+  dentro del `try`. El `catch` respondía 401 — pero como a ningún `return` lo acompañaba, la función seguía
+  ejecutando hasta el `if (!token)` de más abajo, que respondía 401 OTRA VEZ. En Express real esto dispara
+  el error de Node "Cannot set headers after they are sent", que en el mejor caso es un log de warning y en
+  el peor puede tirar abajo la request. Se agregó `return` antes de cada `res.status(...)` en la función.
+- Un token válido y sin expirar de un usuario que mientras tanto fue borrado (ej. un admin elimina un
+  alumno que en ese momento tiene la app abierta en el celular) dejaba pasar la request con
+  `req.user = null`, porque nunca se chequeaba el resultado de `User.findById`. Los controllers que asumen
+  que `req.user` existe explotaban con un 500 genérico. Ahora se corta ahí mismo con un 401 claro
+  ("No autorizado, el usuario ya no existe"), que es lo que el frontend ya sabe interpretar como "andá de
+  nuevo al login".
+
+**3. Cambiar la contraseña aceptaba cualquier longitud si se le pegaba directo a la API.**
+
+El mínimo de 6 caracteres solo existía en `ProfileView.jsx` (frontend) — una validación que cualquiera
+puede saltear pegándole directo al endpoint `PUT /api/student/change-password` (con curl, Postman, etc.).
+Se agregó la misma validación del lado del servidor, que es donde tiene que estar la que de verdad importa.
+Un alumno legítimo usando la app no nota ningún cambio (el frontend ya frenaba esto antes); lo que cambia
+es que ahora tampoco se puede saltear.
+
+**4. El cron diario de "tu cuota vence en 5 días" se cortaba entero si UN solo email fallaba.**
+
+El `try/catch` envolvía el `for` completo que recorre a todos los alumnos por vencer. Si el proveedor de
+mail rechazaba la dirección de un solo alumno (email mal cargado, buzón lleno, lo que sea), el `catch`
+atrapaba el error y el loop se cortaba ahí — todos los alumnos que venían DESPUÉS en la misma corrida se
+quedaban sin `Notification` y sin intento de email, sin tener nada de malo ellos. Como el cron corre una
+vez por día, esos alumnos directamente no se enteraban de que su cuota estaba por vencer esa semana. Se
+movió el `try/catch` para que envuelva cada alumno individualmente: ahora una falla queda contenida a esa
+persona (se loguea el error, con su id y su email, para poder revisarlo a mano) y el resto del batch sigue
+procesándose con normalidad.
+
+**Riesgo para la app en producción:** ninguno de los cuatro toca el esquema de datos ni requiere migración.
+Los tres primeros solo agregan un freno donde antes no había ninguno (una respuesta de error más clara, una
+validación que ya existía en el frontend, un `return` que evita un bug de Express); el cuarto solo cambia
+el radio de qué tan lejos llega una falla, nunca la lógica de qué se le envía a cada alumno individual.
+
+**Tests:** `RegisterUserModal.test.jsx` (mensaje de error) y el e2e de admin-students (DNI duplicado
+mostrando el mensaje específico); `authMiddleware.test.js` (doble respuesta y usuario borrado, ambos
+invertidos a partir de tests que antes documentaban el bug) más el `student.e2e.test.js` del dashboard con
+usuario borrado (ahora 401 en vez de 500); `student.e2e.test.js` para el mínimo de contraseña (rechaza 1
+caracter, acepta exactamente 6); `cron/expirationCheck.test.js` para el email en cascada (el alumno anterior
+y el posterior al que falla ahora sí reciben su aviso).
+
+245 backend en verde, 243 frontend, 28 e2e — sin tocar nada de lo visible cuando todo sale bien.
+
+---

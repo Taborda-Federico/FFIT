@@ -36,7 +36,11 @@ export function RegisterUserModal({ onClose, onSave }) {
             onSave(newStudent);
             onClose();
         } catch (err) {
-            setErrorMsg(err.response?.data?.message || 'Error al registrar socio');
+            // UserService.createStudent usa fetch nativo y tira un Error común
+            // (`err.message`) — leer `err.response?.data?.message` (forma de
+            // Axios) siempre daba undefined acá, así que el admin nunca veía
+            // el motivo real (ej. "DNI ya registrado"), solo el genérico.
+            setErrorMsg(err.message || 'Error al registrar socio');
         } finally {
             setIsLoading(false);
         }

@@ -97,6 +97,10 @@ export function UserDashboard() {
 
             await StudentService.saveWorkout({
                 nombreSesion: activeWorkout?.nombre || 'Rutina Completada',
+                // _id de la sesión puntual del plan (no del plan entero):
+                // permite a HomeHub distinguir dos sesiones que por error
+                // tengan el mismo nombre — ver docs/CAMBIOS.md.
+                sesionId: activeWorkout?._id,
                 duracion: duracionStr,
                 duracionMins: duracionStr.replace('m', ''),
                 pesoTotal: pesoTotalSuma,

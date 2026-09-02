@@ -65,6 +65,20 @@ cron.schedule('59 23 * * 0', async () => {
                 plan.vencimiento = 0;
                 plan.activo = false;
                 plan.notasGlobales = (plan.notasGlobales || "") + " [PLAN FINALIZADO]";
+            } else if (plan.vencimiento === 1 && !plan.avisoVencimientoEnviado) {
+                // Este aviso ("te queda ~1 semana") antes lo disparaba
+                // getStudentDashboard en cada carga de pantalla del alumno —
+                // ver docs/CAMBIOS.md #5 sobre por qué eso además duplicaba
+                // el aviso si dos pedidos llegaban al mismo tiempo. Ahora lo
+                // maneja el mismo lugar que decrementa vencimiento, una sola
+                // vez por semana, sin condición de carrera posible.
+                await Notification.create({
+                    alumnoId: plan.alumnoId,
+                    titulo: '¡Tu plan está por vencer! ⚠️',
+                    mensaje: `Te queda ${plan.vencimiento === 1 ? '1 semana' : `${plan.vencimiento} semanas`} de tu plan "${plan.titulo}". ¡Hablá con tu profe para renovarlo antes de quedarte sin rutina!`,
+                    tipo: 'PLAN'
+                });
+                plan.avisoVencimientoEnviado = true;
             }
 
             await plan.save();

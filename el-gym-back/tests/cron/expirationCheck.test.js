@@ -178,3 +178,56 @@ describe('cron semanal: decremento de vencimiento y auto-finalización', () => {
         expect((await Plan.findById(p2._id)).vencimiento).toBe(1);
     });
 });
+
+describe('cron semanal: aviso de "tu plan está por vencer" (antes vivía en getStudentDashboard, ver docs/CAMBIOS.md #5)', () => {
+    it('al decrementar y quedar en exactamente 1 semana, crea una Notification tipo PLAN', async () => {
+        const { admin } = await createAdmin();
+        const { student } = await createStudentDirect(admin._id);
+        await createPlanDirect(admin._id, student._id, { vencimiento: 2, titulo: 'Fuerza Nivel 1' });
+        await actualizacionSemanal.callback();
+        const notifs = await Notification.find({ alumnoId: student._id, tipo: 'PLAN' });
+        expect(notifs).toHaveLength(1);
+        expect(notifs[0].mensaje).toContain('Fuerza Nivel 1');
+    });
+
+    it('marca avisoVencimientoEnviado=true para no repetir el aviso la semana siguiente', async () => {
+        const { admin } = await createAdmin();
+        const { student } = await createStudentDirect(admin._id);
+        const plan = await createPlanDirect(admin._id, student._id, { vencimiento: 2 });
+        await actualizacionSemanal.callback(); // vencimiento: 2→1, dispara el aviso
+        expect((await Plan.findById(plan._id)).avisoVencimientoEnviado).toBe(true);
+    });
+
+    it('NO duplica el aviso en corridas siguientes del cron (el flag protege, y ya no hay forma de que dos requests concurrentes lo salteen — no hay ningún GET en el medio)', async () => {
+        const { admin } = await createAdmin();
+        const { student } = await createStudentDirect(admin._id);
+        await createPlanDirect(admin._id, student._id, { vencimiento: 2 });
+        await actualizacionSemanal.callback(); // vencimiento: 2→1, dispara el aviso
+        // Otra corrida no debería tocar este plan de nuevo en el sentido de
+        // "avisar" — igual decrementa (1→0) y lo desactiva, pero no crea un
+        // segundo aviso de "por vencer" además del de finalización.
+        await actualizacionSemanal.callback();
+        const notifsPlan = await Notification.find({ alumnoId: student._id, tipo: 'PLAN' });
+        expect(notifsPlan).toHaveLength(1);
+    });
+
+    it('un plan con 4 semanas NO dispara el aviso hasta llegar a exactamente 1 (no antes)', async () => {
+        const { admin } = await createAdmin();
+        const { student } = await createStudentDirect(admin._id);
+        await createPlanDirect(admin._id, student._id, { vencimiento: 4 });
+        await actualizacionSemanal.callback(); // 4→3
+        expect(await Notification.countDocuments({ alumnoId: student._id, tipo: 'PLAN' })).toBe(0);
+        await actualizacionSemanal.callback(); // 3→2
+        expect(await Notification.countDocuments({ alumnoId: student._id, tipo: 'PLAN' })).toBe(0);
+        await actualizacionSemanal.callback(); // 2→1: acá sí
+        expect(await Notification.countDocuments({ alumnoId: student._id, tipo: 'PLAN' })).toBe(1);
+    });
+
+    it('al llegar a 0 (se desactiva), NO crea también el aviso de "por vencer" — son ramas excluyentes', async () => {
+        const { admin } = await createAdmin();
+        const { student } = await createStudentDirect(admin._id);
+        await createPlanDirect(admin._id, student._id, { vencimiento: 1 });
+        await actualizacionSemanal.callback(); // 1→0, se desactiva
+        expect(await Notification.countDocuments({ alumnoId: student._id, tipo: 'PLAN' })).toBe(0);
+    });
+});

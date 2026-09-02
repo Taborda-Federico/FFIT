@@ -24,8 +24,13 @@ test.describe('Panel de admin — gestión de socios', () => {
         await page.getByPlaceholder('Monto de Pago').fill('15000');
         await page.getByRole('button', { name: 'Finalizar Registro' }).click();
 
-        await expect(page.getByText('Alumno E2E Completo')).toBeVisible();
-        await expect(page.getByText('DNI: 40999888')).toBeVisible();
+        // Justo después de guardar, el nombre aparece DOS veces a la vez: en
+        // el toast de éxito ("¡Socio Alumno E2E Completo registrado!") y en
+        // la fila de la tabla — se busca puntualmente en la tabla para no
+        // depender de si el toast ya se cerró o no.
+        const fila = page.locator('.users-table-pro tr', { hasText: 'Alumno E2E Completo' });
+        await expect(fila).toBeVisible();
+        await expect(fila.getByText('DNI: 40999888')).toBeVisible();
     });
 
     test('BUG: DNI duplicado NO muestra el mensaje específico del backend, solo el genérico ("Error al registrar socio") — el modal queda abierto igual', async ({ page }) => {

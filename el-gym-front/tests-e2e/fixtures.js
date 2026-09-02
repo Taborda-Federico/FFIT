@@ -84,6 +84,18 @@ export async function publicarPlan(token, alumnoId, { titulo = 'Plan Test', sesi
     return res.json();
 }
 
+export async function crearPlantilla(token, { titulo = 'Plantilla Test', sesiones } = {}) {
+    const res = await fetch(BACKEND_URL + '/api/planes/plantilla', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+            titulo,
+            sesiones: sesiones || [{ nombre: 'Día 1', bloques: [] }],
+        }),
+    });
+    return res.json();
+}
+
 export async function seedWorkout(alumnoId, nombreSesion, createdAt) {
     await fetch(BACKEND_URL + '/__test__/seed-workout', {
         method: 'POST',

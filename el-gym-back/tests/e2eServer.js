@@ -13,7 +13,6 @@ process.env.JWT_SECRET = process.env.JWT_SECRET || 'e2e-jwt-secret';
 process.env.ADMIN_REGISTRATION_SECRET = process.env.ADMIN_REGISTRATION_SECRET || 'e2e-admin-secret';
 process.env.EMAIL_USER = process.env.EMAIL_USER || 'e2e@ffit.test';
 process.env.EMAIL_PASS = process.env.EMAIL_PASS || 'e2e-pass';
-process.env.MONGOMS_SYSTEM_BINARY = process.env.MONGOMS_SYSTEM_BINARY || '/usr/bin/mongod';
 
 // Nodemailer real, pero interceptado: en el server e2e no usamos el mock de
 // Jest (esto corre como proceso Node normal, no bajo Jest), así que
@@ -33,6 +32,7 @@ Module._load = function (request, parent, isMain) {
     return originalLoad.apply(this, arguments);
 };
 
+const fs = require('fs');
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const app = require('../src/app');
@@ -40,7 +40,12 @@ const app = require('../src/app');
 const PORT = process.env.E2E_PORT || 5057;
 
 async function main() {
-    const mongod = await MongoMemoryServer.create({ binary: { version: '7.0.25' } });
+    // Mismo criterio que tests/helpers/db.js: usar el mongod del sistema si
+    // existe (rápido en esta máquina), o dejar que mongodb-memory-server
+    // descargue el suyo si no (como en un runner de CI limpio).
+    const systemMongod = process.env.MONGOMS_SYSTEM_BINARY || '/usr/bin/mongod';
+    const opts = fs.existsSync(systemMongod) ? { binary: { systemBinary: systemMongod } } : {};
+    const mongod = await MongoMemoryServer.create(opts);
     await mongoose.connect(mongod.getUri());
 
     // Ruta solo-test: limpia todas las colecciones. Se monta en runtime sobre

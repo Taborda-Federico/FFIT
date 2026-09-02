@@ -1,8 +1,9 @@
-// Este archivo documenta CÓDIGO MUERTO/HUÉRFANO encontrado en el backend:
-// rutas que el frontend cree que existen (las llama desde
-// el-gym-front/src/service/gym.service.js) pero que jamás se registraron
-// en ningún archivo de routes/, y una función de controller exportada que
-// nunca se conectó a ninguna ruta y además tiene un bug de referencia.
+// Este archivo documentaba código muerto/huérfano encontrado en la auditoría
+// (ver docs/CAMBIOS.md #3): rutas que el frontend creía que existían, y una
+// función de controller rota que nunca se conectó a ninguna ruta. Ese código
+// ya se borró del lado del frontend y del backend — lo que queda acá son
+// chequeos genéricos de que el servidor sigue respondiendo bien (404 limpio,
+// sin explotar) ante rutas que nunca existieron.
 const request = require('supertest');
 const app = require('../../src/app');
 const { connect, closeDatabase, clearDatabase } = require('../helpers/db');
@@ -12,13 +13,14 @@ beforeAll(async () => { await connect(); }, 60000);
 afterEach(async () => { await clearDatabase(); });
 afterAll(async () => { await closeDatabase(); });
 
-describe('Rutas que el-gym-front/src/service/gym.service.js asume que existen, pero NO están montadas en ningún routes/*.js', () => {
-    // gym.service.js (y su apiFetch de api.config.js) es consumido SOLO por
-    // AdminFinanceDashboard.jsx — que a su vez App.jsx nunca renderiza (la
-    // ruta /admin/finanzas usa un <div>Finanzas</div> hardcodeado). Toda esta
-    // cadena de features (finanzas, asistencia, biblioteca de ejercicios,
-    // CRUD genérico de planes/alumnos con otros nombres) es 100% inalcanzable
-    // y, aunque se conectara, fallaría: no hay backend para ninguna de estas.
+describe('Rutas que nunca existieron en el backend (antes las llamaba el-gym-front/src/service/gym.service.js, ya borrado)', () => {
+    // gym.service.js (y su apiFetch de api.config.js) le pegaban a rutas
+    // como /api/pagos, /api/stats, /api/attendance, /api/exercises,
+    // /api/templates, etc. Ese archivo solo lo consumía AdminFinanceDashboard.jsx,
+    // que App.jsx nunca llegó a renderizar (la ruta /admin/finanzas usaba un
+    // <div>Finanzas</div> hardcodeado) — los tres archivos se borraron por
+    // completo (ver docs/CAMBIOS.md #3). Estos checks quedan como un control
+    // genérico de que rutas inexistentes dan 404 limpio, no un 500.
     const rutasFantasma = [
         ['get', '/api/alumnos'],
         ['get', '/api/alumnos/507f1f77bcf86cd799439011'],
@@ -36,52 +38,39 @@ describe('Rutas que el-gym-front/src/service/gym.service.js asume que existen, p
         ['post', '/api/auth/admin/login'],
     ];
 
-    it.each(rutasFantasma)('%s %s no existe (404) — confirma que gym.service.js apunta a un backend que no está implementado', async (metodo, ruta) => {
+    it.each(rutasFantasma)('%s %s no existe (404)', async (metodo, ruta) => {
         const { token } = await createAdmin();
         const res = await request(app)[metodo](ruta).set('Authorization', `Bearer ${token}`);
         expect(res.status).toBe(404);
     });
 });
 
-describe('studentController.getStudentProgressForAdmin: exportada pero jamás montada en una ruta, y con un bug si se llamara', () => {
-    it('no existe ninguna ruta HTTP que la invoque (ni bajo /api/student ni bajo /api/admin con ese nombre exacto)', () => {
+describe('studentController ya no tiene la función rota getStudentProgressForAdmin', () => {
+    // Existía una segunda copia (rota: usaba AdminNote sin importarlo) de lo
+    // que ya hace bien adminController.getStudentProgress, conectada a
+    // /api/admin/student-progress/:id. Se borró la copia muerta en vez de
+    // arreglarla, para no dejar dos formas de hacer lo mismo en el código.
+    it('studentRoutes.js sigue teniendo exactamente las 6 rutas reales, ninguna extra', () => {
         const studentRoutes = require('../../src/routes/studentRoutes');
-        // Verificamos indirectamente: las únicas rutas registradas en
-        // studentRoutes son las 6 que sabemos (dashboard, workout, history,
-        // notifications, notifications/:id/read, change-password). No hay
-        // ninguna ruta "/progress" ahí, y adminRoutes usa la función
-        // equivalente de adminController (que SÍ importa AdminNote bien).
         const stack = studentRoutes.stack.map(l => l.route && l.route.path).filter(Boolean);
         expect(stack).toEqual(['/dashboard', '/workout', '/history', '/notifications', '/notifications/:id/read', '/change-password']);
     });
 
-    it('DOBLEMENTE muerta: ni siquiera está en el module.exports del archivo (no alcanza con "no tiene ruta")', () => {
+    it('el controller ya no exporta getStudentProgressForAdmin', () => {
         const exportado = require('../../src/controllers/studentController');
         expect(exportado.getStudentProgressForAdmin).toBeUndefined();
-        // Sí siguen exportadas las 6 funciones que SÍ se usan.
         expect(Object.keys(exportado).sort()).toEqual(
             ['changePassword', 'getMyHistory', 'getMyNotifications', 'getStudentDashboard', 'markNotificationRead', 'saveWorkoutLog']
         );
     });
-
-    it('el código fuente de la función referencia `AdminNote` sin importarlo en este archivo (si algún día se exporta/rutea, explota con ReferenceError)', () => {
-        const fs = require('fs');
-        const path = require('path');
-        const codigoFuente = fs.readFileSync(path.join(__dirname, '../../src/controllers/studentController.js'), 'utf8');
-        const usaAdminNote = /AdminNote\.find/.test(codigoFuente);
-        const importaAdminNote = /require\(.*AdminNote.*\)/.test(codigoFuente);
-        expect(usaAdminNote).toBe(true);
-        expect(importaAdminNote).toBe(false);
-    });
 });
 
-describe('AdminRegister.jsx (frontend): no tiene contraparte de backend', () => {
-    it('no existe ninguna ruta que emule un "GOD_MODE" client-side sin verificación de servidor', async () => {
-        // Este test es más una nota de documentación que una prueba de HTTP:
-        // AdminRegister.jsx (frontend) escribe localStorage.setItem('admin_session',
-        // {..., role: 'GOD_MODE'}) SIN llamar a ningún endpoint. Confirmamos
-        // que el backend no tiene absolutamente ningún endpoint relacionado con
-        // "god mode" o registro sin verificación real de secreto/admin.
+describe('El backend nunca tuvo (ni tiene) un endpoint tipo "god mode"', () => {
+    // AdminRegister.jsx (frontend, ya borrado) escribía un localStorage con
+    // role: 'GOD_MODE' sin llamar a ningún endpoint — un backdoor puramente
+    // client-side. Confirmamos que del lado del servidor nunca existió nada
+    // parecido.
+    it('no existe ninguna ruta relacionada con "god mode" o un registro sin verificación real', async () => {
         const res = await request(app).post('/api/auth/god-mode').send({});
         expect(res.status).toBe(404);
     });

@@ -60,5 +60,15 @@ mi máquina" y un runner limpio — por eso vale la pena documentarlo):
   (`vite.config.js`, opción `test.env.TZ`) — no es solo un parche para que CI pase: como la app es para un
   gimnasio real en Argentina, tiene sentido que los tests corran siempre en ese huso, sin importar en qué
   máquina se ejecuten.
+- `el-gym-back/tests/e2eServer.js` tenía la MISMA ruta hardcodeada (`/usr/bin/mongod`) que `db.js`, en un
+  lugar aparte que se me había pasado por alto — mismo arreglo: usar el mongod del sistema si existe, si
+  no dejar que se descargue solo.
+- Un test e2e (`admin-students.spec.js`, "crear un socio completo") era medio inestable: justo después de
+  guardar un alumno, su nombre aparece dos veces en pantalla a la vez — en el toast de éxito y en la fila
+  nueva de la tabla. En esta máquina el toast ya se había cerrado para cuando corría la aserción; en el
+  runner de CI (más lento en arrancar el navegador) todavía estaba visible, y Playwright se quejó de
+  ambigüedad. Se corrigió buscando puntualmente dentro de la tabla.
+
+Con estos ajustes, los tres jobs (backend, frontend, e2e) quedaron en verde en GitHub Actions.
 
 ---

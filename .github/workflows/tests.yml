@@ -50,6 +50,9 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
+          cache-dependency-path: |
+            el-gym-back/package-lock.json
+            el-gym-front/package-lock.json
       - name: Instalar dependencias del backend
         working-directory: el-gym-back
         run: npm ci

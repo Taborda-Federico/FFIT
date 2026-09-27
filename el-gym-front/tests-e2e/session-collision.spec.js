@@ -27,6 +27,7 @@ test.describe('Colisión de nombres de sesión duplicados', () => {
         // Entrena la PRIMERA de las dos.
         await tarjetas.first().click();
         await expect(page.getByText('ENTRENAMIENTO ACTIVO')).toBeVisible();
+        await page.getByLabel(/Repeticiones serie 1/).fill('10');
         await page.getByRole('button', { name: /FINALIZAR SERIE/ }).click();
         await page.getByRole('button', { name: /FINALIZAR ENTRENAMIENTO/ }).click();
 

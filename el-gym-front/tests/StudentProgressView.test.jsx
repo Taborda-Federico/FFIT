@@ -99,6 +99,84 @@ describe('StudentProgressView — ficha del alumno seleccionado', () => {
     });
 });
 
+describe('StudentProgressView — NUEVO: peso por serie en la curva de fuerza (pedido del cliente)', () => {
+    it('con desglose por serie, el modo "Mejor serie" (default) grafica el peso MÁXIMO de esa sesión', async () => {
+        getStudentProgressMock.mockResolvedValue({
+            historial: [{
+                _id: 'h1', nombreSesion: 'Día 1', createdAt: '2026-01-01',
+                ejercicios: [{ nombre: 'Press', series: [{ numero: 1, peso: 40, reps: 10 }, { numero: 2, peso: 45, reps: 6 }, { numero: 3, peso: 42, reps: 8 }] }]
+            }],
+            notas: []
+        });
+        await buscarYSeleccionarAlumno();
+        expect(screen.getByText('45 kg')).toBeInTheDocument();
+    });
+
+    it('cambiando a "Volumen total", el mismo punto pasa a ser peso × repeticiones sumado de todas las series', async () => {
+        getStudentProgressMock.mockResolvedValue({
+            historial: [{
+                _id: 'h1', nombreSesion: 'Día 1', createdAt: '2026-01-01',
+                ejercicios: [{ nombre: 'Press', series: [{ numero: 1, peso: 40, reps: 10 }, { numero: 2, peso: 40, reps: 10 }] }]
+            }],
+            notas: []
+        });
+        await buscarYSeleccionarAlumno();
+        fireEvent.click(screen.getByText('Volumen total'));
+        // 40×10 + 40×10 = 800, no 40 (que sería el máximo de la serie).
+        expect(screen.getByText('800 kg')).toBeInTheDocument();
+    });
+
+    it('una serie sin repeticiones cuenta como 1 en el cálculo de volumen (no se pierde ese peso)', async () => {
+        getStudentProgressMock.mockResolvedValue({
+            historial: [{ _id: 'h1', nombreSesion: 'Día 1', createdAt: '2026-01-01', ejercicios: [{ nombre: 'Press', series: [{ numero: 1, peso: 40 }] }] }],
+            notas: []
+        });
+        await buscarYSeleccionarAlumno();
+        fireEvent.click(screen.getByText('Volumen total'));
+        expect(screen.getByText('40 kg')).toBeInTheDocument();
+    });
+
+    it('un log VIEJO (sin `series`) sigue graficando `pesoUsado` tal cual, en los dos modos por igual — sin romperse', async () => {
+        getStudentProgressMock.mockResolvedValue({
+            historial: [{ _id: 'h1', nombreSesion: 'Día 1', createdAt: '2026-01-01', ejercicios: [{ nombre: 'Press', pesoUsado: 60 }] }],
+            notas: []
+        });
+        await buscarYSeleccionarAlumno();
+        expect(screen.getByText('60 kg')).toBeInTheDocument();
+        fireEvent.click(screen.getByText('Volumen total'));
+        expect(screen.getByText('60 kg')).toBeInTheDocument();
+    });
+
+    it('mezcla de sesiones viejas y nuevas para el MISMO ejercicio: la curva junta ambas sin cortarse', async () => {
+        getStudentProgressMock.mockResolvedValue({
+            historial: [
+                { _id: 'h1', nombreSesion: 'Vieja', createdAt: '2026-01-01', ejercicios: [{ nombre: 'Press', pesoUsado: 35 }] },
+                { _id: 'h2', nombreSesion: 'Nueva', createdAt: '2026-02-01', ejercicios: [{ nombre: 'Press', series: [{ numero: 1, peso: 40, reps: 8 }] }] }
+            ],
+            notas: []
+        });
+        await buscarYSeleccionarAlumno();
+        // El "récord actual" (el máximo de los puntos graficados) es 40 —
+        // confirma que AMBOS puntos (viejo y nuevo) entraron al gráfico.
+        expect(screen.getByText(/RÉCORD ACTUAL/).parentElement).toHaveTextContent('40 kg');
+    });
+
+    it('ARREGLADO: dos ejercicios que difieren solo en mayúsculas/espacios se agrupan como UNO solo, no como dos', async () => {
+        getStudentProgressMock.mockResolvedValue({
+            historial: [
+                { _id: 'h1', nombreSesion: 'D1', createdAt: '2026-01-01', ejercicios: [{ nombre: 'Sentadilla', pesoUsado: 60 }] },
+                { _id: 'h2', nombreSesion: 'D2', createdAt: '2026-01-08', ejercicios: [{ nombre: ' sentadilla ', pesoUsado: 70 }] }
+            ],
+            notas: []
+        });
+        await buscarYSeleccionarAlumno();
+        // Un solo <option> en el selector, no dos "Sentadilla" distintas.
+        expect(screen.getAllByRole('option').filter(o => /sentadilla/i.test(o.textContent))).toHaveLength(1);
+        // Y el "récord actual" junta las dos sesiones (70, la más alta).
+        expect(screen.getByText(/RÉCORD ACTUAL/).parentElement).toHaveTextContent('70 kg');
+    });
+});
+
 describe('StudentProgressView — notas del profesor', () => {
     it('una nota vacía o de solo espacios no se envía', async () => {
         getStudentProgressMock.mockResolvedValue({ historial: [], notas: [] });

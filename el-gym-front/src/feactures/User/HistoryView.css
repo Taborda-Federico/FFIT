@@ -343,6 +343,59 @@
     margin-top: 2px;
 }
 
+/* ── DESGLOSE POR SERIE (NUEVO) ───────────────────────────── */
+.detail-ex-item.con-series {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+}
+
+.ex-info-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.ex-info-top-row h4 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: var(--text-white);
+    font-weight: 700;
+}
+
+.ex-best-chip {
+    background: var(--accent-subtle);
+    border: 1px solid var(--accent-medium);
+    color: var(--color-accent);
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 4px 9px;
+    border-radius: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.ex-series-breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.ex-set-tag {
+    background: var(--bg-pure-black);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 5px 9px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-light);
+}
+
+.ex-set-tag b {
+    color: var(--color-accent);
+}
+
 /* ── FOOTER Y EMPTY STATES ────────────────────────────── */
 .detail-footer {
     margin-top: 40px;

@@ -35,10 +35,12 @@ test.describe('Colisión de nombres de sesión duplicados', () => {
         await expect(tarjetasDespues.first()).toContainText('COMPLETADA');
 
         // La SEGUNDA sesión (mismo nombre, _id distinto) NO quedó marcada
-        // como completada. Sigue bloqueada, pero por el motivo correcto:
-        // "ya entrenaste hoy" (yaEntrenoHoy), un mecanismo aparte que no
-        // depende de qué sesión puntual se haya entrenado.
+        // como completada, y además sigue disponible para entrenar HOY
+        // MISMO (ya no existe el bloqueo de "una sola sesión por día" —
+        // ver docs/CAMBIOS.md).
         await expect(tarjetasDespues.nth(1)).not.toContainText('COMPLETADA');
-        await expect(tarjetasDespues.nth(1)).toContainText('ESPERA A MAÑANA');
+        await expect(tarjetasDespues.nth(1)).not.toContainText('ESPERA A MAÑANA');
+        await tarjetasDespues.nth(1).click();
+        await expect(page.getByText('ENTRENAMIENTO ACTIVO')).toBeVisible();
     });
 });

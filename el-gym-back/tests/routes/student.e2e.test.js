@@ -174,13 +174,29 @@ describe('POST /api/student/workout (saveWorkoutLog)', () => {
         expect(res.status).toBe(201);
     });
 
-    it('bloquea un SEGUNDO entrenamiento el mismo día calendario', async () => {
+    it('ARREGLADO (pedido del cliente): un SEGUNDO entrenamiento el mismo día calendario ya NO se bloquea', async () => {
+        // Antes, cualquier segundo POST el mismo día calendario se
+        // rechazaba con 400 ("Ya registraste un entrenamiento hoy") —
+        // forzaba a una sola sesión por día aunque el plan tuviera varias.
+        // El cliente pidió sacar esa restricción: ahora se puede entrenar
+        // más de una sesión el mismo día (lo que sigue bloqueando UNA
+        // sesión puntual es haberla completado ya esta semana, del lado
+        // del frontend — ver HomeHub.jsx).
         const { admin } = await createAdmin();
         const { token } = await createStudentDirect(admin._id);
         await request(app).post('/api/student/workout').set('Authorization', `Bearer ${token}`).send({ nombreSesion: 'Día 1' });
         const res = await request(app).post('/api/student/workout').set('Authorization', `Bearer ${token}`).send({ nombreSesion: 'Día 2' });
-        expect(res.status).toBe(400);
-        expect(res.body.message).toMatch(/ya registraste/i);
+        expect(res.status).toBe(201);
+    });
+
+    it('un TERCER entrenamiento el mismo día también se acepta (sin límite de cantidad por día)', async () => {
+        const { admin } = await createAdmin();
+        const { student, token } = await createStudentDirect(admin._id);
+        await request(app).post('/api/student/workout').set('Authorization', `Bearer ${token}`).send({ nombreSesion: 'Día 1' });
+        await request(app).post('/api/student/workout').set('Authorization', `Bearer ${token}`).send({ nombreSesion: 'Día 2' });
+        const res = await request(app).post('/api/student/workout').set('Authorization', `Bearer ${token}`).send({ nombreSesion: 'Día 3' });
+        expect(res.status).toBe(201);
+        expect(await WorkoutLog.countDocuments({ alumnoId: student._id })).toBe(3);
     });
 
     it('NO bloquea un entrenamiento al día calendario SIGUIENTE (el log anterior queda con createdAt de "ayer")', async () => {

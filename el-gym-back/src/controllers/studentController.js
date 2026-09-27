@@ -61,24 +61,14 @@ const getStudentDashboard = async (req, res) => {
 //
 const saveWorkoutLog = async (req, res) => {
     try {
-        const hoyInicio = new Date();
-        hoyInicio.setHours(0, 0, 0, 0);
-
-        const hoyFin = new Date();
-        hoyFin.setHours(23, 59, 59, 999);
-
-        const yaEntrenoHoy = await WorkoutLog.findOne({
-            alumnoId: req.user._id,
-            createdAt: { $gte: hoyInicio, $lte: hoyFin }
-        });
-
-
-        if (yaEntrenoHoy) {
-            return res.status(400).json({
-                message: '¡Ey! Ya registraste un entrenamiento hoy. No hagas trampa. 😉'
-            });
-        }
-
+        // ARREGLADO — pedido del cliente (ver docs/CAMBIOS.md): antes se
+        // rechazaba cualquier segundo entrenamiento del mismo día
+        // calendario ("Ya registraste un entrenamiento hoy"), lo que de
+        // hecho forzaba a hacer una sola sesión por día aunque el plan
+        // tuviera varias. Ahora un alumno puede entrenar más de una
+        // sesión el mismo día — lo único que sigue bloqueando una sesión
+        // puntual es haberla completado ya ESA SEMANA (ver
+        // HomeHub.isSessionCompleted, del lado del frontend).
         const { nombreSesion, duracion, ejercicios, sesionId } = req.body;
 
         const newLog = await WorkoutLog.create({

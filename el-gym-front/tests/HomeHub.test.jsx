@@ -87,15 +87,27 @@ describe('HomeHub — ARREGLADO: isSessionCompleted ahora cuenta la semana desde
     });
 });
 
-describe('HomeHub — bloqueo de "ya entrenaste hoy" (yaEntrenoHoy)', () => {
-    it('si ya se entrenó hoy, las sesiones NO completadas quedan bloqueadas ("ESPERA A MAÑANA") y no disparan onStart', () => {
+describe('HomeHub — ARREGLADO: ya no existe el bloqueo de "un entrenamiento por día" (pedido del cliente)', () => {
+    it('entrenar "Día 1" hoy YA NO bloquea a "Día 2": queda disponible y dispara onStart al hacer click', () => {
+        // Antes, terminar CUALQUIER sesión bloqueaba a todas las demás
+        // hasta el día siguiente ("ESPERA A MAÑANA") — el cliente pidió
+        // sacar esa restricción para poder entrenar más de una sesión el
+        // mismo día. Lo único que sigue bloqueando una sesión puntual es
+        // haberla completado ya ESTA SEMANA (ver el describe de arriba).
         setNow(LUN);
         const onStart = vi.fn();
         render(<HomeHub dashboardData={dashboardData()} history={historyWith(LUN, 'Día 1')} onStart={onStart} />);
         const tarjetaDia2 = screen.getByText('Día 2').closest('.hub-session-card');
-        expect(tarjetaDia2).toHaveTextContent('ESPERA A MAÑANA');
+        expect(tarjetaDia2).not.toHaveTextContent('ESPERA A MAÑANA');
+        expect(tarjetaDia2).not.toHaveTextContent('COMPLETADA');
         fireEvent.click(tarjetaDia2);
-        expect(onStart).not.toHaveBeenCalled();
+        expect(onStart).toHaveBeenCalledTimes(1);
+    });
+
+    it('el texto "ESPERA A MAÑANA" ya no existe en ningún lado de la pantalla', () => {
+        setNow(LUN);
+        render(<HomeHub dashboardData={dashboardData()} history={historyWith(LUN, 'Día 1')} onStart={() => {}} />);
+        expect(screen.queryByText('ESPERA A MAÑANA')).not.toBeInTheDocument();
     });
 
     it('si NO se entrenó hoy, una sesión pendiente dispara onStart al hacer click', () => {

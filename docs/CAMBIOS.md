@@ -513,3 +513,44 @@ fallback y trae la más vieja, de forma determinística).
 264 backend en verde (no se tocó nada de frontend en este hotfix).
 
 ---
+
+## 11 — Se saca el límite de "una sola sesión por día"
+
+Pedido explícito del cliente, no un bug: quería poder entrenar **más de una sesión el mismo día** — por
+ejemplo, hacer "Día 1" a la mañana y "Día 2" a la tarde — sin tener que esperar al día siguiente.
+
+**Qué pasaba:** había DOS mecanismos independientes bloqueando sesiones, y el cliente solo quería que
+sobreviviera uno:
+
+1. **Del lado del frontend** (`HomeHub.jsx`): apenas se completaba CUALQUIER sesión, todas las demás
+   quedaban con la etiqueta "ESPERA A MAÑANA" hasta el día calendario siguiente — sin importar si esa otra
+   sesión ya se había hecho esta semana o no.
+2. **Del lado del backend** (`studentController.saveWorkoutLog`): un segundo `POST` el mismo día calendario
+   se rechazaba directamente con 400 ("¡Ey! Ya registraste un entrenamiento hoy. No hagas trampa. 😉"),
+   incluso si el frontend hubiera dejado avanzar.
+
+Los dos hacían, en la práctica, lo mismo: forzar una sola sesión de entrenamiento por día, sin importar
+cuántos días tuviera el plan.
+
+**La solución:** se borran los dos mecanismos por completo. Lo único que sigue bloqueando una sesión
+puntual es haberla completado ya **esta semana** (`isSessionCompleted`, que no se tocó — sigue funcionando
+exactamente igual que antes, ver secciones 4 y 8). Un alumno ahora puede entrenar tantas sesiones distintas
+como quiera el mismo día; la única sesión que queda bloqueada es la que YA completó esa semana, y esa se
+libera automáticamente al empezar la semana siguiente — tal como pidió el cliente ("si no se dio como
+cerrada la sesión igualmente se resetee la semana siguiente"), comportamiento que además ya funcionaba así
+de antes.
+
+**Por qué esto es seguro para los datos existentes:** no se toca el modelo `WorkoutLog` ni ningún dato
+guardado — es puramente borrar una condición de bloqueo, tanto en el frontend (una comparación de más en un
+`if`) como en el backend (una consulta + rechazo que ya no se hace). Los entrenamientos ya registrados
+siguen contando igual que siempre para las estadísticas (`sesionesCompletadas`).
+
+**Tests:** se invirtieron los tests que documentaban el bloqueo viejo (`HomeHub.test.jsx`,
+`student.e2e.test.js`, `student-flow.spec.js`, `session-collision.spec.js` — este último confirmaba de paso
+que la sesión duplicada en nombre, antes bloqueada por "ya entrenaste hoy", ahora directamente queda
+disponible), y se agregó un test nuevo confirmando que se puede guardar un tercer entrenamiento el mismo
+día sin ningún límite de cantidad.
+
+265 backend, 267 frontend, 35 e2e — todo en verde.
+
+---

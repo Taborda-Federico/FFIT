@@ -43,9 +43,12 @@ test.describe('Flujo del alumno — ver plan, entrenar, ver historial', () => {
         await expect(page.getByText('42 kg')).toBeVisible();
     });
 
-    test('después de entrenar hoy, TODAS las demás sesiones quedan bloqueadas ("ESPERA A MAÑANA")', async ({ page }) => {
+    test('ARREGLADO (pedido del cliente): después de entrenar "Día 1" hoy, "Día 2" sigue disponible el mismo día', async ({ page }) => {
+        // Antes, terminar CUALQUIER sesión bloqueaba a todas las demás
+        // hasta el día siguiente. El cliente pidió sacar esa restricción:
+        // ahora se puede entrenar más de una sesión el mismo día.
         const admin = await crearAdmin({ email: 'admin-flujo4@x.com' });
-        const alumno = await crearAlumno(admin.token, { nombre: 'Alumno Bloqueo' });
+        const alumno = await crearAlumno(admin.token, { nombre: 'Alumno Sin Bloqueo' });
         await publicarPlan(admin.token, alumno._id, {
             titulo: 'Plan Dos Días',
             sesiones: [
@@ -60,7 +63,19 @@ test.describe('Flujo del alumno — ver plan, entrenar, ver historial', () => {
         await page.getByRole('button', { name: /FINALIZAR ENTRENAMIENTO/ }).click();
 
         await page.getByText('Inicio').click();
-        await expect(page.locator('.hub-session-card', { hasText: 'Día 2' })).toContainText('ESPERA A MAÑANA');
+        const tarjetaDia2 = page.locator('.hub-session-card', { hasText: 'Día 2' });
+        await expect(tarjetaDia2).not.toContainText('ESPERA A MAÑANA');
+        await expect(tarjetaDia2).not.toContainText('COMPLETADA');
+
+        // Y de verdad se puede entrenar: el click dispara la sesión, y se
+        // puede finalizar sin que el backend la rechace por "ya
+        // entrenaste hoy".
+        await tarjetaDia2.click();
+        await expect(page.getByText('ENTRENAMIENTO ACTIVO')).toBeVisible();
+        await page.getByRole('button', { name: /FINALIZAR SERIE/ }).click();
+        await page.getByRole('button', { name: /FINALIZAR ENTRENAMIENTO/ }).click();
+        await expect(page.getByText('LOGBOOK PERSONAL')).toBeVisible();
+        await expect(page.getByText('Día 2')).toBeVisible();
     });
 
     test('cambiar la contraseña desde el Perfil permite loguearse con la nueva', async ({ page }) => {

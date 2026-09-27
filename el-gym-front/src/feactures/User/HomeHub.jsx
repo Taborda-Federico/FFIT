@@ -11,9 +11,6 @@ export function HomeHub({ onStart, dashboardData, history = [] }) {
     const { user, stats, plan } = dashboardData;
 
 
-    const hoyString = new Date().toDateString();
-    const yaEntrenoHoy = history.some(log => new Date(log.createdAt).toDateString() === hoyString);
-
     const isSessionCompleted = (session) => {
         if (!history || history.length === 0) return false;
         const hoy = new Date();
@@ -118,18 +115,23 @@ export function HomeHub({ onStart, dashboardData, history = [] }) {
                 <div className="sessions-vertical-stack">
                     {plan && plan.sesiones && plan.sesiones.length > 0 ? (
                         plan.sesiones.map((session, index) => {
-                            // Variables de estado del día
+                            // Única razón por la que una sesión queda bloqueada:
+                            // ya se completó ESTA SEMANA (ver isSessionCompleted).
+                            // Antes, además, terminar CUALQUIER sesión bloqueaba
+                            // a todas las demás hasta el día siguiente — el
+                            // cliente pidió sacar esa restricción: ahora se puede
+                            // entrenar más de una sesión el mismo día, en el
+                            // orden que se quiera.
                             const isDone = isSessionCompleted(session);
-                            const isBlocked = isDone || (!isDone && yaEntrenoHoy);
 
                             return (
                                 <div
                                     key={session._id || index}
                                     className="hub-session-card"
-                                    onClick={() => !isBlocked && onStart(session)}
+                                    onClick={() => !isDone && onStart(session)}
                                     style={{
-                                        opacity: isBlocked ? 0.6 : 1,
-                                        cursor: isBlocked ? 'default' : 'pointer',
+                                        opacity: isDone ? 0.6 : 1,
+                                        cursor: isDone ? 'default' : 'pointer',
                                         border: isDone ? '1px solid rgba(191, 255, 0, 0.2)' : ''
                                     }}
                                 >
@@ -139,7 +141,7 @@ export function HomeHub({ onStart, dashboardData, history = [] }) {
                                             <div className="s-card-tags">
                                                 <span className="tag-pill">{session.bloques?.filter(b => b.ejercicios && b.ejercicios.length > 0).length || 0} Bloques</span>
                                                 <span className="tag-pill accent">
-                                                    {isDone ? 'COMPLETADA' : (isBlocked ? 'ESPERA A MAÑANA' : 'Fuerza / Hipertrofia')}
+                                                    {isDone ? 'COMPLETADA' : 'Fuerza / Hipertrofia'}
                                                 </span>
                                             </div>
                                         </div>
@@ -147,7 +149,7 @@ export function HomeHub({ onStart, dashboardData, history = [] }) {
                                             {isDone ? (
                                                 <FaCheckCircle style={{ color: '#BFFF00', fontSize: '1.8rem', opacity: 0.8 }} />
                                             ) : (
-                                                <div className="play-btn-neon" style={{ opacity: isBlocked ? 0.3 : 1 }}>
+                                                <div className="play-btn-neon">
                                                     <FaPlay />
                                                 </div>
                                             )}

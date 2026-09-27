@@ -47,6 +47,19 @@ export function HistoryView({ history = [] }) {
     const calcularPesoSesion = (ejercicios) => {
         if (!ejercicios || !Array.isArray(ejercicios)) return 0;
         return ejercicios.reduce((total, ex) => {
+            // ARREGLADO: cuando hay desglose por serie, el volumen real es
+            // peso × repeticiones de CADA serie (lo que de verdad se
+            // levantó), no solo la suma de un número por ejercicio como
+            // antes. Si una serie no tiene reps cargadas, se cuenta como 1
+            // para no perder ese peso del cálculo. Los logs viejos (sin
+            // `series`) siguen sumando como siempre.
+            if (Array.isArray(ex.series) && ex.series.length > 0) {
+                const volumenEjercicio = ex.series.reduce(
+                    (acc, s) => acc + (Number(s.peso) || 0) * (Number(s.reps) || 1),
+                    0
+                );
+                return total + volumenEjercicio;
+            }
             const peso = parseFloat(ex.pesoUsado || ex.peso || 0);
             return total + peso;
         }, 0);
@@ -149,18 +162,49 @@ export function HistoryView({ history = [] }) {
                             <label className="section-label">DESGLOSE DE CARGAS</label>
 
                             {selectedLog.ejercicios && selectedLog.ejercicios.length > 0 ? (
-                                selectedLog.ejercicios.map((ex, idx) => (
-                                    <div key={ex._id || idx} className="detail-ex-item">
-                                        <div className="ex-info">
-                                            <h4>{ex.nombre}</h4>
-                                            <p>{ex.series || 0} series registradas</p>
+                                selectedLog.ejercicios.map((ex, idx) => {
+                                    // ARREGLADO — pedido del cliente (ver docs/CAMBIOS.md):
+                                    // antes se guardaba un solo peso por ejercicio
+                                    // para toda la sesión. Si el log tiene el
+                                    // desglose por serie (`series`), se muestra
+                                    // completo, con la mejor marca destacada. Los
+                                    // logs viejos (sin `series`) siguen mostrando
+                                    // el número único de siempre, sin ningún cambio.
+                                    const tieneSeries = Array.isArray(ex.series) && ex.series.length > 0;
+                                    const mejorSerie = tieneSeries
+                                        ? Math.max(...ex.series.map(s => Number(s.peso) || 0))
+                                        : null;
+
+                                    if (tieneSeries) {
+                                        return (
+                                            <div key={ex._id || idx} className="detail-ex-item con-series">
+                                                <div className="ex-info-top-row">
+                                                    <h4>{ex.nombre}</h4>
+                                                    <span className="ex-best-chip">Mejor: {mejorSerie}kg</span>
+                                                </div>
+                                                <div className="ex-series-breakdown">
+                                                    {ex.series.map((s, i) => (
+                                                        <span key={i} className="ex-set-tag">
+                                                            S{s.numero} <b>{s.peso}</b>{s.reps !== undefined && s.reps !== null ? ` × ${s.reps}` : ''}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+
+                                    return (
+                                        <div key={ex._id || idx} className="detail-ex-item">
+                                            <div className="ex-info">
+                                                <h4>{ex.nombre}</h4>
+                                            </div>
+                                            <div className="ex-final-weight">
+                                                <span>{ex.pesoUsado || ex.peso || 0}</span>
+                                                <small>KG</small>
+                                            </div>
                                         </div>
-                                        <div className="ex-final-weight">
-                                            <span>{ex.pesoUsado || ex.peso || 0}</span>
-                                            <small>KG</small>
-                                        </div>
-                                    </div>
-                                ))
+                                    );
+                                })
                             ) : (
                                 <div className="h-empty-mini">No hay detalles de ejercicios disponibles.</div>
                             )}

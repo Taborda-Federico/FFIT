@@ -1,9 +1,33 @@
 const mongoose = require('mongoose');
 
+// Una serie puntual dentro de un ejercicio: el peso real que se usó en ESA
+// serie y, si se cargó, las repeticiones hechas. `numero` es simplemente
+// 1, 2, 3... en el orden en que se completaron esa sesión — no tiene que
+// coincidir con la cantidad de series de ningún otro día ni con lo que
+// pide el plan (ver docs/CAMBIOS.md).
+const setLogSchema = new mongoose.Schema({
+    numero: { type: Number, required: true },
+    peso: { type: Number, default: 0 },
+    reps: { type: Number }
+}, { _id: false });
+
 const exerciseLogSchema = new mongoose.Schema({
     ejercicioId: { type: String, required: true },
     nombre: { type: String, required: true },
-    pesoUsado: { type: Number, default: 0 }
+    // pesoUsado se sigue guardando SIEMPRE — ya no lo manda el frontend
+    // directo, lo calcula el propio backend como el máximo de `series`
+    // (ver studentController.saveWorkoutLog). Se mantiene por dos motivos:
+    // 1) los WorkoutLog ya guardados en la base (meses de historial) solo
+    //    tienen este campo, nunca `series` — nada que migrar.
+    // 2) cualquier pantalla que todavía no sepa de `series` (o un log
+    //    viejo sin series) sigue funcionando exactamente igual que antes,
+    //    sin ningún cambio de código necesario en esos casos.
+    pesoUsado: { type: Number, default: 0 },
+    // NUEVO, opcional: el desglose real serie por serie. Si no viene (logs
+    // viejos, o un cliente que todavía no manda este campo), queda como
+    // array vacío — el resto de la app cae automáticamente al
+    // comportamiento de siempre usando `pesoUsado`.
+    series: [setLogSchema]
 });
 
 const workoutLogSchema = new mongoose.Schema({

@@ -11,6 +11,27 @@ import { AdminService } from '../../../service/admin.service';
 import { UserService } from '../../../service/user.service';
 import './StudentProgressView.css';
 
+// Normaliza un nombre de ejercicio para comparar/agrupar sin que
+// mayúsculas o espacios de más lo hagan contar como "otro" ejercicio.
+function normalizarNombreEjercicio(nombre) {
+    return (nombre || '').trim().toLowerCase();
+}
+
+// Resume el peso de UNA sesión para un ejercicio a un solo número — lo que
+// el gráfico necesita para tener un punto por fecha. Si el log tiene el
+// desglose por serie, se calcula según el modo elegido; si es un log viejo
+// (sin `series`), se sigue usando `pesoUsado` tal cual, en los dos modos
+// por igual (es la única cifra que existe para esos datos).
+function resumirPeso(ejercicio, modo) {
+    if (Array.isArray(ejercicio.series) && ejercicio.series.length > 0) {
+        if (modo === 'volumen') {
+            return ejercicio.series.reduce((acc, s) => acc + (Number(s.peso) || 0) * (Number(s.reps) || 1), 0);
+        }
+        return Math.max(...ejercicio.series.map(s => Number(s.peso) || 0));
+    }
+    return ejercicio.pesoUsado || 0;
+}
+
 export function StudentProgressView() {
     const { user: admin } = useAuth();
     const [toast, setToast] = useState(null);
@@ -24,6 +45,12 @@ export function StudentProgressView() {
 
     const [uniqueExercises, setUniqueExercises] = useState([]);
     const [selectedExercise, setSelectedExercise] = useState("");
+    // 'mejor' = el peso más alto levantado esa sesión (sobrecarga
+    // progresiva clásica); 'volumen' = peso × repeticiones sumado de todas
+    // las series (cuánto trabajo total se hizo). Ver docs/CAMBIOS.md: con
+    // el peso por serie, una sesión ya no es "un solo número", así que hay
+    // que elegir qué representar en el gráfico.
+    const [modoGrafico, setModoGrafico] = useState('mejor');
 
     const notify = (msg, type = 'success') => setToast({ msg, type });
 
@@ -55,13 +82,21 @@ export function StudentProgressView() {
             setProgressData(data);
             setSearchQuery("");
 
-            const exercisesSet = new Set();
+            // Se agrupa ignorando mayúsculas/espacios de más ("Sentadilla"
+            // y "sentadilla " cuentan como el mismo ejercicio) — sin esto,
+            // un simple typo en una edición del plan partía la curva de un
+            // ejercicio en dos "distintos" sin que nadie lo pidiera. Se
+            // muestra el PRIMER casing visto como etiqueta, por prolijidad.
+            const porNombreNormalizado = new Map();
             data.historial.forEach(session => {
                 session.ejercicios?.forEach(ej => {
-                    if (ej.nombre) exercisesSet.add(ej.nombre);
+                    const clave = normalizarNombreEjercicio(ej.nombre);
+                    if (clave && !porNombreNormalizado.has(clave)) {
+                        porNombreNormalizado.set(clave, ej.nombre);
+                    }
                 });
             });
-            const exercisesArray = Array.from(exercisesSet).sort();
+            const exercisesArray = Array.from(porNombreNormalizado.values()).sort();
             setUniqueExercises(exercisesArray);
 
             if (exercisesArray.length > 0) {
@@ -96,13 +131,18 @@ export function StudentProgressView() {
     const chartData = [...progressData.historial].reverse().reduce((acc, session) => {
         if (!selectedExercise) return acc;
 
-        const exerciseData = session.ejercicios?.find(ej => ej.nombre === selectedExercise);
+        const exerciseData = session.ejercicios?.find(
+            ej => normalizarNombreEjercicio(ej.nombre) === normalizarNombreEjercicio(selectedExercise)
+        );
+        if (!exerciseData) return acc;
 
-        if (exerciseData && exerciseData.pesoUsado > 0) {
+        const peso = resumirPeso(exerciseData, modoGrafico);
+        if (peso > 0) {
             acc.push({
                 fecha: new Date(session.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
-                peso: exerciseData.pesoUsado,
-                rutina: session.nombreSesion
+                peso,
+                rutina: session.nombreSesion,
+                series: Array.isArray(exerciseData.series) ? exerciseData.series : null
             });
         }
         return acc;
@@ -110,12 +150,23 @@ export function StudentProgressView() {
 
     const CustomTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
+            const punto = payload[0].payload;
             return (
                 <div style={{ backgroundColor: '#111', padding: '10px', border: '1px solid #d4f039', borderRadius: '8px' }}>
                     <p style={{ color: '#888', margin: 0, fontSize: '0.8rem' }}>{label}</p>
                     <p style={{ color: '#fff', margin: '5px 0 0 0', fontWeight: 'bold' }}>
                         {selectedExercise}: <span style={{ color: '#d4f039' }}>{payload[0].value} kg</span>
+                        <span style={{ color: '#666', fontWeight: 'normal' }}> ({modoGrafico === 'volumen' ? 'volumen' : 'mejor serie'})</span>
                     </p>
+                    {punto.series && punto.series.length > 0 && (
+                        <p style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', margin: '8px 0 0 0' }}>
+                            {punto.series.map((s, i) => (
+                                <span key={i} style={{ fontFamily: 'monospace', fontSize: '0.7rem', color: '#ccc', background: '#000', border: '1px solid #222', borderRadius: '6px', padding: '2px 6px' }}>
+                                    S{s.numero} {s.peso}{s.reps !== undefined && s.reps !== null ? `×${s.reps}` : ''}
+                                </span>
+                            ))}
+                        </p>
+                    )}
                 </div>
             );
         }
@@ -169,28 +220,51 @@ export function StudentProgressView() {
 
                     <section className="analytics-dashboard">
                         <div className="main-chart-card">
-                            <div className="chart-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div className="chart-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
                                 <div>
                                     <h3><FaDumbbell style={{ marginRight: '8px', color: '#d4f039' }} /> CURVA DE FUERZA (KG)</h3>
                                     <span className="stat-growth">SOBRECARGA PROGRESIVA</span>
                                 </div>
 
-                                {/* SELECTOR DE EJERCICIO */}
-                                {uniqueExercises.length > 0 && (
-                                    <select
-                                        style={{
-                                            background: '#1a1a1a', color: '#fff', border: '1px solid #333',
-                                            padding: '8px 15px', borderRadius: '8px', outline: 'none', cursor: 'pointer',
-                                            fontFamily: 'Roboto', fontSize: '0.9rem'
-                                        }}
-                                        value={selectedExercise}
-                                        onChange={(e) => setSelectedExercise(e.target.value)}
-                                    >
-                                        {uniqueExercises.map((ej, idx) => (
-                                            <option key={idx} value={ej}>{ej}</option>
-                                        ))}
-                                    </select>
-                                )}
+                                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                    {/* NUEVO: con peso por serie, una sesión ya no es
+                                        un solo número — hay que elegir qué mostrar
+                                        (ver docs/CAMBIOS.md). Para logs viejos (sin
+                                        series) el número es el mismo en los dos modos. */}
+                                    <div className="modo-grafico-toggle" role="group" aria-label="Qué mostrar en el gráfico">
+                                        <button
+                                            type="button"
+                                            className={modoGrafico === 'mejor' ? 'activo' : ''}
+                                            onClick={() => setModoGrafico('mejor')}
+                                        >
+                                            Mejor serie
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={modoGrafico === 'volumen' ? 'activo' : ''}
+                                            onClick={() => setModoGrafico('volumen')}
+                                        >
+                                            Volumen total
+                                        </button>
+                                    </div>
+
+                                    {/* SELECTOR DE EJERCICIO */}
+                                    {uniqueExercises.length > 0 && (
+                                        <select
+                                            style={{
+                                                background: '#1a1a1a', color: '#fff', border: '1px solid #333',
+                                                padding: '8px 15px', borderRadius: '8px', outline: 'none', cursor: 'pointer',
+                                                fontFamily: 'Roboto', fontSize: '0.9rem'
+                                            }}
+                                            value={selectedExercise}
+                                            onChange={(e) => setSelectedExercise(e.target.value)}
+                                        >
+                                            {uniqueExercises.map((ej, idx) => (
+                                                <option key={idx} value={ej}>{ej}</option>
+                                            ))}
+                                        </select>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="chart-area" style={{ marginTop: '20px' }}>
@@ -225,7 +299,9 @@ export function StudentProgressView() {
                         <div className="quick-metrics-stack">
                             <div className="metric-box-pro">
                                 <FaWeightHanging />
-                                <label>RÉCORD ACTUAL ({selectedExercise || '---'})</label>
+                                <label>
+                                    {modoGrafico === 'volumen' ? 'MEJOR VOLUMEN' : 'RÉCORD ACTUAL'} ({selectedExercise || '---'})
+                                </label>
                                 <span style={{ color: '#d4f039' }}>
                                     {chartData.length > 0 ? Math.max(...chartData.map(d => d.peso)) : 0} kg
                                 </span>

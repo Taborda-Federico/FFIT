@@ -219,14 +219,6 @@
     border: 1px solid var(--border-subtle);
 }
 
-.ex-main-body {
-    display: grid;
-    /* 145px asegura que el input de peso no se corte con 3 dígitos + KG */
-    grid-template-columns: 1fr 145px;
-    gap: 15px;
-    align-items: center;
-}
-
 .ex-title-row {
     display: flex;
     align-items: center;
@@ -315,35 +307,68 @@
     font-weight: 600;
 }
 
-/* ── INPUT DE PESO (OPTIMIZADO ANTI-CORTE) ───────────────── */
-.ex-weight-side {
+/* ── SERIES YA CARGADAS ESTA SESIÓN (chips) ──────────────── */
+.series-chips-row {
     display: flex;
-    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+    margin-bottom: 10px;
 }
 
-.input-weight-pill {
+.chip-serie {
+    background: var(--accent-dim);
+    border: 1px solid var(--accent-subtle);
+    color: var(--color-accent);
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 4px 9px;
+    border-radius: var(--radius-sm);
+}
+
+/* ── CARGA DE LA SERIE EN CURSO (peso + reps) ────────────── */
+.set-log-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.set-numero-badge {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--text-faint);
+    width: 26px;
+    flex-shrink: 0;
+    text-align: center;
+}
+
+.mini-field-pill {
     background: var(--bg-pure-black);
     border: 2px solid var(--border-medium);
     border-radius: var(--radius-md);
     display: flex;
     align-items: center;
     padding: 8px 12px;
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     transition: var(--transition-fast);
 }
 
-.input-weight-pill:focus-within {
+.mini-field-pill:focus-within {
     border-color: var(--color-accent);
     box-shadow: 0 0 10px var(--accent-glow);
 }
 
-.input-weight-pill input {
+.mini-field-pill input {
     background: transparent;
     border: none;
     color: var(--text-white);
     width: 100%;
-    font-size: 1.4rem;
-    /* Tamaño grande para legibilidad */
+    min-width: 0;
+    font-size: 1.3rem;
     font-weight: 900;
     text-align: right;
     outline: none;
@@ -351,19 +376,25 @@
     padding: 0;
 }
 
+.mini-field-pill.reps input {
+    color: var(--text-light);
+    font-size: 1.1rem;
+}
+
 /* Quitar flechas nativas */
-.input-weight-pill input::-webkit-inner-spin-button,
-.input-weight-pill input::-webkit-outer-spin-button {
+.mini-field-pill input::-webkit-inner-spin-button,
+.mini-field-pill input::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
 
-.input-weight-pill label {
+.mini-field-pill label {
     margin-left: 6px;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 900;
     color: var(--text-ghost);
     letter-spacing: 1px;
+    flex-shrink: 0;
 }
 
 /* ── BOTÓN FINALIZAR SERIE ───────────────────────────────── */
@@ -395,6 +426,21 @@
     background: var(--bg-muted);
     color: var(--text-subtle);
     cursor: default;
+}
+
+/* Deshabilitado por faltar repeticiones (distinto de "ya completado":
+   btn-done de arriba) — mismo gris, pero sin el ícono de check. */
+.btn-finish-block-pro:disabled:not(.btn-done) {
+    background: var(--bg-muted);
+    color: var(--text-faint);
+    cursor: not-allowed;
+}
+
+.aviso-faltan-reps {
+    margin: 10px 0 0;
+    font-size: 0.72rem;
+    color: var(--color-warning);
+    text-align: center;
 }
 
 .workout-end-trigger {
@@ -456,20 +502,27 @@
 
 /* ── RESPONSIVE ──────────────────────────────────────────── */
 @media (max-width: 600px) {
-    .ex-main-body {
-        grid-template-columns: 1fr 125px;
-        gap: 10px;
-    }
-
     .big-timer {
         font-size: 5rem;
     }
 
-    .input-weight-pill input {
-        font-size: 1.2rem;
+    .mini-field-pill input {
+        font-size: 1.1rem;
+    }
+
+    .set-log-row {
+        gap: 6px;
     }
 
     .ex-title-row h4 {
         font-size: 0.95rem;
+    }
+}
+
+/* En pantallas MUY angostas, "KG" y "REPS" sacan lugar — se abrevian solo
+   con CSS, sin duplicar markup para dos variantes de texto. */
+@media (max-width: 360px) {
+    .mini-field-pill label {
+        font-size: 0.58rem;
     }
 }

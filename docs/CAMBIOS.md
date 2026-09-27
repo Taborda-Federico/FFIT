@@ -554,3 +554,68 @@ día sin ningún límite de cantidad.
 265 backend, 267 frontend, 35 e2e — todo en verde.
 
 ---
+
+## 12 — Peso por serie: ya no se guarda un solo número por ejercicio
+
+Pedido explícito del cliente, no un bug: el peso real de un ejercicio suele variar serie a serie (una
+pirámide, una serie de calentamiento más liviana, etc.), pero la app solo dejaba cargar **un único número
+por ejercicio para toda la sesión**. El pedido fue mejorar el guardado del historial de pesos, por ejercicio
+y por serie, con su cantidad de repeticiones — con mucho cuidado porque la curva de "sobrecarga progresiva"
+del panel admin (Seguimiento) depende de estos datos.
+
+**Diseño acordado de antemano:** antes de tocar código, se armó y publicó una vista previa visual (con los
+mismos componentes y colores reales de la app) mostrando cómo quedaría la carga durante la sesión, el
+historial del alumno y la curva del admin — se revisó junto con el cliente, incluyendo las ambigüedades del
+pedido (qué número representa una sesión con varias series distintas en el gráfico) antes de implementar
+nada.
+
+**Qué se agregó:**
+
+- **`WorkoutLog` (backend):** cada ejercicio ahora puede guardar `series: [{ numero, peso, reps }]`, además
+  de seguir teniendo `pesoUsado` (un número). `pesoUsado` NO lo manda más el frontend — lo calcula el
+  backend como el **máximo** de las series, así cualquier pantalla vieja que no sepa nada de `series` sigue
+  funcionando exactamente igual que antes, automáticamente.
+- **Durante el entrenamiento (`WorkoutView.jsx`):** el input de peso pasa a cargarse por serie, en sincronía
+  con el contador "SERIE X / Y" que ya existía. Al pasar a la siguiente serie, el peso queda precargado con
+  el de la anterior (lo más común es repetirlo — solo hay que tocarlo si cambió); las repeticiones sí
+  arrancan vacías en cada serie nueva. **Se agregó, a pedido explícito durante la revisión, que no se puede
+  "Finalizar Serie" sin cargar al menos 1 repetición** (en bloques que no son circuito — ahí no aplica,
+  son sets por tiempo).
+- **Historial del alumno (`HistoryView.jsx`):** el detalle de una sesión pasada muestra el desglose real
+  serie por serie, con la mejor marca destacada, en vez de un número plano. De paso se corrigió el cálculo
+  de "tonelaje" de la sesión: antes sumaba solo el peso de cada ejercicio (ni multiplicaba por
+  repeticiones); ahora, cuando hay series, es peso × repeticiones sumado de cada una — el número real de
+  cuánto se movió.
+- **Seguimiento del admin (`StudentProgressView.jsx`):** la curva de fuerza ahora deja elegir, con un
+  selector, qué representar por sesión: **"Mejor serie"** (el peso más alto de esa sesión — la métrica
+  estándar de sobrecarga progresiva, no le afecta hacer menos series que otro día) o **"Volumen total"**
+  (peso × repeticiones sumado de todas las series — sensible a la cantidad de series hechas, mide trabajo
+  total, no fuerza pura). El tooltip muestra el desglose completo de esa sesión al pasar el mouse.
+
+**El matching de ejercicios a través del tiempo (pregunta que surgió en la revisión):** el `_id` de un
+ejercicio NO sirve para juntar el historial de meses — cada vez que se edita/publica un plan, se crea un
+documento nuevo con IDs de ejercicio nuevos (mismo motivo por el que el `sesionId` de la sección 8 tampoco
+serviría para esto). Por eso el gráfico sigue agrupando por **nombre** del ejercicio, como ya lo hacía. Se
+agregó, de yapa, una normalización (ignorar mayúsculas y espacios de más) para que un typo de tipeo al
+editar el plan no parta la curva de un ejercicio en dos — sin construir un catálogo de ejercicios completo,
+que sería un cambio bastante más grande y quedó fuera de este alcance.
+
+**Por qué esto es seguro para los datos existentes:** ningún `WorkoutLog` guardado se toca ni se migra.
+`series` es un campo nuevo y opcional — los logs de meses de historial simplemente no lo tienen, y cada
+pantalla que lo consume (historial, curva) cae automáticamente al comportamiento de siempre (`pesoUsado`
+tal cual) cuando no está presente. Una curva de un ejercicio con sesiones viejas y nuevas mezcladas se sigue
+graficando de forma continua, sin cortes.
+
+**Tests:** 5 nuevos en el backend (desglose guardado + `pesoUsado` calculado como máximo, compatibilidad sin
+`series`, filtrado de series con datos basura, varios ejercicios sin mezclarse entre sí). En el frontend, se
+reescribió gran parte de `WorkoutView.test.jsx` (34 tests: carga por serie, precarga del peso anterior, la
+validación nueva de "al menos 1 repetición", circuitos sin pedir reps, supersets con series independientes
+por ejercicio), se sumaron tests a `HistoryView.test.jsx` (desglose, tonelaje real, compatibilidad con logs
+viejos) y a `StudentProgressView.test.jsx` (los dos modos del gráfico, la normalización de nombres, mezcla
+de datos viejos y nuevos en una misma curva). Un e2e nuevo (`peso-por-serie.spec.js`) recorre la cadena
+completa en un navegador real: el alumno carga tres pesos distintos con sus repeticiones, y el admin ve el
+resultado correcto en los dos modos del gráfico.
+
+270 backend, 290 frontend, 36 e2e — todo en verde.
+
+---

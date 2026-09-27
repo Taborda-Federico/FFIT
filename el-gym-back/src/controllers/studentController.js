@@ -71,6 +71,38 @@ const saveWorkoutLog = async (req, res) => {
         // HomeHub.isSessionCompleted, del lado del frontend).
         const { nombreSesion, duracion, ejercicios, sesionId } = req.body;
 
+        // ARREGLADO — pedido del cliente (ver docs/CAMBIOS.md): antes se
+        // guardaba un solo número de peso por ejercicio para TODA la
+        // sesión, aunque el peso real cambiara serie a serie. Ahora, si el
+        // frontend manda el desglose (`series: [{numero, peso, reps}]`),
+        // se guarda completo — y `pesoUsado` se sigue calculando siempre
+        // acá mismo, como el máximo de esas series, para que cualquier
+        // pantalla vieja (o un WorkoutLog de hace meses, que nunca tuvo
+        // `series`) siga funcionando exactamente igual que antes, sin
+        // ningún cambio de código en esos casos.
+        const ejerciciosProcesados = Array.isArray(ejercicios) ? ejercicios.map(ej => {
+            const seriesValidas = Array.isArray(ej?.series)
+                ? ej.series
+                    .filter(s => s && typeof s.peso !== 'undefined')
+                    .map((s, idx) => ({
+                        numero: Number(s.numero) || idx + 1,
+                        peso: Number(s.peso) || 0,
+                        reps: s.reps !== undefined && s.reps !== null && s.reps !== '' ? Number(s.reps) : undefined
+                    }))
+                : [];
+
+            const pesoUsado = seriesValidas.length > 0
+                ? Math.max(...seriesValidas.map(s => s.peso))
+                : Number(ej?.pesoUsado) || 0;
+
+            return {
+                ejercicioId: ej?.ejercicioId,
+                nombre: ej?.nombre,
+                pesoUsado,
+                series: seriesValidas
+            };
+        }) : ejercicios;
+
         const newLog = await WorkoutLog.create({
             alumnoId: req.user._id,
             nombreSesion,
@@ -82,7 +114,7 @@ const saveWorkoutLog = async (req, res) => {
             // siempre se guardó, sin romper nada.
             sesionId: mongoose.isValidObjectId(sesionId) ? sesionId : undefined,
             duracion,
-            ejercicios: ejercicios
+            ejercicios: ejerciciosProcesados
         });
 
         res.status(201).json({ message: 'Entrenamiento guardado', log: newLog });

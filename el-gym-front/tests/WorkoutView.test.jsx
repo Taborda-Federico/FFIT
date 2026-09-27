@@ -49,9 +49,19 @@ describe('WorkoutView — render por tipo de bloque', () => {
     });
 });
 
+// Las repeticiones ahora son obligatorias (al menos 1) para poder
+// "Finalizar Serie" — ver describe de validación más abajo. Estos tests de
+// progreso/timers no están probando esa regla, así que cargan una
+// repetición cualquiera antes de cada click para no toparse con el botón
+// deshabilitado.
+function cargarReps(valor = '10', label = /Repeticiones serie/) {
+    fireEvent.change(screen.getByLabelText(label), { target: { value: valor } });
+}
+
 describe('WorkoutView — completar series/vueltas', () => {
     it('al finalizar una serie, avanza el contador y dispara el timer de descanso', () => {
         render(<WorkoutView session={sesionEstandar()} onFinish={() => {}} onExit={() => {}} />);
+        cargarReps();
         fireEvent.click(screen.getByText(/FINALIZAR SERIE/));
         expect(screen.getByText(/SERIE 2 \/ 3/)).toBeInTheDocument();
         expect(screen.getByText('RECUPERACIÓN')).toBeInTheDocument();
@@ -60,8 +70,11 @@ describe('WorkoutView — completar series/vueltas', () => {
 
     it('al completar la última serie, el bloque queda "COMPLETADO" y el botón se deshabilita', () => {
         const { container } = render(<WorkoutView session={sesionEstandar()} onFinish={() => {}} onExit={() => {}} />);
+        cargarReps();
         fireEvent.click(screen.getByText(/FINALIZAR SERIE/));
+        cargarReps();
         fireEvent.click(screen.getByText(/FINALIZAR SERIE/));
+        cargarReps();
         fireEvent.click(screen.getByText(/FINALIZAR SERIE/));
         expect(screen.getByText('COMPLETADO')).toBeInTheDocument();
         expect(container.querySelector('.btn-finish-block-pro')).toBeDisabled();
@@ -69,6 +82,7 @@ describe('WorkoutView — completar series/vueltas', () => {
 
     it('el timer de descanso cuenta regresivo con fake timers y desaparece al llegar a 0', () => {
         render(<WorkoutView session={sesionEstandar()} onFinish={() => {}} onExit={() => {}} />);
+        cargarReps();
         fireEvent.click(screen.getByText(/FINALIZAR SERIE/));
         expect(screen.getByText('60seg')).toBeInTheDocument();
         act(() => { vi.advanceTimersByTime(60000); });
@@ -77,6 +91,7 @@ describe('WorkoutView — completar series/vueltas', () => {
 
     it('el botón "SALTAR" corta el timer de descanso al toque', () => {
         render(<WorkoutView session={sesionEstandar()} onFinish={() => {}} onExit={() => {}} />);
+        cargarReps();
         fireEvent.click(screen.getByText(/FINALIZAR SERIE/));
         fireEvent.click(screen.getByText('SALTAR'));
         expect(screen.queryByText('RECUPERACIÓN')).not.toBeInTheDocument();
@@ -85,6 +100,7 @@ describe('WorkoutView — completar series/vueltas', () => {
     it('un bloque con descanso=0 no dispara el timer de recuperación', () => {
         const session = sesionEstandar({ bloques: [{ tipo: 'standard', descanso: 0, ejercicios: [{ id: 'e1', nombre: 'X', series: 2 }] }] });
         render(<WorkoutView session={session} onFinish={() => {}} onExit={() => {}} />);
+        cargarReps();
         fireEvent.click(screen.getByText(/FINALIZAR SERIE/));
         expect(screen.queryByText('RECUPERACIÓN')).not.toBeInTheDocument();
     });
@@ -105,7 +121,7 @@ describe('WorkoutView — timer de ejercicio (circuit) e input de peso', () => {
 
     it('el input de peso actualiza el payload por ejercicio (keyed por id)', () => {
         render(<WorkoutView session={sesionEstandar()} onFinish={() => {}} onExit={() => {}} />);
-        const input = screen.getByPlaceholderText('0');
+        const input = screen.getByLabelText(/Peso serie 1/);
         fireEvent.change(input, { target: { value: '55' } });
         expect(input).toHaveValue(55);
     });
@@ -129,15 +145,15 @@ describe('WorkoutView — timer de ejercicio (circuit) e input de peso', () => {
 describe('WorkoutView — persistencia en localStorage', () => {
     it('el peso cargado se persiste en localStorage bajo ffit_workout_payload', () => {
         render(<WorkoutView session={sesionEstandar()} onFinish={() => {}} onExit={() => {}} />);
-        fireEvent.change(screen.getByPlaceholderText('0'), { target: { value: '80' } });
+        fireEvent.change(screen.getByLabelText(/Peso serie 1/), { target: { value: '80' } });
         const guardado = JSON.parse(localStorage.getItem('ffit_workout_payload'));
-        expect(guardado.e1).toBe('80');
+        expect(guardado.e1.pesoActual).toBe('80');
     });
 
     it('handleExit limpia localStorage y llama a onExit', () => {
         const onExit = vi.fn();
         const { container } = render(<WorkoutView session={sesionEstandar()} onFinish={() => {}} onExit={onExit} />);
-        fireEvent.change(screen.getByPlaceholderText('0'), { target: { value: '80' } });
+        fireEvent.change(screen.getByLabelText(/Peso serie 1/), { target: { value: '80' } });
         fireEvent.click(container.querySelector('.btn-exit-workout'));
         expect(onExit).toHaveBeenCalled();
         expect(localStorage.getItem('ffit_workout_payload')).toBeNull();
@@ -146,9 +162,11 @@ describe('WorkoutView — persistencia en localStorage', () => {
     it('handleFinish limpia localStorage y llama a onFinish con el payload acumulado', () => {
         const onFinish = vi.fn();
         render(<WorkoutView session={sesionEstandar()} onFinish={onFinish} onExit={() => {}} />);
-        fireEvent.change(screen.getByPlaceholderText('0'), { target: { value: '80' } });
+        fireEvent.change(screen.getByLabelText(/Peso serie 1/), { target: { value: '80' } });
         fireEvent.click(screen.getByText(/FINALIZAR ENTRENAMIENTO/));
-        expect(onFinish).toHaveBeenCalledWith(expect.objectContaining({ e1: '80' }));
+        expect(onFinish).toHaveBeenCalledWith(expect.objectContaining({
+            e1: expect.objectContaining({ pesoActual: '80' })
+        }));
         expect(localStorage.getItem('ffit_workout_payload')).toBeNull();
     });
 
@@ -157,5 +175,128 @@ describe('WorkoutView — persistencia en localStorage', () => {
         render(<WorkoutView session={sesionEstandar({ bloques: [] })} onFinish={onFinish} onExit={() => {}} />);
         fireEvent.click(screen.getByText(/FINALIZAR ENTRENAMIENTO/));
         expect(onFinish).toHaveBeenCalledWith({});
+    });
+
+    it('un `ffit_workout_payload` viejo en localStorage (formato plano, de antes de este cambio) se migra solo, sin crashear', () => {
+        // Simula un entrenamiento que quedó a mitad de camino justo cuando
+        // se actualizó la app: el formato viejo era { ejId: "55" } (un
+        // string plano), no { ejId: { series, pesoActual, repsActual } }.
+        localStorage.setItem('ffit_workout_payload', JSON.stringify({ e1: '55' }));
+        render(<WorkoutView session={sesionEstandar()} onFinish={() => {}} onExit={() => {}} />);
+        // El peso viejo se recupera como punto de partida de la serie 1.
+        expect(screen.getByLabelText(/Peso serie 1/)).toHaveValue(55);
+    });
+});
+
+describe('WorkoutView — NUEVO: carga de peso y repeticiones por serie (pedido del cliente)', () => {
+    it('"Finalizar Serie" confirma el peso/reps tipeados como la serie actual, y los muestra como chip', () => {
+        render(<WorkoutView session={sesionEstandar()} onFinish={() => {}} onExit={() => {}} />);
+        fireEvent.change(screen.getByLabelText(/Peso serie 1/), { target: { value: '40' } });
+        fireEvent.change(screen.getByLabelText(/Repeticiones serie 1/), { target: { value: '10' } });
+        fireEvent.click(screen.getByText(/FINALIZAR SERIE/));
+
+        expect(screen.getByText('S1 · 40kg × 10')).toBeInTheDocument();
+    });
+
+    it('al pasar a la siguiente serie, el peso queda PRECARGADO con el de la serie anterior, pero las reps arrancan vacías', () => {
+        render(<WorkoutView session={sesionEstandar()} onFinish={() => {}} onExit={() => {}} />);
+        fireEvent.change(screen.getByLabelText(/Peso serie 1/), { target: { value: '40' } });
+        fireEvent.change(screen.getByLabelText(/Repeticiones serie 1/), { target: { value: '10' } });
+        fireEvent.click(screen.getByText(/FINALIZAR SERIE/));
+
+        expect(screen.getByLabelText(/Peso serie 2/)).toHaveValue(40);
+        expect(screen.getByLabelText(/Repeticiones serie 2/)).toHaveValue(null);
+    });
+
+    it('el peso varía serie a serie: cada una queda guardada con SU propio valor, no todas con el último', () => {
+        const onFinish = vi.fn();
+        render(<WorkoutView session={sesionEstandar()} onFinish={onFinish} onExit={() => {}} />);
+
+        fireEvent.change(screen.getByLabelText(/Peso serie 1/), { target: { value: '40' } });
+        fireEvent.change(screen.getByLabelText(/Repeticiones serie 1/), { target: { value: '10' } });
+        fireEvent.click(screen.getByText(/FINALIZAR SERIE/));
+        fireEvent.change(screen.getByLabelText(/Peso serie 2/), { target: { value: '45' } });
+        fireEvent.change(screen.getByLabelText(/Repeticiones serie 2/), { target: { value: '6' } });
+        fireEvent.click(screen.getByText(/FINALIZAR SERIE/));
+        fireEvent.change(screen.getByLabelText(/Peso serie 3/), { target: { value: '42' } });
+        fireEvent.change(screen.getByLabelText(/Repeticiones serie 3/), { target: { value: '8' } });
+        fireEvent.click(screen.getByText(/FINALIZAR SERIE/));
+
+        fireEvent.click(screen.getByText(/FINALIZAR ENTRENAMIENTO/));
+        const payload = onFinish.mock.calls[0][0];
+        expect(payload.e1.series.map(s => s.peso)).toEqual([40, 45, 42]);
+    });
+
+    it('en un bloque de circuito NO se pide repeticiones (son sets por tiempo, no por reps)', () => {
+        const session = sesionEstandar({
+            bloques: [{ tipo: 'circuit', vueltas: 2, ejercicios: [{ id: 'e1', nombre: 'Burpees', tiempo: '20' }] }]
+        });
+        render(<WorkoutView session={session} onFinish={() => {}} onExit={() => {}} />);
+        expect(screen.getByLabelText(/Peso serie 1/)).toBeInTheDocument();
+        expect(screen.queryByLabelText(/Repeticiones/)).not.toBeInTheDocument();
+    });
+
+    it('un superset con dos ejercicios: cada uno guarda SU propia serie por separado, no se mezclan', () => {
+        const onFinish = vi.fn();
+        const session = sesionEstandar({
+            bloques: [{ tipo: 'superset', descanso: 30, ejercicios: [{ id: 'e1', nombre: 'A' }, { id: 'e2', nombre: 'B' }] }]
+        });
+        render(<WorkoutView session={session} onFinish={onFinish} onExit={() => {}} />);
+
+        fireEvent.change(screen.getByLabelText(/Peso serie 1 — A/), { target: { value: '20' } });
+        fireEvent.change(screen.getByLabelText(/Repeticiones serie 1 — A/), { target: { value: '12' } });
+        fireEvent.change(screen.getByLabelText(/Peso serie 1 — B/), { target: { value: '15' } });
+        fireEvent.change(screen.getByLabelText(/Repeticiones serie 1 — B/), { target: { value: '12' } });
+        fireEvent.click(screen.getByText(/FINALIZAR SERIE/));
+        fireEvent.click(screen.getByText(/FINALIZAR ENTRENAMIENTO/));
+
+        const payload = onFinish.mock.calls[0][0];
+        expect(payload.e1.series[0].peso).toBe(20);
+        expect(payload.e2.series[0].peso).toBe(15);
+    });
+});
+
+describe('WorkoutView — NUEVO: las repeticiones son obligatorias (al menos 1) para poder finalizar la serie', () => {
+    it('sin cargar ninguna repetición, "Finalizar Serie" queda deshabilitado y muestra el aviso', () => {
+        render(<WorkoutView session={sesionEstandar()} onFinish={() => {}} onExit={() => {}} />);
+        fireEvent.change(screen.getByLabelText(/Peso serie 1/), { target: { value: '40' } });
+
+        expect(screen.getByText(/FINALIZAR SERIE/)).toBeDisabled();
+        expect(screen.getByText(/Cargá las repeticiones/i)).toBeInTheDocument();
+    });
+
+    it('con 0 repeticiones tampoco alcanza — tiene que ser al menos 1', () => {
+        render(<WorkoutView session={sesionEstandar()} onFinish={() => {}} onExit={() => {}} />);
+        fireEvent.change(screen.getByLabelText(/Peso serie 1/), { target: { value: '40' } });
+        fireEvent.change(screen.getByLabelText(/Repeticiones serie 1/), { target: { value: '0' } });
+
+        expect(screen.getByText(/FINALIZAR SERIE/)).toBeDisabled();
+    });
+
+    it('cargando 1 repetición (o más), el botón se habilita y el aviso desaparece', () => {
+        render(<WorkoutView session={sesionEstandar()} onFinish={() => {}} onExit={() => {}} />);
+        fireEvent.change(screen.getByLabelText(/Peso serie 1/), { target: { value: '40' } });
+        fireEvent.change(screen.getByLabelText(/Repeticiones serie 1/), { target: { value: '1' } });
+
+        expect(screen.getByText(/FINALIZAR SERIE/)).not.toBeDisabled();
+        expect(screen.queryByText(/Cargá las repeticiones/i)).not.toBeInTheDocument();
+    });
+
+    it('en un circuito, esta validación no aplica — se puede finalizar la vuelta sin ningún campo de reps (no existe)', () => {
+        const session = sesionEstandar({
+            bloques: [{ tipo: 'circuit', vueltas: 1, ejercicios: [{ id: 'e1', nombre: 'Burpees', tiempo: '20' }] }]
+        });
+        render(<WorkoutView session={session} onFinish={() => {}} onExit={() => {}} />);
+        expect(screen.getByText(/FINALIZAR VUELTA/)).not.toBeDisabled();
+    });
+
+    it('en un superset, si a UNO de los dos ejercicios le faltan las reps, el botón sigue deshabilitado (aplica a todo el bloque)', () => {
+        const session = sesionEstandar({
+            bloques: [{ tipo: 'superset', descanso: 30, ejercicios: [{ id: 'e1', nombre: 'A' }, { id: 'e2', nombre: 'B' }] }]
+        });
+        render(<WorkoutView session={session} onFinish={() => {}} onExit={() => {}} />);
+        fireEvent.change(screen.getByLabelText(/Repeticiones serie 1 — A/), { target: { value: '12' } });
+        // B se deja sin cargar.
+        expect(screen.getByText(/FINALIZAR SERIE/)).toBeDisabled();
     });
 });

@@ -124,6 +124,75 @@ describe('HistoryView — tonelaje y tiempo total', () => {
         render(<HistoryView history={[log(HOY, { duracion: 'formato raro' })]} />);
         expect(screen.getByText('0m')).toBeInTheDocument();
     });
+
+    it('ARREGLADO: con desglose por serie, el tonelaje es peso × repeticiones de cada serie (volumen real)', () => {
+        render(<HistoryView history={[log(HOY, {
+            ejercicios: [{ nombre: 'Press', series: [{ numero: 1, peso: 40, reps: 10 }, { numero: 2, peso: 40, reps: 10 }] }]
+        })]} />);
+        // 40×10 + 40×10 = 800, no 40 (que era lo que daba sumando solo el
+        // peso "plano" de antes, sin multiplicar por repeticiones).
+        expect(screen.getByText('800')).toBeInTheDocument();
+    });
+
+    it('una serie sin repeticiones cargadas cuenta como 1 repetición (no se pierde ese peso del cálculo)', () => {
+        render(<HistoryView history={[log(HOY, {
+            ejercicios: [{ nombre: 'Press', series: [{ numero: 1, peso: 40 }] }]
+        })]} />);
+        expect(screen.getByText('40')).toBeInTheDocument();
+    });
+});
+
+describe('HistoryView — NUEVO: desglose de series en el detalle (pedido del cliente)', () => {
+    it('un ejercicio CON series muestra cada una por separado, con la mejor marca destacada', () => {
+        render(<HistoryView history={[log(HOY, {
+            ejercicios: [{
+                nombre: 'Press de Banca',
+                series: [
+                    { numero: 1, peso: 40, reps: 10 },
+                    { numero: 2, peso: 45, reps: 6 },
+                    { numero: 3, peso: 42, reps: 8 }
+                ]
+            }]
+        })]} />);
+        fireEvent.click(screen.getByText('Día 1'));
+
+        expect(screen.getByText('Mejor: 45kg')).toBeInTheDocument();
+        expect(screen.getByText(/S1/)).toBeInTheDocument();
+        expect(screen.getByText(/S2/)).toBeInTheDocument();
+        expect(screen.getByText(/S3/)).toBeInTheDocument();
+    });
+
+    it('una serie sin repeticiones no muestra el "× reps" (pero tampoco crashea)', () => {
+        render(<HistoryView history={[log(HOY, {
+            ejercicios: [{ nombre: 'Peso Muerto', series: [{ numero: 1, peso: 100 }] }]
+        })]} />);
+        fireEvent.click(screen.getByText('Día 1'));
+        expect(screen.getAllByText(/100/).length).toBeGreaterThan(0);
+        expect(screen.queryByText(/×/)).not.toBeInTheDocument();
+    });
+
+    it('un ejercicio SIN series (log viejo, de antes de este cambio) sigue mostrando el número único de siempre — sin crashear', () => {
+        render(<HistoryView history={[log(HOY, {
+            ejercicios: [{ nombre: 'Sentadilla', pesoUsado: 60 }]
+        })]} />);
+        fireEvent.click(screen.getByText('Día 1'));
+        expect(screen.getByText('Sentadilla')).toBeInTheDocument();
+        expect(screen.getAllByText('60').length).toBeGreaterThan(0);
+        expect(screen.queryByText('Mejor:', { exact: false })).not.toBeInTheDocument();
+    });
+
+    it('un `series` numérico (uso viejo y distinto del campo, no un array) NO se confunde con el desglose nuevo', () => {
+        // Antes de este cambio, algún dato podría tener `series` como
+        // NÚMERO (cantidad de series pactadas, no el desglose real). Un
+        // Array.isArray() explícito evita que eso se interprete como el
+        // desglose nuevo.
+        render(<HistoryView history={[log(HOY, {
+            ejercicios: [{ nombre: 'Sentadilla', series: 4, pesoUsado: 100 }]
+        })]} />);
+        fireEvent.click(screen.getByText('Día 1'));
+        expect(screen.getAllByText('100').length).toBeGreaterThan(0);
+        expect(screen.queryByText('Mejor:', { exact: false })).not.toBeInTheDocument();
+    });
 });
 
 describe('HistoryView — lista y detalle', () => {

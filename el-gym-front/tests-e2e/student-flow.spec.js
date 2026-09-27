@@ -33,7 +33,11 @@ test.describe('Flujo del alumno — ver plan, entrenar, ver historial', () => {
 
         await page.locator('.hub-session-card', { hasText: 'Día 1' }).click();
         await expect(page.getByText('ENTRENAMIENTO ACTIVO')).toBeVisible();
-        await page.getByPlaceholder('0').fill('42');
+        await page.getByLabel(/Peso serie 1/).fill('42');
+        // Las repeticiones son obligatorias (al menos 1) para poder
+        // finalizar la serie — se carga "1" para que el tonelaje total de
+        // la sesión (peso × reps) siga dando exactamente 42.
+        await page.getByLabel(/Repeticiones serie 1/).fill('1');
         await page.getByRole('button', { name: /FINALIZAR SERIE/ }).click();
         await page.getByRole('button', { name: /FINALIZAR ENTRENAMIENTO/ }).click();
 
@@ -59,6 +63,7 @@ test.describe('Flujo del alumno — ver plan, entrenar, ver historial', () => {
         await loguearComoAlumno(page, alumno);
 
         await page.locator('.hub-session-card', { hasText: 'Día 1' }).click();
+        await page.getByLabel(/Repeticiones serie 1/).fill('10');
         await page.getByRole('button', { name: /FINALIZAR SERIE/ }).click();
         await page.getByRole('button', { name: /FINALIZAR ENTRENAMIENTO/ }).click();
 
@@ -72,6 +77,7 @@ test.describe('Flujo del alumno — ver plan, entrenar, ver historial', () => {
         // entrenaste hoy".
         await tarjetaDia2.click();
         await expect(page.getByText('ENTRENAMIENTO ACTIVO')).toBeVisible();
+        await page.getByLabel(/Repeticiones serie 1/).fill('10');
         await page.getByRole('button', { name: /FINALIZAR SERIE/ }).click();
         await page.getByRole('button', { name: /FINALIZAR ENTRENAMIENTO/ }).click();
         await expect(page.getByText('LOGBOOK PERSONAL')).toBeVisible();

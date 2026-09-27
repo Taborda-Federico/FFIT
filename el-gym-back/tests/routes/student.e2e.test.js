@@ -233,6 +233,93 @@ describe('POST /api/student/workout (saveWorkoutLog)', () => {
         expect(res.status).toBe(500);
     });
 
+    describe('NUEVO: peso por serie (pedido del cliente, ver docs/CAMBIOS.md)', () => {
+        it('guarda el desglose completo de series, y calcula pesoUsado como el MÁXIMO de esas series', async () => {
+            const { admin } = await createAdmin();
+            const { student, token } = await createStudentDirect(admin._id);
+            const res = await request(app).post('/api/student/workout').set('Authorization', `Bearer ${token}`).send({
+                nombreSesion: 'Día 1',
+                ejercicios: [{
+                    ejercicioId: 'e1', nombre: 'Press de Banca',
+                    series: [
+                        { numero: 1, peso: 40, reps: 10 },
+                        { numero: 2, peso: 45, reps: 6 },
+                        { numero: 3, peso: 42, reps: 8 }
+                    ]
+                }]
+            });
+            expect(res.status).toBe(201);
+            const guardado = await WorkoutLog.findById(res.body.log._id);
+            expect(guardado.ejercicios[0].series).toHaveLength(3);
+            expect(guardado.ejercicios[0].series[1]).toMatchObject({ numero: 2, peso: 45, reps: 6 });
+            // El máximo de [40, 45, 42] es 45 — pesoUsado lo calcula el
+            // backend, no depende de que el frontend lo mande bien.
+            expect(guardado.ejercicios[0].pesoUsado).toBe(45);
+        });
+
+        it('sin `series` (forma vieja, con pesoUsado directo) sigue funcionando exactamente igual que antes', async () => {
+            const { admin } = await createAdmin();
+            const { student, token } = await createStudentDirect(admin._id);
+            const res = await request(app).post('/api/student/workout').set('Authorization', `Bearer ${token}`).send({
+                nombreSesion: 'Día 1',
+                ejercicios: [{ ejercicioId: 'e1', nombre: 'Press de Banca', pesoUsado: 42 }]
+            });
+            expect(res.status).toBe(201);
+            const guardado = await WorkoutLog.findById(res.body.log._id);
+            expect(guardado.ejercicios[0].pesoUsado).toBe(42);
+            expect(guardado.ejercicios[0].series).toHaveLength(0);
+        });
+
+        it('una serie con `reps` ausente guarda esa serie igual, solo sin repeticiones (no rompe el guardado)', async () => {
+            const { admin } = await createAdmin();
+            const { token } = await createStudentDirect(admin._id);
+            const res = await request(app).post('/api/student/workout').set('Authorization', `Bearer ${token}`).send({
+                nombreSesion: 'Día 1',
+                ejercicios: [{ ejercicioId: 'e1', nombre: 'Sentadilla', series: [{ numero: 1, peso: 60 }] }]
+            });
+            expect(res.status).toBe(201);
+            const guardado = await WorkoutLog.findById(res.body.log._id);
+            expect(guardado.ejercicios[0].series[0].peso).toBe(60);
+            expect(guardado.ejercicios[0].series[0].reps).toBeUndefined();
+        });
+
+        it('series con datos basura (sin peso) se filtran en vez de romper el guardado completo', async () => {
+            const { admin } = await createAdmin();
+            const { token } = await createStudentDirect(admin._id);
+            const res = await request(app).post('/api/student/workout').set('Authorization', `Bearer ${token}`).send({
+                nombreSesion: 'Día 1',
+                ejercicios: [{
+                    ejercicioId: 'e1', nombre: 'Sentadilla',
+                    series: [{ numero: 1, peso: 60, reps: 8 }, { numero: 2 }, null, 'texto-invalido']
+                }]
+            });
+            expect(res.status).toBe(201);
+            const guardado = await WorkoutLog.findById(res.body.log._id);
+            // La serie 2 (sin `peso`), el null y el string se descartan — solo
+            // queda la serie 1, válida.
+            expect(guardado.ejercicios[0].series).toHaveLength(1);
+            expect(guardado.ejercicios[0].series[0].peso).toBe(60);
+        });
+
+        it('varios ejercicios en la misma sesión, cada uno con su propio desglose de series, no se mezclan entre sí', async () => {
+            const { admin } = await createAdmin();
+            const { token } = await createStudentDirect(admin._id);
+            const res = await request(app).post('/api/student/workout').set('Authorization', `Bearer ${token}`).send({
+                nombreSesion: 'Día 1',
+                ejercicios: [
+                    { ejercicioId: 'e1', nombre: 'Press de Banca', series: [{ numero: 1, peso: 40, reps: 10 }] },
+                    { ejercicioId: 'e2', nombre: 'Remo con Barra', series: [{ numero: 1, peso: 35, reps: 10 }, { numero: 2, peso: 35, reps: 8 }] }
+                ]
+            });
+            expect(res.status).toBe(201);
+            const guardado = await WorkoutLog.findById(res.body.log._id);
+            expect(guardado.ejercicios[0].series).toHaveLength(1);
+            expect(guardado.ejercicios[0].pesoUsado).toBe(40);
+            expect(guardado.ejercicios[1].series).toHaveLength(2);
+            expect(guardado.ejercicios[1].pesoUsado).toBe(35);
+        });
+    });
+
     it('NUEVO: si el frontend manda sesionId (el _id de la sesión puntual del plan), queda guardado en el log', async () => {
         const { admin } = await createAdmin();
         const { student, token } = await createStudentDirect(admin._id);

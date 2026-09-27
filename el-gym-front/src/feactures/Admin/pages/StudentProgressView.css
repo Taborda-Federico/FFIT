@@ -109,6 +109,36 @@
 .metric-box-pro span { font-size: 1.8rem; font-family: 'Oswald'; color: #fff; margin-top: 5px; }
 .metric-box-pro svg { color: var(--neon); font-size: 1.2rem; margin-bottom: 10px; opacity: 0.3; }
 
+/* ── TOGGLE "MEJOR SERIE / VOLUMEN TOTAL" (NUEVO) ────────── */
+.modo-grafico-toggle {
+    display: inline-flex;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 3px;
+    gap: 2px;
+}
+
+.modo-grafico-toggle button {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: #888;
+    font-family: 'Roboto', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 7px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: 0.2s;
+}
+
+.modo-grafico-toggle button.activo {
+    background: var(--neon);
+    color: #0a0a0a;
+}
+
 /* --- SECTIONS --- */
 .detailed-data-split { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
 .section-pro-title { display: flex; align-items: center; gap: 12px; margin-bottom: 25px; color: #222; }

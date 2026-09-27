@@ -76,12 +76,21 @@ export function UserDashboard() {
                     if (bloque.ejercicios) {
                         bloque.ejercicios.forEach(ej => {
                             const ejId = String(ej.id || ej._id || Math.random());
-                            const peso = Number(workoutResult[ej.id || ej._id]) || 0;
-                            pesoTotalSuma += peso;
+                            // ARREGLADO — pedido del cliente (ver docs/CAMBIOS.md):
+                            // antes acá se leía un solo número de peso por
+                            // ejercicio (workoutResult[ejId]). Ahora WorkoutView
+                            // manda { series: [{numero, peso, reps}], ... } por
+                            // ejercicio — el backend calcula pesoUsado solo (el
+                            // máximo de las series), así que acá alcanza con
+                            // reenviar el desglose tal cual.
+                            const entrada = workoutResult[ej.id || ej._id];
+                            const series = entrada?.series || [];
+                            const pesoMaximo = series.length > 0 ? Math.max(...series.map(s => s.peso || 0)) : 0;
+                            pesoTotalSuma += pesoMaximo;
                             ejerciciosFormateados.push({
                                 ejercicioId: ejId,
                                 nombre: ej.nombre || 'Ejercicio',
-                                pesoUsado: peso
+                                series
                             });
                         });
                     }

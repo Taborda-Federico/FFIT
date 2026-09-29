@@ -84,6 +84,15 @@ export async function publicarPlan(token, alumnoId, { titulo = 'Plan Test', sesi
     return res.json();
 }
 
+export async function actualizarPlan(token, planId, data) {
+    const res = await fetch(BACKEND_URL + `/api/planes/${planId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(data),
+    });
+    return res.json();
+}
+
 export async function crearPlantilla(token, { titulo = 'Plantilla Test', sesiones } = {}) {
     const res = await fetch(BACKEND_URL + '/api/planes/plantilla', {
         method: 'POST',

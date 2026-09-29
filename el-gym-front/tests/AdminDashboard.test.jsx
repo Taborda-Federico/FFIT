@@ -2,13 +2,18 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { AdminDashboard } from '../src/feactures/Admin/pages/AdminDashboard';
 
-const { getStudentsMock, getPlantillasMock, publicarPlanMock, guardarPlantillaMock, actualizarPlantillaMock, eliminarPlantillaMock, authValue } = vi.hoisted(() => ({
+const {
+    getStudentsMock, getPlantillasMock, publicarPlanMock, guardarPlantillaMock, actualizarPlantillaMock, eliminarPlantillaMock,
+    getPlanesActivosMock, actualizarPlanMock, authValue
+} = vi.hoisted(() => ({
     getStudentsMock: vi.fn(),
     getPlantillasMock: vi.fn(),
     publicarPlanMock: vi.fn(),
     guardarPlantillaMock: vi.fn(),
     actualizarPlantillaMock: vi.fn(),
     eliminarPlantillaMock: vi.fn(),
+    getPlanesActivosMock: vi.fn(),
+    actualizarPlanMock: vi.fn(),
     // Referencia ESTABLE: si useAuth() devolviera un objeto nuevo en cada
     // render (como haría un mock ingenuo `() => ({...})`), el useEffect que
     // depende de `[user]` se re-dispararía en cada re-render del componente
@@ -23,7 +28,8 @@ vi.mock('../src/service/user.service', () => ({ UserService: { getStudents: getS
 vi.mock('../src/service/plan.service', () => ({
     PlanService: {
         getPlantillas: getPlantillasMock, publicarPlan: publicarPlanMock, guardarPlantilla: guardarPlantillaMock,
-        actualizarPlantilla: actualizarPlantillaMock, eliminarPlantilla: eliminarPlantillaMock
+        actualizarPlantilla: actualizarPlantillaMock, eliminarPlantilla: eliminarPlantillaMock,
+        getPlanesActivos: getPlanesActivosMock, actualizarPlan: actualizarPlanMock
     }
 }));
 
@@ -34,6 +40,8 @@ beforeEach(() => {
     guardarPlantillaMock.mockReset().mockResolvedValue({ plantilla: {} });
     actualizarPlantillaMock.mockReset().mockResolvedValue({ plantilla: {} });
     eliminarPlantillaMock.mockReset().mockResolvedValue({ message: 'ok' });
+    getPlanesActivosMock.mockReset().mockResolvedValue([]);
+    actualizarPlanMock.mockReset().mockResolvedValue({ plan: { sesiones: [], vencimiento: 4 } });
 });
 
 async function esperarCargaInicial() {
@@ -474,5 +482,155 @@ describe('AdminDashboard — persistencia del borrador (arreglo del bug reportad
         expect(() => render(<AdminDashboard />)).not.toThrow();
         await esperarCargaInicial();
         expect(screen.getByPlaceholderText(/TÍTULO/)).toHaveValue('');
+    });
+});
+
+describe('AdminDashboard — NUEVO: Planes Activos (ver y editar un plan ya asignado)', () => {
+    // Plan "en curso": lleva 2 de las 4 semanas originales (el cron ya lo
+    // decrementó), con dos sesiones reales (con _id de Mongo, no client-side).
+    const planActivoDemo = {
+        _id: 'plan1',
+        titulo: 'Fuerza Nivel 1',
+        vencimiento: 2,
+        alumnoId: { _id: 'a1', nombre: 'Federico Gómez', email: 'f@x.com' },
+        sesiones: [
+            { _id: 's1', nombre: 'Día 1', bloques: [{ _id: 'b1', tipo: 'standard', descanso: 60, ejercicios: [{ _id: 'e1', nombre: 'Sentadilla', series: '4', reps: '8-10' }] }] },
+            { _id: 's2', nombre: 'Día 2', bloques: [{ _id: 'b2', tipo: 'circuit', descanso: 30, vueltas: 3, ejercicios: [{ _id: 'e2', nombre: 'Burpees', tiempo: '40' }] }] },
+        ]
+    };
+
+    function modalPlanesActivos() {
+        return screen.getByRole('heading', { name: /Planes Activos/i }).closest('.planes-activos-modal-card');
+    }
+
+    it('el botón "Planes Activos" abre el modal con los planes ya cargados (alumno + título)', async () => {
+        getPlanesActivosMock.mockResolvedValue([planActivoDemo]);
+        render(<AdminDashboard />);
+        await esperarCargaInicial();
+        fireEvent.click(screen.getByText('Planes Activos'));
+        await screen.findByRole('heading', { name: /Planes Activos/i });
+        const modal = modalPlanesActivos();
+        expect(within(modal).getByText('Fuerza Nivel 1')).toBeInTheDocument();
+        expect(within(modal).getByText(/Federico Gómez/)).toBeInTheDocument();
+    });
+
+    it('hacer click en la fila la expande y muestra el detalle de sesiones/bloques/ejercicios de solo lectura', async () => {
+        getPlanesActivosMock.mockResolvedValue([planActivoDemo]);
+        render(<AdminDashboard />);
+        await esperarCargaInicial();
+        fireEvent.click(screen.getByText('Planes Activos'));
+        await screen.findByRole('heading', { name: /Planes Activos/i });
+
+        expect(screen.queryByText('Sentadilla')).not.toBeInTheDocument();
+        fireEvent.click(screen.getByText('Fuerza Nivel 1'));
+        expect(screen.getByText('Sentadilla')).toBeInTheDocument();
+        expect(screen.getByText('Burpees')).toBeInTheDocument();
+    });
+
+    it('"Editar" carga el plan real en el armador (con los _id de sus sesiones), muestra el banner y el campo de semanas restantes', async () => {
+        getPlanesActivosMock.mockResolvedValue([planActivoDemo]);
+        render(<AdminDashboard />);
+        await esperarCargaInicial();
+        fireEvent.click(screen.getByText('Planes Activos'));
+        fireEvent.click(await screen.findByTitle('Editar plan'));
+
+        // El modal se cierra
+        expect(screen.queryByRole('heading', { name: /Planes Activos/i })).not.toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/TÍTULO/)).toHaveValue('Fuerza Nivel 1');
+        expect(screen.getByDisplayValue('Día 1')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('Día 2')).toBeInTheDocument();
+        expect(screen.getByText(/Editando el plan activo de Federico Gómez/i)).toBeInTheDocument();
+        // Precarga las semanas restantes ACTUALES (2), no reinicia a 4.
+        expect(screen.getByDisplayValue('2')).toBeInTheDocument();
+        expect(screen.getByText('Guardar Cambios en el Plan')).toBeInTheDocument();
+        expect(screen.queryByText('Publicar a Alumno')).not.toBeInTheDocument();
+        // Mientras se edita un plan real, no tiene sentido reasignarlo:
+        // el buscador de alumno se oculta.
+        expect(screen.queryByPlaceholderText(/Buscar alumno/)).not.toBeInTheDocument();
+    });
+
+    it('"Guardar Cambios en el Plan" llama a actualizarPlan (PUT), no a publicarPlan ni guardarPlantilla', async () => {
+        getPlanesActivosMock.mockResolvedValue([planActivoDemo]);
+        render(<AdminDashboard />);
+        await esperarCargaInicial();
+        fireEvent.click(screen.getByText('Planes Activos'));
+        fireEvent.click(await screen.findByTitle('Editar plan'));
+        fireEvent.click(screen.getByText('Guardar Cambios en el Plan'));
+
+        await waitFor(() => expect(actualizarPlanMock).toHaveBeenCalledWith(
+            'plan1',
+            expect.objectContaining({ titulo: 'Fuerza Nivel 1', vencimiento: 2 }),
+            'tok'
+        ));
+        expect(publicarPlanMock).not.toHaveBeenCalled();
+        expect(guardarPlantillaMock).not.toHaveBeenCalled();
+    });
+
+    it('CRÍTICO: editar el nombre de UNA sesión no le hace perder el _id a la OTRA sesión que no se tocó (así sigue matcheando "ya completada")', async () => {
+        getPlanesActivosMock.mockResolvedValue([planActivoDemo]);
+        render(<AdminDashboard />);
+        await esperarCargaInicial();
+        fireEvent.click(screen.getByText('Planes Activos'));
+        fireEvent.click(await screen.findByTitle('Editar plan'));
+
+        // Solo se toca "Día 1" — "Día 2" (con la sesión ya completada por
+        // el alumno esta semana, en un caso real) no se toca para nada.
+        fireEvent.change(screen.getByDisplayValue('Día 1'), { target: { value: 'Día 1 (renombrado)' } });
+        fireEvent.click(screen.getByText('Guardar Cambios en el Plan'));
+
+        await waitFor(() => expect(actualizarPlanMock).toHaveBeenCalled());
+        const payload = actualizarPlanMock.mock.calls[0][1];
+        const dia1 = payload.sesiones.find(s => s.nombre === 'Día 1 (renombrado)');
+        const dia2 = payload.sesiones.find(s => s.nombre === 'Día 2');
+        expect(dia1._id).toBe('s1');
+        expect(dia2._id).toBe('s2'); // intacto: mismo _id que tenía en el plan real
+    });
+
+    it('cambiar "Semanas restantes" a mano SÍ se manda (el admin decide extender/acortar el plan al editar)', async () => {
+        getPlanesActivosMock.mockResolvedValue([planActivoDemo]);
+        render(<AdminDashboard />);
+        await esperarCargaInicial();
+        fireEvent.click(screen.getByText('Planes Activos'));
+        fireEvent.click(await screen.findByTitle('Editar plan'));
+
+        fireEvent.change(screen.getByDisplayValue('2'), { target: { value: '6' } });
+        fireEvent.click(screen.getByText('Guardar Cambios en el Plan'));
+
+        await waitFor(() => expect(actualizarPlanMock).toHaveBeenCalledWith('plan1', expect.objectContaining({ vencimiento: 6 }), 'tok'));
+    });
+
+    it('"salir" del modo edición de un plan vuelve a mostrar "Publicar a Alumno" sin borrar lo tipeado', async () => {
+        getPlanesActivosMock.mockResolvedValue([planActivoDemo]);
+        render(<AdminDashboard />);
+        await esperarCargaInicial();
+        fireEvent.click(screen.getByText('Planes Activos'));
+        fireEvent.click(await screen.findByTitle('Editar plan'));
+        fireEvent.click(screen.getByTitle('Salir del modo edición'));
+
+        expect(screen.queryByText(/Editando el plan activo/i)).not.toBeInTheDocument();
+        expect(screen.getByText('Publicar a Alumno')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/TÍTULO/)).toHaveValue('Fuerza Nivel 1'); // el contenido sigue ahí
+        expect(actualizarPlanMock).not.toHaveBeenCalled();
+    });
+
+    it('sin ningún plan activo, el modal muestra un estado vacío', async () => {
+        getPlanesActivosMock.mockResolvedValue([]);
+        render(<AdminDashboard />);
+        await esperarCargaInicial();
+        fireEvent.click(screen.getByText('Planes Activos'));
+        expect(await screen.findByText(/Todavía no hay ningún plan activo/i)).toBeInTheDocument();
+    });
+
+    it('si actualizarPlan falla, muestra el mensaje de error y no cierra el modo edición', async () => {
+        getPlanesActivosMock.mockResolvedValue([planActivoDemo]);
+        actualizarPlanMock.mockRejectedValue(new Error('El servidor rechazó el cambio'));
+        render(<AdminDashboard />);
+        await esperarCargaInicial();
+        fireEvent.click(screen.getByText('Planes Activos'));
+        fireEvent.click(await screen.findByTitle('Editar plan'));
+        fireEvent.click(screen.getByText('Guardar Cambios en el Plan'));
+
+        expect(await screen.findByText('El servidor rechazó el cambio')).toBeInTheDocument();
+        expect(screen.getByText('Guardar Cambios en el Plan')).toBeInTheDocument(); // sigue en modo edición
     });
 });

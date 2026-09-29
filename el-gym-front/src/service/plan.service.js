@@ -80,5 +80,32 @@ export const PlanService = {
         const data = await response.json();
         if (!response.ok) throw new Error(data.message);
         return data;
+    },
+
+    // 6. Listar los planes activos (uno por alumno) para la sección
+    // "Planes Activos" del panel
+    getPlanesActivos: async (token) => {
+        const response = await fetch(`${API_URL}/planes/activos`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message);
+        return data;
+    },
+
+    // 7. Editar un plan YA ASIGNADO en el mismo documento (a diferencia de
+    // publicarPlan, no crea uno nuevo ni desactiva nada)
+    actualizarPlan: async (planId, planData, token) => {
+        const response = await fetch(`${API_URL}/planes/${planId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(planData)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message);
+        return data;
     }
 };

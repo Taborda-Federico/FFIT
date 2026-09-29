@@ -130,6 +130,42 @@ describe('UserDashboard — flujo completo de entrenamiento', () => {
         expect(localStorage.getItem('ffit_active_workout')).not.toBeNull();
     });
 
+    it('NUEVO: al terminar, vuelve a pedir el dashboard (no solo el historial) — si el admin editó el plan mientras entrenaba, ya lo ve actualizado', async () => {
+        render(<UserDashboard />);
+        await esperarCarga();
+        expect(getDashboardMock).toHaveBeenCalledTimes(1); // solo la carga inicial, todavía
+
+        // El admin edita el plan MIENTRAS el alumno está entrenando (título
+        // nuevo, "Día 1" renombrado) — simulado devolviendo otra respuesta
+        // la próxima vez que se pida el dashboard.
+        getDashboardMock.mockResolvedValue(dashboardConPlan([
+            { _id: 's1', nombre: 'Día 1 (editado por el admin)', bloques: [] }
+        ]));
+
+        fireEvent.click(screen.getByText('Día 1').closest('.hub-session-card'));
+        fireEvent.click(screen.getByText(/FINALIZAR ENTRENAMIENTO/));
+        await waitFor(() => expect(saveWorkoutMock).toHaveBeenCalled());
+
+        // El entrenamiento se guardó igual (con la versión VIEJA de la
+        // sesión que tenía cargada) — eso nunca se pierde, ver
+        // studentController.saveWorkoutLog: el log es independiente del Plan.
+        expect(saveWorkoutMock.mock.calls[0][0].sesionId).toBe('s1');
+
+        await waitFor(() => expect(getDashboardMock).toHaveBeenCalledTimes(2));
+        fireEvent.click(screen.getByText('Inicio'));
+        expect(screen.getByText('Día 1 (editado por el admin)')).toBeInTheDocument();
+    });
+
+    it('si el admin NO tocó el plan mientras entrenaba, después de terminar se ve exactamente igual que antes', async () => {
+        render(<UserDashboard />);
+        await esperarCarga();
+        fireEvent.click(screen.getByText('Día 1').closest('.hub-session-card'));
+        fireEvent.click(screen.getByText(/FINALIZAR ENTRENAMIENTO/));
+        await waitFor(() => expect(getDashboardMock).toHaveBeenCalledTimes(2));
+        fireEvent.click(screen.getByText('Inicio'));
+        expect(screen.getByText('Día 1')).toBeInTheDocument();
+    });
+
     it('BUG: un entrenamiento activo abandonado en localStorage desde una sesión previa se RETOMA al volver a entrar, sin importar cuánto tiempo pasó', async () => {
         const haceTresDias = Date.now() - 3 * 24 * 60 * 60 * 1000;
         localStorage.setItem('ffit_active_workout', JSON.stringify({

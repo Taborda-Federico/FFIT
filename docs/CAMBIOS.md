@@ -619,3 +619,68 @@ resultado correcto en los dos modos del gráfico.
 270 backend, 290 frontend, 36 e2e — todo en verde.
 
 ---
+
+## 13 — NUEVO: sección "Planes Activos" en el admin — ver y editar un plan ya asignado
+
+**Pedido del cliente:** el admin quería una sección para ver todos los planes que ya están asignados (qué
+creó, a quién) y poder editarlos, sin borrar los que ya tiene un alumno en curso. El punto que más
+preocupaba: **¿qué pasa si edita un plan mientras el alumno lo está entrenando en ese mismo momento?**
+
+**Por qué esto era seguro desde el principio, sin tocar nada de eso:** cuando un alumno guarda un
+entrenamiento (`saveWorkoutLog`), lo que se guarda en `WorkoutLog` es una **copia independiente** de lo que
+entrenó — no una referencia viva al `Plan`. El backend nunca vuelve a consultar el plan al guardar un log.
+Esto significa que **ningún entrenamiento se pierde ni se corrompe** aunque el admin edite el plan en medio
+de una sesión activa; en el peor caso, esa sesión puntual podría no marcarse bien como "completada" si se
+la borra justo en ese momento — nunca se pierde el registro real del entrenamiento.
+
+**Decisión de diseño clave: editar es "in-place", no un reemplazo.** Hasta ahora, la única forma de
+"cambiar" el plan de un alumno era `publicarPlan`, que SIEMPRE crea un documento nuevo y desactiva el
+anterior (bien para asignar una rutina distinta desde cero, mal para una edición puntual: perdía el `_id`
+del plan y de sus sesiones). El alumno matchea "esta sesión ya la completé esta semana" comparando el `_id`
+real de la sesión contra el `sesionId` guardado en cada log (ver sección 8, más arriba) — si editar
+reemplazara el documento entero, cualquier día ya completado esa semana perdería esa marca, aunque el
+entrenamiento en sí siguiera intacto en el Historial. Por eso se agregó `actualizarPlan` (`PUT
+/api/planes/:id`), que edita el plan **en el mismo documento**: las sesiones que el admin no toca
+conservan su `_id` (Mongoose respeta el `_id` que ya viene en cada sesión del body), y solo las sesiones
+nuevas o eliminadas generan `_id` distintos. Se confirmó con un test que reproduce exactamente esto: se
+edita el nombre de una sesión sin tocar otra, y la que no se tocó sale con el mismo `_id` que tenía antes.
+
+**El "vencimiento" (semanas restantes) no se reinicia al editar.** Si el admin edita el contenido de un
+plan que ya lleva, por ejemplo, 2 de 4 semanas, el formulario de edición precarga el valor ACTUAL (2), no
+el original — si no lo toca, sigue contando igual que antes del cron semanal; si lo cambia a mano, se pisa
+directo (el admin decide extender o acortar el plan a propósito).
+
+**El plan mostrado durante una sesión activa no se actualiza solo (no hay websockets) — pero al terminar,
+sí.** `UserDashboard.jsx` pedía el plan una sola vez, al loguearse, y nunca más — si el admin editaba
+mientras el alumno entrenaba, seguía viendo la versión vieja hasta cerrar sesión y volver a entrar. Se
+agregó un refetch del dashboard (no solo del historial) justo después de guardar un entrenamiento, así que
+apenas termina ESA sesión ya ve el plan actualizado, sin perder nada de lo que acaba de guardar.
+
+**Qué se agregó:**
+
+- **Backend:** `GET /api/planes/activos` (lista los planes activos del admin, con el nombre del alumno
+  poblado) y `PUT /api/planes/:id` (`actualizarPlan`, edición in-place — rechaza plantillas y planes de
+  otro admin, mismo patrón de scoping que el resto del archivo).
+- **Frontend:** nueva sección "Planes Activos" en la barra del armador (`PlanesActivosModal.jsx`, mismo
+  patrón visual que "Gestionar Plantillas"), con buscador, detalle expandible de solo lectura por fila, y
+  "Editar" que carga el plan real en el mismo armador (banner de modo edición, campo de "semanas
+  restantes", botón "Guardar Cambios en el Plan" en vez de "Publicar a Alumno" — y el buscador de alumno se
+  oculta, porque editar nunca reasigna el plan a otra persona).
+
+**Verificado en vivo, en un navegador real, el caso exacto que preocupaba:** con el alumno a mitad de
+"Día 1" (una sesión ya completada esta semana), el admin edita el plan desde otra pestaña — renombra
+sesiones, cambia las semanas restantes, agrega un día nuevo. La sesión activa del alumno sigue
+funcionando sin ningún error, se guarda al terminar, y al volver a "Inicio" ya ve el plan editado con
+**las dos sesiones entrenadas esa semana todavía marcadas como completadas** (la de antes de la edición y
+la que estaba activa durante la edición) y el día nuevo disponible.
+
+**Tests:** 9 nuevos en el backend (listado con IDOR, edición in-place con preservación de `_id`,
+preservación/override del vencimiento, rechazo de plantillas por esta ruta). 20 nuevos en el frontend
+(componente `PlanesActivosModal` aislado + el flujo completo dentro de `AdminDashboard`, más 2 en
+`UserDashboard` para el refetch post-entrenamiento). Dos e2e nuevos: uno reproduce en un navegador real,
+con backend real, la edición mientras la sesión está activa (el caso que más preocupaba); otro recorre el
+flujo completo desde la UI del admin (ver, editar, guardar, reabrir).
+
+282 backend, 315 frontend, 40 e2e — todo en verde.
+
+---

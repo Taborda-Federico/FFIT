@@ -3,12 +3,13 @@ import {
     FaTrash, FaPlus, FaCloudUploadAlt, FaSave, FaUserEdit,
     FaLink, FaInfoCircle, FaDumbbell, FaHistory, FaLayerGroup,
     FaClock, FaCalendarPlus, FaSearch, FaWhatsapp, FaCheckCircle, FaSpinner,
-    FaClipboardList, FaPencilAlt, FaTimes
+    FaClipboardList, FaPencilAlt, FaTimes, FaCalendarCheck
 } from 'react-icons/fa';
 import { Button } from '../../../Utils/Button';
 import { ConfirmModal } from '../../../Utils/ConfirmModal';
 import { Toast } from '../../../Utils/Toast';
 import { PlantillasModal } from './PlantillasModal';
+import { PlanesActivosModal } from './PlanesActivosModal';
 import './AdminDashboard.css';
 
 import { useAuth } from '../../../contex/AuthContext';
@@ -22,6 +23,7 @@ const planVacio = () => ({
     alumnoId: null,
     celular: '',
     titulo: '',
+    vencimiento: undefined,
     sesiones: [{ id: generateId(), nombre: 'Día 1', bloques: [] }]
 });
 
@@ -70,6 +72,16 @@ export function AdminDashboard() {
     const [confirmDeletePlantilla, setConfirmDeletePlantilla] = useState(null);
     const [editingPlantillaId, setEditingPlantillaId] = useState(null);
 
+    // Estado de la sección "Planes Activos" — a diferencia de las
+    // plantillas (que son reutilizables y no pertenecen a nadie),
+    // acá cada plan sí está asignado a un alumno puntual, y `editingPlanId`
+    // indica que el armador está EDITANDO ese plan real en el mismo
+    // documento (ver actualizarPlan en el backend) en vez de publicar uno
+    // nuevo — así no se pierde el progreso semanal del alumno.
+    const [planesActivosDb, setPlanesActivosDb] = useState([]);
+    const [showPlanesActivosModal, setShowPlanesActivosModal] = useState(false);
+    const [editingPlanId, setEditingPlanId] = useState(null);
+
     const notify = (msg, type = 'success') => setToast({ msg, type });
 
     useEffect(() => {
@@ -77,18 +89,28 @@ export function AdminDashboard() {
 
         const cargarDatos = async () => {
             try {
-                const [alumnosData, plantillasData] = await Promise.all([
+                const [alumnosData, plantillasData, planesActivosData] = await Promise.all([
                     UserService.getStudents(user.token),
-                    PlanService.getPlantillas(user.token)
+                    PlanService.getPlantillas(user.token),
+                    PlanService.getPlanesActivos(user.token)
                 ]);
                 setAlumnosDb(alumnosData);
                 setPlantillasDb(plantillasData);
+                setPlanesActivosDb(planesActivosData);
             } catch (error) {
                 notify("Error al cargar datos del servidor", "error");
             }
         };
         cargarDatos();
     }, [user]);
+
+    // Se refresca la lista cada vez que se abre el modal — por si pasó
+    // tiempo desde la carga inicial (otro admin editó algo, un alumno
+    // avanzó de semana, etc.).
+    useEffect(() => {
+        if (!showPlanesActivosModal || !user?.token) return;
+        PlanService.getPlanesActivos(user.token).then(setPlanesActivosDb).catch(() => { });
+    }, [showPlanesActivosModal, user]);
 
     // Persistencia del borrador: cada cambio en el plan (agregar un día,
     // escribir un ejercicio, elegir un alumno...) se guarda al toque. Si la
@@ -162,8 +184,62 @@ export function AdminDashboard() {
             sesiones: plantilla.sesiones
         });
         setEditingPlantillaId(plantilla._id);
+        setEditingPlanId(null);
         setShowPlantillasModal(false);
         notify(`Editando plantilla "${plantilla.titulo}"`);
+    };
+
+    // Carga un plan REAL (ya asignado a un alumno) en el armador para
+    // editarlo in-place — a diferencia de handleEditarPlantilla, acá se
+    // conserva alumnoId (aunque no se pueda reasignar por esta vía: el
+    // backend de actualizarPlan lo ignora, editar nunca cambia de dueño) y
+    // vencimiento, porque hace falta mostrarlos/reenviarlos tal cual.
+    const handleEditarPlan = (planActivo) => {
+        setPlan({
+            ...planVacio(),
+            alumno: planActivo.alumnoId?.nombre || '',
+            alumnoId: planActivo.alumnoId?._id || planActivo.alumnoId || null,
+            titulo: planActivo.titulo,
+            vencimiento: planActivo.vencimiento,
+            sesiones: planActivo.sesiones
+        });
+        setEditingPlanId(planActivo._id);
+        setEditingPlantillaId(null);
+        setShowPlanesActivosModal(false);
+        notify(`Editando el plan de ${planActivo.alumnoId?.nombre || 'este alumno'}`);
+    };
+
+    const handleSalirEdicionPlan = () => {
+        setEditingPlanId(null);
+    };
+
+    const handleGuardarEdicionPlan = async () => {
+        if (!plan.titulo) return notify("El plan debe tener un título", "error");
+        setIsProcessing(true);
+        try {
+            const planAEnviar = {
+                titulo: plan.titulo,
+                notasGlobales: plan.notasGlobales,
+                vencimiento: plan.vencimiento,
+                sesiones: plan.sesiones.map(s => ({
+                    ...s,
+                    bloques: s.bloques.filter(b => b.ejercicios && b.ejercicios.length > 0)
+                }))
+            };
+            const { plan: planActualizado } = await PlanService.actualizarPlan(editingPlanId, planAEnviar, user.token);
+            // Se sincronizan los _id que el backend haya asignado a
+            // sesiones nuevas — si el admin guarda de nuevo sin recargar la
+            // página, evita que esa MISMA sesión reciba un _id distinto en
+            // cada guardado.
+            setPlan(prev => ({ ...prev, sesiones: planActualizado.sesiones, vencimiento: planActualizado.vencimiento }));
+            notify(`Plan de ${plan.alumno} actualizado con éxito`);
+            const updatedPlanes = await PlanService.getPlanesActivos(user.token);
+            setPlanesActivosDb(updatedPlanes);
+        } catch (error) {
+            notify(error.message, "error");
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     // "Salir" del modo edición: el contenido armado en pantalla NO se borra
@@ -227,6 +303,7 @@ export function AdminDashboard() {
             try { localStorage.removeItem(claveDraft(user?._id)); } catch { /* nada que limpiar */ }
             setPlan(planVacio());
             setEditingPlantillaId(null);
+            setEditingPlanId(null);
         } catch (error) {
             notify(error.message, "error");
         } finally {
@@ -283,6 +360,14 @@ export function AdminDashboard() {
                 />
             )}
 
+            {showPlanesActivosModal && (
+                <PlanesActivosModal
+                    planes={planesActivosDb}
+                    onClose={() => setShowPlanesActivosModal(false)}
+                    onEditar={handleEditarPlan}
+                />
+            )}
+
             {/* Modal de confirmación de borrado — se monta DESPUÉS del de
                 plantillas para quedar por encima en el stacking (mismo
                 z-index, gana el último en el DOM). */}
@@ -336,29 +421,31 @@ export function AdminDashboard() {
             )}
 
             <div className="admin-top-controls">
-                <div className="search-user-container">
-                    <FaSearch className="icon-dim" />
-                    <input
-                        placeholder="Buscar alumno para asignar..."
-                        value={userSearch}
-                        onChange={(e) => setUserSearch(e.target.value)}
-                    />
-                    {userSearch && (
-                        <div className="search-results-dropdown">
-                            {alumnosDb.filter(a => a.nombre.toLowerCase().includes(userSearch.toLowerCase())).map(a => (
-                                <div key={a._id} className="result-item" onClick={() => {
-                                    // El modelo de alumno guarda el teléfono como `telefono`, no
-                                    // `celular` — leer `a.celular` siempre daba undefined, así que
-                                    // el link de WhatsApp de abajo nunca llevaba el número real.
-                                    setPlan({ ...plan, alumno: a.nombre, alumnoId: a._id, celular: a.telefono });
-                                    setUserSearch("");
-                                }}>
-                                    {a.nombre} - <small>{a.email}</small>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                {!editingPlanId && (
+                    <div className="search-user-container">
+                        <FaSearch className="icon-dim" />
+                        <input
+                            placeholder="Buscar alumno para asignar..."
+                            value={userSearch}
+                            onChange={(e) => setUserSearch(e.target.value)}
+                        />
+                        {userSearch && (
+                            <div className="search-results-dropdown">
+                                {alumnosDb.filter(a => a.nombre.toLowerCase().includes(userSearch.toLowerCase())).map(a => (
+                                    <div key={a._id} className="result-item" onClick={() => {
+                                        // El modelo de alumno guarda el teléfono como `telefono`, no
+                                        // `celular` — leer `a.celular` siempre daba undefined, así que
+                                        // el link de WhatsApp de abajo nunca llevaba el número real.
+                                        setPlan({ ...plan, alumno: a.nombre, alumnoId: a._id, celular: a.telefono });
+                                        setUserSearch("");
+                                    }}>
+                                        {a.nombre} - <small>{a.email}</small>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 <div className="admin-top-actions">
                     <div className="template-selector">
@@ -375,6 +462,14 @@ export function AdminDashboard() {
                         onClick={() => setShowPlantillasModal(true)}
                     >
                         <FaClipboardList /> <span>Plantillas</span>
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="btn-gestionar-plantillas"
+                        onClick={() => setShowPlanesActivosModal(true)}
+                    >
+                        <FaCalendarCheck /> <span>Planes Activos</span>
                     </Button>
                 </div>
             </div>
@@ -400,6 +495,29 @@ export function AdminDashboard() {
                             <FaTimes />
                         </button>
                     </div>
+                )}
+
+                {editingPlanId && (
+                    <>
+                        <div className="editing-plantilla-banner">
+                            <FaCalendarCheck />
+                            <span>Editando el plan activo de {plan.alumno || 'este alumno'} — se guarda sobre el mismo plan, sin perder lo que ya entrenó ni las sesiones que ya completó.</span>
+                            <button className="btn-salir-edicion" onClick={handleSalirEdicionPlan} title="Salir del modo edición">
+                                <FaTimes />
+                            </button>
+                        </div>
+                        <div className="input-row-vencimiento">
+                            <FaClock className="text-neon" />
+                            <label htmlFor="input-vencimiento-plan">Semanas restantes:</label>
+                            <input
+                                id="input-vencimiento-plan"
+                                type="number"
+                                min="0"
+                                value={plan.vencimiento ?? ''}
+                                onChange={(e) => setPlan({ ...plan, vencimiento: e.target.value === '' ? '' : Number(e.target.value) })}
+                            />
+                        </div>
+                    </>
                 )}
             </section>
 
@@ -518,11 +636,19 @@ export function AdminDashboard() {
                 <Button
                     variant="primary"
                     className="action-btn-central btn-publish"
-                    onClick={() => plan.alumnoId ? setShowConfirm(true) : notify("Busca y selecciona un alumno primero", "error")}
+                    onClick={() => {
+                        if (editingPlanId) {
+                            handleGuardarEdicionPlan();
+                        } else if (plan.alumnoId) {
+                            setShowConfirm(true);
+                        } else {
+                            notify("Busca y selecciona un alumno primero", "error");
+                        }
+                    }}
                     disabled={isProcessing}
                 >
                     {isProcessing ? <FaSpinner className="spin" /> : <FaCloudUploadAlt />}
-                    <span>{isProcessing ? 'Publicando...' : 'Publicar a Alumno'}</span>
+                    <span>{isProcessing ? 'Guardando...' : (editingPlanId ? 'Guardar Cambios en el Plan' : 'Publicar a Alumno')}</span>
                 </Button>
             </div>
         </div>

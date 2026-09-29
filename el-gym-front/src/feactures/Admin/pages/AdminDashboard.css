@@ -217,6 +217,28 @@
 
 .btn-salir-edicion:hover { color: #fff; }
 
+/* Input de "semanas restantes" al editar un plan activo — mismo look que
+   .rest-input-admin (descanso en segundos), para no introducir un estilo
+   de input nuevo. */
+.input-row-vencimiento {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 15px;
+    color: #666;
+    font-size: 0.8rem;
+}
+
+.input-row-vencimiento input {
+    width: 60px;
+    background: #000;
+    border: 1px solid #333;
+    border-radius: 6px;
+    color: var(--neon);
+    text-align: center;
+    padding: 6px;
+}
+
 .input-row-alumno {
     display: flex;
     align-items: center;

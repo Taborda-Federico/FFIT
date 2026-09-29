@@ -127,4 +127,55 @@ const eliminarPlantilla = async (req, res) => {
     }
 };
 
-module.exports = { publicarPlan, guardarPlantilla, getPlantillas, actualizarPlantilla, eliminarPlantilla };
+// Lista los planes REALES (no plantillas) que están activos ahora mismo,
+// uno por alumno, para la sección "Planes Activos" del panel — antes no
+// existía ninguna forma de ver de un vistazo todo lo que está asignado, solo
+// el nombre suelto (`planActivoNombre`) dentro de la lista de alumnos.
+const getPlanesActivos = async (req, res) => {
+    try {
+        const planes = await Plan.find({ adminId: req.user._id, esPlantilla: false, activo: true })
+            .populate('alumnoId', 'nombre email')
+            .sort({ createdAt: -1 });
+        res.json(planes);
+    } catch (error) {
+        res.status(500).json({ message: 'Error al obtener los planes activos' });
+    }
+};
+
+// Edita un plan REAL ya asignado a un alumno, EN EL MISMO DOCUMENTO — a
+// diferencia de publicarPlan (que siempre crea uno nuevo y da de baja el
+// anterior). Esto es a propósito: el alumno matchea "esta sesión ya la
+// completé esta semana" comparando el _id de la sesión del plan contra el
+// sesionId que quedó guardado en cada WorkoutLog (ver HomeHub.jsx). Si esta
+// ruta reemplazara el plan entero, cualquier día que el alumno ya hubiera
+// entrenado perdería esa marca aunque el entrenamiento en sí (el
+// WorkoutLog) siga intacto — Mongoose ya respeta el _id de cada sesión que
+// viene en el body, así que basta con reasignar `sesiones` completo: las
+// que no se tocaron conservan su _id, solo las nuevas obtienen uno.
+// El vencimiento (semanas restantes) es opcional: si no se manda, se deja
+// tal cual va el cron semanal, para poder editar contenido a mitad de plan
+// sin reiniciar el conteo.
+const actualizarPlan = async (req, res) => {
+    try {
+        const { titulo, notasGlobales, vencimiento, sesiones } = req.body;
+
+        const plan = await Plan.findOne({ _id: req.params.id, adminId: req.user._id, esPlantilla: false });
+        if (!plan) {
+            return res.status(404).json({ message: 'Plan no encontrado o no autorizado' });
+        }
+
+        plan.titulo = titulo;
+        plan.notasGlobales = notasGlobales;
+        if (vencimiento !== undefined && vencimiento !== null && vencimiento !== '') {
+            plan.vencimiento = vencimiento;
+        }
+        plan.sesiones = sesiones;
+        await plan.save();
+
+        res.json({ message: 'Plan actualizado con éxito', plan });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al actualizar el plan', error: error.message });
+    }
+};
+
+module.exports = { publicarPlan, guardarPlantilla, getPlantillas, actualizarPlantilla, eliminarPlantilla, getPlanesActivos, actualizarPlan };

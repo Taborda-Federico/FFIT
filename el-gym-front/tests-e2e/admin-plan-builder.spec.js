@@ -1,4 +1,4 @@
-import { test, expect, crearAdmin, crearAlumno, crearPlantilla } from './fixtures.js';
+import { test, expect, crearAdmin, crearAlumno, crearPlantilla, publicarPlan } from './fixtures.js';
 
 async function loguearComoAdmin(page, admin) {
     await page.goto('/');
@@ -180,5 +180,80 @@ test.describe('NUEVO: Gestionar Plantillas (pedido de un cliente real — tenía
         await expect(modal.getByText('Original')).toBeVisible(); // la original sigue intacta
         await expect(modal.getByText('Copia Nueva')).toBeVisible(); // y ahora hay una nueva, aparte
         await expect(page.locator('.plantilla-row')).toHaveCount(2);
+    });
+});
+
+test.describe('NUEVO: Planes Activos (ver y editar un plan ya asignado, desde la UI real del admin)', () => {
+    test('flujo completo: abrir la lista, ver el detalle, editar (pisa el mismo plan) y confirmar que la semana restante se conserva', async ({ page }) => {
+        const admin = await crearAdmin({ email: 'admin-planesactivos1@x.com' });
+        const alumno = await crearAlumno(admin.token, { nombre: 'Alumno Con Plan' });
+        await publicarPlan(admin.token, alumno._id, {
+            titulo: 'Plan En Curso',
+            sesiones: [
+                { nombre: 'Día 1', bloques: [{ tipo: 'standard', descanso: 30, ejercicios: [{ nombre: 'Sentadilla', series: 4, reps: '8-10' }] }] },
+                { nombre: 'Día 2', bloques: [] },
+            ],
+        });
+        await loguearComoAdmin(page, admin);
+        await page.goto('/admin/planes');
+
+        const modal = page.locator('.planes-activos-modal-card');
+        await page.getByRole('button', { name: 'Planes Activos' }).click();
+        await expect(page.getByRole('heading', { name: 'Planes Activos' })).toBeVisible();
+        await expect(modal.getByText('Plan En Curso')).toBeVisible();
+        await expect(modal.getByText('Alumno Con Plan')).toBeVisible();
+
+        // Ver el detalle (solo lectura) expandiendo la fila.
+        await modal.getByText('Plan En Curso').click();
+        await expect(modal.getByText('Sentadilla')).toBeVisible();
+
+        // Editar: carga el plan real en el armador — mismo _id, no crea uno
+        // nuevo ni pide elegir alumno de nuevo.
+        await page.locator('.plan-activo-row', { hasText: 'Plan En Curso' }).getByTitle('Editar plan').click();
+        await expect(page.getByRole('heading', { name: 'Planes Activos' })).not.toBeVisible();
+        await expect(page.getByPlaceholder('TÍTULO DE LA RUTINA')).toHaveValue('Plan En Curso');
+        await expect(page.getByText(/Editando el plan activo de Alumno Con Plan/i)).toBeVisible();
+        await expect(page.getByPlaceholder(/Buscar alumno para asignar/)).not.toBeVisible();
+        await expect(page.getByRole('button', { name: 'Guardar Cambios en el Plan' })).toBeVisible();
+
+        // Cambia solo el nombre de una sesión — sin tocar "Semanas
+        // restantes" (4, el valor con el que se publicó).
+        await expect(page.locator('#input-vencimiento-plan')).toHaveValue('4');
+        await page.locator('.sesion-name-input').first().fill('Día 1 (editado)');
+
+        await page.getByRole('button', { name: 'Guardar Cambios en el Plan' }).click();
+        await expect(page.getByText(/actualizado con éxito/i)).toBeVisible();
+
+        // Reabrir la lista: sigue habiendo UN solo plan activo (no se
+        // duplicó), con el nombre de sesión nuevo y la semana intacta.
+        await page.getByRole('button', { name: 'Planes Activos' }).click();
+        await expect(page.locator('.plan-activo-row')).toHaveCount(1);
+        await modal.getByText('Plan En Curso').click();
+        await expect(modal.getByText('Día 1 (editado)')).toBeVisible();
+        await expect(modal.getByText(/4 semanas restantes/)).toBeVisible();
+    });
+
+    test('"salir" del modo edición vuelve a "Publicar a Alumno" sin perder lo tipeado, y NO guarda nada', async ({ page }) => {
+        const admin = await crearAdmin({ email: 'admin-planesactivos2@x.com' });
+        const alumno = await crearAlumno(admin.token, { nombre: 'Alumno Salir' });
+        await publicarPlan(admin.token, alumno._id, { titulo: 'Plan Para Salir' });
+        await loguearComoAdmin(page, admin);
+        await page.goto('/admin/planes');
+
+        await page.getByRole('button', { name: 'Planes Activos' }).click();
+        await page.locator('.plan-activo-row', { hasText: 'Plan Para Salir' }).getByTitle('Editar plan').click();
+        await page.getByTitle('Salir del modo edición').click();
+
+        await expect(page.getByText(/Editando el plan activo/i)).not.toBeVisible();
+        await expect(page.getByRole('button', { name: 'Publicar a Alumno' })).toBeVisible();
+        await expect(page.getByPlaceholder('TÍTULO DE LA RUTINA')).toHaveValue('Plan Para Salir');
+    });
+
+    test('sin ningún plan activo, el modal muestra el estado vacío', async ({ page }) => {
+        const admin = await crearAdmin({ email: 'admin-planesactivos3@x.com' });
+        await loguearComoAdmin(page, admin);
+        await page.goto('/admin/planes');
+        await page.getByRole('button', { name: 'Planes Activos' }).click();
+        await expect(page.getByText(/Todavía no hay ningún plan activo asignado/i)).toBeVisible();
     });
 });

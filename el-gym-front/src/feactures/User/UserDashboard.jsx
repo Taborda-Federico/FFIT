@@ -116,8 +116,22 @@ export function UserDashboard() {
                 ejercicios: ejerciciosFormateados
             }, user.token);
 
-            const updatedHistory = await StudentService.getHistory(user.token);
+            // Además del historial, se vuelve a pedir el dashboard (con el
+            // plan) acá. Antes el plan solo se cargaba UNA VEZ, al entrar a
+            // la app — si el admin lo editaba mientras el alumno estaba
+            // entrenando, seguía viendo la versión vieja hasta cerrar
+            // sesión y volver a entrar. Ahora, apenas termina ESE
+            // entrenamiento, ya ve el plan editado (si el admin lo tocó
+            // mientras tanto) o exactamente el mismo de siempre (si no lo
+            // tocó) — en ningún caso se pierde nada de lo que acaba de
+            // guardar, porque el WorkoutLog ya se guardó en el paso anterior
+            // y es independiente del Plan.
+            const [updatedHistory, updatedDashboard] = await Promise.all([
+                StudentService.getHistory(user.token),
+                StudentService.getDashboard(user.token)
+            ]);
             setHistory(updatedHistory);
+            setDashboardData(updatedDashboard);
             setActiveWorkout(null);
             setCurrentTab('history');
 

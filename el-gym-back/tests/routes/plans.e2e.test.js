@@ -273,3 +273,149 @@ describe('NUEVO: DELETE /api/planes/plantilla/:id (eliminarPlantilla)', () => {
         expect(res.status).toBe(404);
     });
 });
+
+describe('NUEVO: GET /api/planes/activos (getPlanesActivos) — sección "Planes Activos" del admin', () => {
+    it('sin token → 401', async () => {
+        expect((await request(app).get('/api/planes/activos')).status).toBe(401);
+    });
+
+    it('lista los planes activos de MIS alumnos, con el nombre del alumno incluido', async () => {
+        const { token, admin } = await createAdmin();
+        const { student } = await createStudentDirect(admin._id, { nombre: 'Fede Alumno' });
+        await createPlanDirect(admin._id, student._id, { titulo: 'Fuerza' });
+
+        const res = await request(app).get('/api/planes/activos').set('Authorization', `Bearer ${token}`);
+        expect(res.status).toBe(200);
+        expect(res.body).toHaveLength(1);
+        expect(res.body[0].titulo).toBe('Fuerza');
+        expect(res.body[0].alumnoId.nombre).toBe('Fede Alumno');
+    });
+
+    it('no incluye plantillas ni planes ya inactivos (reemplazados por uno nuevo)', async () => {
+        const { token, admin } = await createAdmin();
+        const { student } = await createStudentDirect(admin._id);
+        await createPlanDirect(admin._id, null, { esPlantilla: true, titulo: 'Plantilla' });
+        await createPlanDirect(admin._id, student._id, { titulo: 'Viejo', activo: false });
+        await createPlanDirect(admin._id, student._id, { titulo: 'Vigente', activo: true });
+
+        const res = await request(app).get('/api/planes/activos').set('Authorization', `Bearer ${token}`);
+        expect(res.body).toHaveLength(1);
+        expect(res.body[0].titulo).toBe('Vigente');
+    });
+
+    it('IDOR: cada admin ve solo los planes de SUS alumnos', async () => {
+        const { token: tokenA, admin: adminA } = await createAdmin();
+        const { admin: adminB } = await createAdmin();
+        const { student: alumnoB } = await createStudentDirect(adminB._id);
+        await createPlanDirect(adminB._id, alumnoB._id, { titulo: 'De otro admin' });
+
+        const res = await request(app).get('/api/planes/activos').set('Authorization', `Bearer ${tokenA}`);
+        expect(res.body).toHaveLength(0);
+    });
+});
+
+describe('NUEVO: PUT /api/planes/:id (actualizarPlan) — editar un plan activo sin romper el progreso del alumno', () => {
+    it('sin token → 401', async () => {
+        const res = await request(app).put('/api/planes/000000000000000000000000').send({});
+        expect(res.status).toBe(401);
+    });
+
+    it('camino feliz: edita el plan EN EL MISMO documento (no crea uno nuevo, no lo desactiva)', async () => {
+        const { token, admin } = await createAdmin();
+        const { student } = await createStudentDirect(admin._id);
+        const plan = await createPlanDirect(admin._id, student._id, { titulo: 'Original' });
+
+        const res = await request(app).put(`/api/planes/${plan._id}`).set('Authorization', `Bearer ${token}`).send({
+            titulo: 'Editado', sesiones: [buildSesion({ nombre: 'Nuevo Día' })]
+        });
+
+        expect(res.status).toBe(200);
+        expect(res.body.plan._id).toBe(String(plan._id)); // mismo documento, no uno nuevo
+        expect(res.body.plan.activo).toBe(true); // sigue activo, nunca se desactivó
+        expect(await Plan.countDocuments({ alumnoId: student._id })).toBe(1); // no se duplicó
+        const enLaBase = await Plan.findById(plan._id);
+        expect(enLaBase.titulo).toBe('Editado');
+        expect(enLaBase.sesiones[0].nombre).toBe('Nuevo Día');
+    });
+
+    it('CRÍTICO: una sesión que NO se toca conserva su _id — así una sesión ya completada esta semana sigue matcheando después de editar otra parte del plan', async () => {
+        const { token, admin } = await createAdmin();
+        const { student } = await createStudentDirect(admin._id);
+        const plan = await createPlanDirect(admin._id, student._id, {
+            sesiones: [buildSesion({ nombre: 'Día 1' }), buildSesion({ nombre: 'Día 2' })]
+        });
+        const [dia1Original, dia2Original] = plan.sesiones;
+
+        const res = await request(app).put(`/api/planes/${plan._id}`).set('Authorization', `Bearer ${token}`).send({
+            titulo: plan.titulo,
+            sesiones: [
+                // Día 1 vuelve TAL CUAL vino (con su _id real) — como hace el
+                // armador cuando el admin no la toca.
+                dia1Original.toObject(),
+                // Día 2 se edita (cambia el nombre) pero conservando su _id.
+                { ...dia2Original.toObject(), nombre: 'Día 2 (editado)' },
+                // Día 3 es nuevo: no trae _id.
+                buildSesion({ nombre: 'Día 3' })
+            ]
+        });
+
+        expect(res.status).toBe(200);
+        const [dia1, dia2, dia3] = res.body.plan.sesiones;
+        expect(String(dia1._id)).toBe(String(dia1Original._id));
+        expect(String(dia2._id)).toBe(String(dia2Original._id)); // editado mas no recreado
+        expect(dia2.nombre).toBe('Día 2 (editado)');
+        expect(String(dia3._id)).not.toBe(String(dia1Original._id));
+        expect(String(dia3._id)).not.toBe(String(dia2Original._id));
+    });
+
+    it('sin mandar `vencimiento`, no toca las semanas restantes (permite editar contenido a mitad de plan sin reiniciar el conteo)', async () => {
+        const { token, admin } = await createAdmin();
+        const { student } = await createStudentDirect(admin._id);
+        // Simula un plan de 4 semanas que ya lleva 2 (el cron semanal ya lo
+        // decrementó de 4 a 2 — ver cron/expirationCheck.js).
+        const plan = await createPlanDirect(admin._id, student._id, { vencimiento: 2 });
+
+        const res = await request(app).put(`/api/planes/${plan._id}`).set('Authorization', `Bearer ${token}`).send({
+            titulo: 'Editado', sesiones: [buildSesion()]
+        });
+
+        expect(res.body.plan.vencimiento).toBe(2);
+    });
+
+    it('mandando `vencimiento`, lo pisa directo (el admin decide extender o acortar el plan al editar)', async () => {
+        const { token, admin } = await createAdmin();
+        const { student } = await createStudentDirect(admin._id);
+        const plan = await createPlanDirect(admin._id, student._id, { vencimiento: 2 });
+
+        const res = await request(app).put(`/api/planes/${plan._id}`).set('Authorization', `Bearer ${token}`).send({
+            titulo: 'Editado', vencimiento: 6, sesiones: [buildSesion()]
+        });
+
+        expect(res.body.plan.vencimiento).toBe(6);
+    });
+
+    it('IDOR: un admin no puede editar el plan de un alumno de OTRO admin (404, no revela que existe)', async () => {
+        const { admin: adminA } = await createAdmin();
+        const { token: tokenB } = await createAdmin();
+        const { student: alumnoA } = await createStudentDirect(adminA._id);
+        const planDeA = await createPlanDirect(adminA._id, alumnoA._id, { titulo: 'De A' });
+
+        const res = await request(app).put(`/api/planes/${planDeA._id}`).set('Authorization', `Bearer ${tokenB}`).send({ titulo: 'Hackeado' });
+        expect(res.status).toBe(404);
+        expect((await Plan.findById(planDeA._id)).titulo).toBe('De A'); // intacta
+    });
+
+    it('una PLANTILLA (esPlantilla:true) no se puede "editar" por esta ruta — para eso está PUT /plantilla/:id', async () => {
+        const { token, admin } = await createAdmin();
+        const plantilla = await createPlanDirect(admin._id, null, { esPlantilla: true, titulo: 'Plantilla' });
+
+        const res = await request(app).put(`/api/planes/${plantilla._id}`).set('Authorization', `Bearer ${token}`).send({ titulo: 'Hackeada' });
+        expect(res.status).toBe(404);
+    });
+
+    it('id inexistente → 404', async () => {
+        const { token } = await createAdmin();
+        const res = await request(app).put('/api/planes/000000000000000000000000').set('Authorization', `Bearer ${token}`).send({ titulo: 'X' });
+        expect(res.status).toBe(404);
+    });
+});

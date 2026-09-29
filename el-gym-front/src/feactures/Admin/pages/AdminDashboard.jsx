@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
     FaTrash, FaPlus, FaCloudUploadAlt, FaSave, FaUserEdit,
     FaLink, FaInfoCircle, FaDumbbell, FaHistory, FaLayerGroup,
@@ -9,7 +10,6 @@ import { Button } from '../../../Utils/Button';
 import { ConfirmModal } from '../../../Utils/ConfirmModal';
 import { Toast } from '../../../Utils/Toast';
 import { PlantillasModal } from './PlantillasModal';
-import { PlanesActivosModal } from './PlanesActivosModal';
 import './AdminDashboard.css';
 
 import { useAuth } from '../../../contex/AuthContext';
@@ -48,6 +48,8 @@ function cargarDraft(adminId) {
 
 export function AdminDashboard() {
     const { user } = useAuth();
+    const location = useLocation();
+    const navigate = useNavigate();
 
     const [plan, setPlan] = useState(() => cargarDraft(user?._id) || planVacio());
 
@@ -72,14 +74,11 @@ export function AdminDashboard() {
     const [confirmDeletePlantilla, setConfirmDeletePlantilla] = useState(null);
     const [editingPlantillaId, setEditingPlantillaId] = useState(null);
 
-    // Estado de la sección "Planes Activos" — a diferencia de las
-    // plantillas (que son reutilizables y no pertenecen a nadie),
-    // acá cada plan sí está asignado a un alumno puntual, y `editingPlanId`
-    // indica que el armador está EDITANDO ese plan real en el mismo
-    // documento (ver actualizarPlan en el backend) en vez de publicar uno
-    // nuevo — así no se pierde el progreso semanal del alumno.
-    const [planesActivosDb, setPlanesActivosDb] = useState([]);
-    const [showPlanesActivosModal, setShowPlanesActivosModal] = useState(false);
+    // `editingPlanId`, cuando no es null, indica que el armador está
+    // EDITANDO un plan real (ya asignado a un alumno) en el mismo documento
+    // (ver actualizarPlan en el backend) en vez de publicar uno nuevo — así
+    // no se pierde el progreso semanal del alumno. Se llega acá desde la
+    // pestaña "Planes Activos" (ver más abajo, el useEffect de location.state).
     const [editingPlanId, setEditingPlanId] = useState(null);
 
     const notify = (msg, type = 'success') => setToast({ msg, type });
@@ -89,14 +88,12 @@ export function AdminDashboard() {
 
         const cargarDatos = async () => {
             try {
-                const [alumnosData, plantillasData, planesActivosData] = await Promise.all([
+                const [alumnosData, plantillasData] = await Promise.all([
                     UserService.getStudents(user.token),
-                    PlanService.getPlantillas(user.token),
-                    PlanService.getPlanesActivos(user.token)
+                    PlanService.getPlantillas(user.token)
                 ]);
                 setAlumnosDb(alumnosData);
                 setPlantillasDb(plantillasData);
-                setPlanesActivosDb(planesActivosData);
             } catch (error) {
                 notify("Error al cargar datos del servidor", "error");
             }
@@ -104,13 +101,18 @@ export function AdminDashboard() {
         cargarDatos();
     }, [user]);
 
-    // Se refresca la lista cada vez que se abre el modal — por si pasó
-    // tiempo desde la carga inicial (otro admin editó algo, un alumno
-    // avanzó de semana, etc.).
+    // "Editar" en la pestaña Planes Activos manda al plan elegido acá, viajando
+    // en el state de la navegación (no por localStorage: es un traspaso de
+    // una sola vez entre pestañas del panel, no algo que tenga que sobrevivir
+    // un F5). Se limpia el state enseguida para que volver atrás o recargar
+    // esta misma pantalla no reabra el modo edición solo.
     useEffect(() => {
-        if (!showPlanesActivosModal || !user?.token) return;
-        PlanService.getPlanesActivos(user.token).then(setPlanesActivosDb).catch(() => { });
-    }, [showPlanesActivosModal, user]);
+        if (location.state?.planParaEditar) {
+            handleEditarPlan(location.state.planParaEditar);
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [location.state]);
 
     // Persistencia del borrador: cada cambio en el plan (agregar un día,
     // escribir un ejercicio, elegir un alumno...) se guarda al toque. Si la
@@ -205,7 +207,6 @@ export function AdminDashboard() {
         });
         setEditingPlanId(planActivo._id);
         setEditingPlantillaId(null);
-        setShowPlanesActivosModal(false);
         notify(`Editando el plan de ${planActivo.alumnoId?.nombre || 'este alumno'}`);
     };
 
@@ -233,8 +234,6 @@ export function AdminDashboard() {
             // cada guardado.
             setPlan(prev => ({ ...prev, sesiones: planActualizado.sesiones, vencimiento: planActualizado.vencimiento }));
             notify(`Plan de ${plan.alumno} actualizado con éxito`);
-            const updatedPlanes = await PlanService.getPlanesActivos(user.token);
-            setPlanesActivosDb(updatedPlanes);
         } catch (error) {
             notify(error.message, "error");
         } finally {
@@ -360,14 +359,6 @@ export function AdminDashboard() {
                 />
             )}
 
-            {showPlanesActivosModal && (
-                <PlanesActivosModal
-                    planes={planesActivosDb}
-                    onClose={() => setShowPlanesActivosModal(false)}
-                    onEditar={handleEditarPlan}
-                />
-            )}
-
             {/* Modal de confirmación de borrado — se monta DESPUÉS del de
                 plantillas para quedar por encima en el stacking (mismo
                 z-index, gana el último en el DOM). */}
@@ -462,14 +453,6 @@ export function AdminDashboard() {
                         onClick={() => setShowPlantillasModal(true)}
                     >
                         <FaClipboardList /> <span>Plantillas</span>
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="btn-gestionar-plantillas"
-                        onClick={() => setShowPlanesActivosModal(true)}
-                    >
-                        <FaCalendarCheck /> <span>Planes Activos</span>
                     </Button>
                 </div>
             </div>

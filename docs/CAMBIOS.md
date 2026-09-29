@@ -661,11 +661,15 @@ apenas termina ESA sesión ya ve el plan actualizado, sin perder nada de lo que 
 - **Backend:** `GET /api/planes/activos` (lista los planes activos del admin, con el nombre del alumno
   poblado) y `PUT /api/planes/:id` (`actualizarPlan`, edición in-place — rechaza plantillas y planes de
   otro admin, mismo patrón de scoping que el resto del archivo).
-- **Frontend:** nueva sección "Planes Activos" en la barra del armador (`PlanesActivosModal.jsx`, mismo
-  patrón visual que "Gestionar Plantillas"), con buscador, detalle expandible de solo lectura por fila, y
-  "Editar" que carga el plan real en el mismo armador (banner de modo edición, campo de "semanas
-  restantes", botón "Guardar Cambios en el Plan" en vez de "Publicar a Alumno" — y el buscador de alumno se
-  oculta, porque editar nunca reasigna el plan a otra persona).
+- **Frontend:** nueva pestaña propia "Planes Activos" en la navegación del admin (`AdminPlanesActivos.jsx`,
+  ruta `/admin/planes-activos` — el cliente la pidió como sección aparte, no como un modal dentro del
+  armador). Tiene su buscador, y al elegir un plan lo muestra **en grande** (título, alumno, semanas
+  restantes y el detalle completo de sesiones/bloques/ejercicios), con un botón chico de "Editar" que manda
+  al armador de siempre (`/admin/planes`) con el plan ya cargado — el traspaso viaja por
+  `location.state` de React Router, no por localStorage, porque es un traspaso de una sola vez entre
+  pestañas, no algo que tenga que sobrevivir un F5. El modo edición en sí (banner, campo de "semanas
+  restantes", botón "Guardar Cambios en el Plan" en vez de "Publicar a Alumno", buscador de alumno oculto)
+  vive en `AdminDashboard.jsx` sin cambios de lógica — solo cambió la forma de llegar ahí.
 
 **Verificado en vivo, en un navegador real, el caso exacto que preocupaba:** con el alumno a mitad de
 "Día 1" (una sesión ya completada esta semana), el admin edita el plan desde otra pestaña — renombra
@@ -675,12 +679,14 @@ funcionando sin ningún error, se guarda al terminar, y al volver a "Inicio" ya 
 la que estaba activa durante la edición) y el día nuevo disponible.
 
 **Tests:** 9 nuevos en el backend (listado con IDOR, edición in-place con preservación de `_id`,
-preservación/override del vencimiento, rechazo de plantillas por esta ruta). 20 nuevos en el frontend
-(componente `PlanesActivosModal` aislado + el flujo completo dentro de `AdminDashboard`, más 2 en
-`UserDashboard` para el refetch post-entrenamiento). Dos e2e nuevos: uno reproduce en un navegador real,
-con backend real, la edición mientras la sesión está activa (el caso que más preocupaba); otro recorre el
-flujo completo desde la UI del admin (ver, editar, guardar, reabrir).
+preservación/override del vencimiento, rechazo de plantillas por esta ruta). En el frontend, componente
+`AdminPlanesActivos` aislado (lista, búsqueda, detalle en grande, navegación al armador) + el flujo del
+handoff por `location.state` dentro de `AdminDashboard`, más 2 en `UserDashboard` para el refetch
+post-entrenamiento. Dos e2e nuevos: uno reproduce en un navegador real, con backend real, la edición
+mientras la sesión está activa (el caso que más preocupaba); otro recorre el flujo completo desde la UI
+real del admin — entrar por la pestaña del menú, buscar, ver el plan en grande, editar, guardar, y
+confirmar que la semana restante se conserva.
 
-282 backend, 315 frontend, 40 e2e — todo en verde.
+282 backend, 308 frontend, 41 e2e — todo en verde.
 
 ---

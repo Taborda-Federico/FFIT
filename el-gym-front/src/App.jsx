@@ -12,6 +12,7 @@ import { AdminDashboard } from './feactures/Admin/pages/AdminDashboard';
 import { AdminUsers } from './feactures/Admin/pages/AdminUsers';
 import { AdminLandingEditor } from './feactures/Admin/pages/AdminLandingEditor';
 import { StudentProgressView } from './feactures/Admin/pages/StudentProgressView'
+import { AdminPlanesActivos } from './feactures/Admin/pages/AdminPlanesActivos'
 import { NotFound } from './Utils/NotFound';
 import { UserDashboard } from './feactures/User/UserDashboard';
 
@@ -32,6 +33,7 @@ export default function App() {
                     >
                         <Route index element={<AdminUsers />} />
                         <Route path="planes" element={<AdminDashboard />} />
+                        <Route path="planes-activos" element={<AdminPlanesActivos />} />
                         <Route path="finanzas" element={<div>Finanzas</div>} />
                         <Route path="editor" element={<AdminLandingEditor />} />
                         <Route path="progreso" element={<StudentProgressView />} />

@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { AdminDashboard } from '../src/feactures/Admin/pages/AdminDashboard';
 
 const {
     getStudentsMock, getPlantillasMock, publicarPlanMock, guardarPlantillaMock, actualizarPlantillaMock, eliminarPlantillaMock,
-    getPlanesActivosMock, actualizarPlanMock, authValue
+    actualizarPlanMock, authValue
 } = vi.hoisted(() => ({
     getStudentsMock: vi.fn(),
     getPlantillasMock: vi.fn(),
@@ -12,7 +13,6 @@ const {
     guardarPlantillaMock: vi.fn(),
     actualizarPlantillaMock: vi.fn(),
     eliminarPlantillaMock: vi.fn(),
-    getPlanesActivosMock: vi.fn(),
     actualizarPlanMock: vi.fn(),
     // Referencia ESTABLE: si useAuth() devolviera un objeto nuevo en cada
     // render (como haría un mock ingenuo `() => ({...})`), el useEffect que
@@ -29,7 +29,7 @@ vi.mock('../src/service/plan.service', () => ({
     PlanService: {
         getPlantillas: getPlantillasMock, publicarPlan: publicarPlanMock, guardarPlantilla: guardarPlantillaMock,
         actualizarPlantilla: actualizarPlantillaMock, eliminarPlantilla: eliminarPlantillaMock,
-        getPlanesActivos: getPlanesActivosMock, actualizarPlan: actualizarPlanMock
+        actualizarPlan: actualizarPlanMock
     }
 }));
 
@@ -40,9 +40,21 @@ beforeEach(() => {
     guardarPlantillaMock.mockReset().mockResolvedValue({ plantilla: {} });
     actualizarPlantillaMock.mockReset().mockResolvedValue({ plantilla: {} });
     eliminarPlantillaMock.mockReset().mockResolvedValue({ message: 'ok' });
-    getPlanesActivosMock.mockReset().mockResolvedValue([]);
     actualizarPlanMock.mockReset().mockResolvedValue({ plan: { sesiones: [], vencimiento: 4 } });
 });
+
+// AdminDashboard usa useLocation/useNavigate (para recibir el plan a editar
+// que llega desde la pestaña "Planes Activos" — ver más abajo), así que
+// necesita un Router alrededor. `initialEntries` permite simular que se
+// llegó acá con un plan ya elegido, vía location.state, tal como lo manda
+// AdminPlanesActivos.jsx.
+function renderAdmin(initialEntries) {
+    return render(
+        <MemoryRouter initialEntries={initialEntries || ['/admin/planes']}>
+            <AdminDashboard />
+        </MemoryRouter>
+    );
+}
 
 async function esperarCargaInicial() {
     await waitFor(() => expect(getStudentsMock).toHaveBeenCalled());
@@ -50,20 +62,20 @@ async function esperarCargaInicial() {
 
 describe('AdminDashboard — construir un plan: días, bloques, ejercicios', () => {
     it('arranca con una sesión por defecto ("Día 1")', async () => {
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         expect(screen.getByDisplayValue('Día 1')).toBeInTheDocument();
     });
 
     it('"AÑADIR NUEVO DÍA DE ENTRENAMIENTO" agrega una sesión más, numerada secuencialmente', async () => {
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.click(screen.getByText(/AÑADIR NUEVO DÍA/));
         expect(screen.getByDisplayValue('Día 2')).toBeInTheDocument();
     });
 
     it('BUG: borrar un día intermedio y agregar uno nuevo puede duplicar el nombre autogenerado', async () => {
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.click(screen.getByText(/AÑADIR NUEVO DÍA/)); // Día 2
         fireEvent.click(screen.getByText(/AÑADIR NUEVO DÍA/)); // Día 3
@@ -79,7 +91,7 @@ describe('AdminDashboard — construir un plan: días, bloques, ejercicios', () 
     });
 
     it('permite renombrar el título de una sesión', async () => {
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         const input = screen.getByDisplayValue('Día 1');
         fireEvent.change(input, { target: { value: 'Pecho y Tríceps' } });
@@ -87,21 +99,21 @@ describe('AdminDashboard — construir un plan: días, bloques, ejercicios', () 
     });
 
     it('agrega un bloque "Serie" (standard) a una sesión', async () => {
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.click(screen.getByText('Serie'));
         expect(screen.getByText('STANDARD')).toBeInTheDocument();
     });
 
     it('agrega un bloque "Circuito" con vueltas por defecto = 3', async () => {
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.click(screen.getByText('Circuito'));
         expect(screen.getByDisplayValue('3')).toBeInTheDocument();
     });
 
     it('agrega un bloque "Superserie" y permite añadir un segundo ejercicio', async () => {
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.click(screen.getByText('Superserie'));
         expect(screen.getByText('SUPERSET')).toBeInTheDocument();
@@ -110,7 +122,7 @@ describe('AdminDashboard — construir un plan: días, bloques, ejercicios', () 
     });
 
     it('escribir el nombre de un ejercicio actualiza SOLO ese ejercicio (no sus hermanos)', async () => {
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.click(screen.getByText('Superserie'));
         fireEvent.click(screen.getByText(/Añadir Ejercicio/));
@@ -122,7 +134,7 @@ describe('AdminDashboard — construir un plan: días, bloques, ejercicios', () 
     });
 
     it('borrar el único ejercicio de un bloque borra también el bloque (queda vacío)', async () => {
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.click(screen.getByText('Serie'));
         expect(screen.getByText('STANDARD')).toBeInTheDocument();
@@ -137,7 +149,7 @@ describe('AdminDashboard — buscar y seleccionar alumno', () => {
             { _id: 'a1', nombre: 'Federico Gómez', email: 'f@x.com' },
             { _id: 'a2', nombre: 'Ana Pérez', email: 'a@x.com' },
         ]);
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.change(screen.getByPlaceholderText(/Buscar alumno/), { target: { value: 'FEDE' } });
         expect(screen.getByText(/Federico Gómez/)).toBeInTheDocument();
@@ -146,7 +158,7 @@ describe('AdminDashboard — buscar y seleccionar alumno', () => {
 
     it('seleccionar un resultado carga el alumno en el plan y limpia la búsqueda', async () => {
         getStudentsMock.mockResolvedValue([{ _id: 'a1', nombre: 'Federico Gómez', email: 'f@x.com', telefono: '111' }]);
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.change(screen.getByPlaceholderText(/Buscar alumno/), { target: { value: 'Fede' } });
         fireEvent.click(screen.getByText(/Federico Gómez/));
@@ -155,7 +167,7 @@ describe('AdminDashboard — buscar y seleccionar alumno', () => {
 
     it('ARREGLADO: el teléfono del alumno (`telefono`) SÍ llega al link de WhatsApp', async () => {
         getStudentsMock.mockResolvedValue([{ _id: 'a1', nombre: 'Federico Gómez', email: 'f@x.com', telefono: '1122334455' }]);
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.change(screen.getByPlaceholderText(/Buscar alumno/), { target: { value: 'Fede' } });
         fireEvent.click(screen.getByText(/Federico Gómez/));
@@ -176,7 +188,7 @@ describe('AdminDashboard — buscar y seleccionar alumno', () => {
 
 describe('AdminDashboard — publicar y guardar plantilla', () => {
     it('"Publicar a Alumno" sin haber elegido alumno muestra error y no abre el modal', async () => {
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.click(screen.getByText('Publicar a Alumno'));
         expect(await screen.findByText(/selecciona un alumno primero/i)).toBeInTheDocument();
@@ -184,7 +196,7 @@ describe('AdminDashboard — publicar y guardar plantilla', () => {
     });
 
     it('"Guardar Plantilla" sin título muestra error y no llama al servicio', async () => {
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.click(screen.getByText('Guardar Plantilla'));
         expect(await screen.findByText(/ponerle un título/i)).toBeInTheDocument();
@@ -192,7 +204,7 @@ describe('AdminDashboard — publicar y guardar plantilla', () => {
     });
 
     it('guardar plantilla con título llama al servicio y refresca la lista de plantillas', async () => {
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.change(screen.getByPlaceholderText(/TÍTULO/), { target: { value: 'Mi Plantilla' } });
         fireEvent.click(screen.getByText('Guardar Plantilla'));
@@ -201,7 +213,7 @@ describe('AdminDashboard — publicar y guardar plantilla', () => {
     });
 
     it('bloques sin ningún ejercicio se filtran antes de guardar la plantilla', async () => {
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.click(screen.getByText('Serie')); // bloque con 1 ejercicio vacío
         fireEvent.change(screen.getByPlaceholderText(/TÍTULO/), { target: { value: 'X' } });
@@ -216,7 +228,7 @@ describe('AdminDashboard — publicar y guardar plantilla', () => {
 
     it('después de publicar con éxito, resetea el formulario a un plan nuevo vacío', async () => {
         getStudentsMock.mockResolvedValue([{ _id: 'a1', nombre: 'Ana', email: 'a@x.com' }]);
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.change(screen.getByPlaceholderText(/Buscar alumno/), { target: { value: 'Ana' } });
         fireEvent.click(screen.getByText(/Ana/));
@@ -231,7 +243,7 @@ describe('AdminDashboard — publicar y guardar plantilla', () => {
     it('si falla publicarPlan, muestra el mensaje de error y NO resetea el formulario', async () => {
         getStudentsMock.mockResolvedValue([{ _id: 'a1', nombre: 'Ana', email: 'a@x.com' }]);
         publicarPlanMock.mockRejectedValue(new Error('El servidor rechazó el plan'));
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.change(screen.getByPlaceholderText(/Buscar alumno/), { target: { value: 'Ana' } });
         fireEvent.click(screen.getByText(/Ana/));
@@ -248,7 +260,7 @@ describe('AdminDashboard — cargar plantilla existente', () => {
         getPlantillasMock.mockResolvedValue([
             { _id: 'p1', titulo: 'Plantilla Fuerza', sesiones: [{ _id: 's1', nombre: 'Empuje', bloques: [] }] }
         ]);
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.change(screen.getByDisplayValue('Cargar Plantilla...'), { target: { value: 'p1' } });
         expect(screen.getByPlaceholderText(/TÍTULO/)).toHaveValue('Plantilla Fuerza');
@@ -272,7 +284,7 @@ describe('AdminDashboard — NUEVO: Gestionar Plantillas (modal de búsqueda/edi
 
     it('el botón "Plantillas" abre el modal con las plantillas ya cargadas', async () => {
         getPlantillasMock.mockResolvedValue([plantillaDemo]);
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.click(screen.getByText('Plantillas'));
         await screen.findByRole('heading', { name: /Gestionar Plantillas/i });
@@ -281,7 +293,7 @@ describe('AdminDashboard — NUEVO: Gestionar Plantillas (modal de búsqueda/edi
 
     it('"Editar" en el modal carga la plantilla en el armador, muestra el banner de edición y cierra el modal', async () => {
         getPlantillasMock.mockResolvedValue([plantillaDemo]);
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.click(screen.getByText('Plantillas'));
         fireEvent.click(await screen.findByTitle('Editar plantilla'));
@@ -297,7 +309,7 @@ describe('AdminDashboard — NUEVO: Gestionar Plantillas (modal de búsqueda/edi
 
     it('en modo edición, "Guardar Cambios" llama a actualizarPlantilla (PUT) — no a guardarPlantilla (POST)', async () => {
         getPlantillasMock.mockResolvedValue([plantillaDemo]);
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.click(screen.getByText('Plantillas'));
         fireEvent.click(await screen.findByTitle('Editar plantilla'));
@@ -309,7 +321,7 @@ describe('AdminDashboard — NUEVO: Gestionar Plantillas (modal de búsqueda/edi
 
     it('"salir" del banner de edición vuelve a "Guardar Plantilla" (crea una nueva) sin borrar lo ya tipeado', async () => {
         getPlantillasMock.mockResolvedValue([plantillaDemo]);
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.click(screen.getByText('Plantillas'));
         fireEvent.click(await screen.findByTitle('Editar plantilla'));
@@ -326,7 +338,7 @@ describe('AdminDashboard — NUEVO: Gestionar Plantillas (modal de búsqueda/edi
 
     it('"Borrar" pide confirmación antes de eliminar', async () => {
         getPlantillasMock.mockResolvedValue([plantillaDemo]);
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.click(screen.getByText('Plantillas'));
         fireEvent.click(await screen.findByTitle('Eliminar plantilla'));
@@ -338,7 +350,7 @@ describe('AdminDashboard — NUEVO: Gestionar Plantillas (modal de búsqueda/edi
 
     it('confirmar el borrado llama a eliminarPlantilla y la saca de la lista', async () => {
         getPlantillasMock.mockResolvedValue([plantillaDemo]);
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.click(screen.getByText('Plantillas'));
         fireEvent.click(await screen.findByTitle('Eliminar plantilla'));
@@ -350,7 +362,7 @@ describe('AdminDashboard — NUEVO: Gestionar Plantillas (modal de búsqueda/edi
 
     it('cancelar el borrado NO llama a eliminarPlantilla, y el modal de plantillas sigue abierto con todo intacto', async () => {
         getPlantillasMock.mockResolvedValue([plantillaDemo]);
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.click(screen.getByText('Plantillas'));
         fireEvent.click(await screen.findByTitle('Eliminar plantilla'));
@@ -365,7 +377,7 @@ describe('AdminDashboard — NUEVO: Gestionar Plantillas (modal de búsqueda/edi
 
     it('la búsqueda del modal es sensible a coincidencias parciales, sin importar mayúsculas', async () => {
         getPlantillasMock.mockResolvedValue([plantillaDemo, { _id: 'p2', titulo: 'Cardio Intenso', sesiones: [] }]);
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.click(screen.getByText('Plantillas'));
         await screen.findByRole('heading', { name: /Gestionar Plantillas/i });
@@ -380,7 +392,7 @@ describe('AdminDashboard — NUEVO: Gestionar Plantillas (modal de búsqueda/edi
 
     it('sin ninguna plantilla guardada, el modal muestra un estado vacío en vez de una lista en blanco', async () => {
         getPlantillasMock.mockResolvedValue([]);
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.click(screen.getByText('Plantillas'));
         expect(await screen.findByText(/Todavía no guardaste ninguna plantilla/i)).toBeInTheDocument();
@@ -389,7 +401,7 @@ describe('AdminDashboard — NUEVO: Gestionar Plantillas (modal de búsqueda/edi
     it('si eliminarPlantilla falla, muestra el error y NO saca la plantilla de la lista', async () => {
         getPlantillasMock.mockResolvedValue([plantillaDemo]);
         eliminarPlantillaMock.mockRejectedValue(new Error('No se pudo eliminar'));
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.click(screen.getByText('Plantillas'));
         fireEvent.click(await screen.findByTitle('Eliminar plantilla'));
@@ -402,7 +414,7 @@ describe('AdminDashboard — NUEVO: Gestionar Plantillas (modal de búsqueda/edi
 
 describe('AdminDashboard — persistencia del borrador (arreglo del bug reportado por un cliente real)', () => {
     it('escribir en el plan lo guarda en localStorage al toque', async () => {
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         fireEvent.change(screen.getByPlaceholderText(/TÍTULO/), { target: { value: 'Plan Sin Terminar' } });
         await waitFor(() => {
@@ -412,7 +424,7 @@ describe('AdminDashboard — persistencia del borrador (arreglo del bug reportad
     });
 
     it('desmontar la pantalla (simula navegar a otra pestaña) y volver a montarla recupera el borrador tal cual quedó', async () => {
-        const { unmount } = render(<AdminDashboard />);
+        const { unmount } = renderAdmin();
         await esperarCargaInicial();
         fireEvent.change(screen.getByPlaceholderText(/TÍTULO/), { target: { value: 'Plan A Medio Hacer' } });
         fireEvent.click(screen.getByText('Serie'));
@@ -423,7 +435,7 @@ describe('AdminDashboard — persistencia del borrador (arreglo del bug reportad
         // componente (como al navegar a "Alumnos" o "Seguimiento") y se
         // vuelve a montar (como al volver a "Planes").
         unmount();
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
 
         expect(screen.getByPlaceholderText(/TÍTULO/)).toHaveValue('Plan A Medio Hacer');
@@ -434,20 +446,20 @@ describe('AdminDashboard — persistencia del borrador (arreglo del bug reportad
         // jsdom no tiene un F5 real, pero un refresh de página ES, para
         // React, exactamente esto: el árbol entero se desmonta y se vuelve
         // a montar desde cero con un `render` nuevo.
-        const { unmount } = render(<AdminDashboard />);
+        const { unmount } = renderAdmin();
         await esperarCargaInicial();
         fireEvent.change(screen.getByPlaceholderText(/TÍTULO/), { target: { value: 'Sobrevive al F5' } });
         await waitFor(() => expect(localStorage.getItem('ffit_admin_plan_draft_anon')).toContain('Sobrevive al F5'));
         unmount();
 
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         expect(screen.getByPlaceholderText(/TÍTULO/)).toHaveValue('Sobrevive al F5');
     });
 
     it('publicar con éxito borra el borrador — un remount posterior arranca en blanco, no con el plan ya publicado', async () => {
         getStudentsMock.mockResolvedValue([{ _id: 'a1', nombre: 'Ana', email: 'a@x.com' }]);
-        const { unmount } = render(<AdminDashboard />);
+        const { unmount } = renderAdmin();
         await esperarCargaInicial();
         fireEvent.change(screen.getByPlaceholderText(/Buscar alumno/), { target: { value: 'Ana' } });
         fireEvent.click(screen.getByText(/Ana/));
@@ -459,35 +471,37 @@ describe('AdminDashboard — persistencia del borrador (arreglo del bug reportad
         expect(localStorage.getItem('ffit_admin_plan_draft_anon')).toBeNull();
 
         unmount();
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         expect(screen.getByPlaceholderText(/TÍTULO/)).toHaveValue('');
     });
 
     it('guardar como plantilla NO borra el borrador (el profe puede seguir editando el mismo plan después)', async () => {
-        const { unmount } = render(<AdminDashboard />);
+        const { unmount } = renderAdmin();
         await esperarCargaInicial();
         fireEvent.change(screen.getByPlaceholderText(/TÍTULO/), { target: { value: 'Plantilla En Progreso' } });
         fireEvent.click(screen.getByText('Guardar Plantilla'));
         await waitFor(() => expect(guardarPlantillaMock).toHaveBeenCalled());
 
         unmount();
-        render(<AdminDashboard />);
+        renderAdmin();
         await esperarCargaInicial();
         expect(screen.getByPlaceholderText(/TÍTULO/)).toHaveValue('Plantilla En Progreso');
     });
 
     it('un borrador con JSON corrupto en localStorage no rompe la pantalla — arranca en blanco', async () => {
         localStorage.setItem('ffit_admin_plan_draft_anon', '{esto no es JSON válido');
-        expect(() => render(<AdminDashboard />)).not.toThrow();
+        expect(() => renderAdmin()).not.toThrow();
         await esperarCargaInicial();
         expect(screen.getByPlaceholderText(/TÍTULO/)).toHaveValue('');
     });
 });
 
-describe('AdminDashboard — NUEVO: Planes Activos (ver y editar un plan ya asignado)', () => {
+describe('AdminDashboard — NUEVO: recibe un plan para editar desde "Planes Activos" (location.state)', () => {
     // Plan "en curso": lleva 2 de las 4 semanas originales (el cron ya lo
     // decrementó), con dos sesiones reales (con _id de Mongo, no client-side).
+    // La pestaña "Planes Activos" (AdminPlanesActivos.jsx) manda exactamente
+    // esta forma de objeto al navegar acá, vía location.state.planParaEditar.
     const planActivoDemo = {
         _id: 'plan1',
         titulo: 'Fuerza Nivel 1',
@@ -499,43 +513,14 @@ describe('AdminDashboard — NUEVO: Planes Activos (ver y editar un plan ya asig
         ]
     };
 
-    function modalPlanesActivos() {
-        return screen.getByRole('heading', { name: /Planes Activos/i }).closest('.planes-activos-modal-card');
+    function renderEditando() {
+        return renderAdmin([{ pathname: '/admin/planes', state: { planParaEditar: planActivoDemo } }]);
     }
 
-    it('el botón "Planes Activos" abre el modal con los planes ya cargados (alumno + título)', async () => {
-        getPlanesActivosMock.mockResolvedValue([planActivoDemo]);
-        render(<AdminDashboard />);
+    it('al llegar con un plan en location.state, lo carga en el armador (con los _id reales de sus sesiones), banner y campo de semanas restantes', async () => {
+        renderEditando();
         await esperarCargaInicial();
-        fireEvent.click(screen.getByText('Planes Activos'));
-        await screen.findByRole('heading', { name: /Planes Activos/i });
-        const modal = modalPlanesActivos();
-        expect(within(modal).getByText('Fuerza Nivel 1')).toBeInTheDocument();
-        expect(within(modal).getByText(/Federico Gómez/)).toBeInTheDocument();
-    });
 
-    it('hacer click en la fila la expande y muestra el detalle de sesiones/bloques/ejercicios de solo lectura', async () => {
-        getPlanesActivosMock.mockResolvedValue([planActivoDemo]);
-        render(<AdminDashboard />);
-        await esperarCargaInicial();
-        fireEvent.click(screen.getByText('Planes Activos'));
-        await screen.findByRole('heading', { name: /Planes Activos/i });
-
-        expect(screen.queryByText('Sentadilla')).not.toBeInTheDocument();
-        fireEvent.click(screen.getByText('Fuerza Nivel 1'));
-        expect(screen.getByText('Sentadilla')).toBeInTheDocument();
-        expect(screen.getByText('Burpees')).toBeInTheDocument();
-    });
-
-    it('"Editar" carga el plan real en el armador (con los _id de sus sesiones), muestra el banner y el campo de semanas restantes', async () => {
-        getPlanesActivosMock.mockResolvedValue([planActivoDemo]);
-        render(<AdminDashboard />);
-        await esperarCargaInicial();
-        fireEvent.click(screen.getByText('Planes Activos'));
-        fireEvent.click(await screen.findByTitle('Editar plan'));
-
-        // El modal se cierra
-        expect(screen.queryByRole('heading', { name: /Planes Activos/i })).not.toBeInTheDocument();
         expect(screen.getByPlaceholderText(/TÍTULO/)).toHaveValue('Fuerza Nivel 1');
         expect(screen.getByDisplayValue('Día 1')).toBeInTheDocument();
         expect(screen.getByDisplayValue('Día 2')).toBeInTheDocument();
@@ -549,12 +534,17 @@ describe('AdminDashboard — NUEVO: Planes Activos (ver y editar un plan ya asig
         expect(screen.queryByPlaceholderText(/Buscar alumno/)).not.toBeInTheDocument();
     });
 
-    it('"Guardar Cambios en el Plan" llama a actualizarPlan (PUT), no a publicarPlan ni guardarPlantilla', async () => {
-        getPlanesActivosMock.mockResolvedValue([planActivoDemo]);
-        render(<AdminDashboard />);
+    it('sin nada en location.state (navegación normal a "Planes"), arranca en blanco, como siempre', async () => {
+        renderAdmin();
         await esperarCargaInicial();
-        fireEvent.click(screen.getByText('Planes Activos'));
-        fireEvent.click(await screen.findByTitle('Editar plan'));
+        expect(screen.getByPlaceholderText(/TÍTULO/)).toHaveValue('');
+        expect(screen.queryByText(/Editando el plan activo/i)).not.toBeInTheDocument();
+        expect(screen.getByText('Publicar a Alumno')).toBeInTheDocument();
+    });
+
+    it('"Guardar Cambios en el Plan" llama a actualizarPlan (PUT), no a publicarPlan ni guardarPlantilla', async () => {
+        renderEditando();
+        await esperarCargaInicial();
         fireEvent.click(screen.getByText('Guardar Cambios en el Plan'));
 
         await waitFor(() => expect(actualizarPlanMock).toHaveBeenCalledWith(
@@ -567,11 +557,8 @@ describe('AdminDashboard — NUEVO: Planes Activos (ver y editar un plan ya asig
     });
 
     it('CRÍTICO: editar el nombre de UNA sesión no le hace perder el _id a la OTRA sesión que no se tocó (así sigue matcheando "ya completada")', async () => {
-        getPlanesActivosMock.mockResolvedValue([planActivoDemo]);
-        render(<AdminDashboard />);
+        renderEditando();
         await esperarCargaInicial();
-        fireEvent.click(screen.getByText('Planes Activos'));
-        fireEvent.click(await screen.findByTitle('Editar plan'));
 
         // Solo se toca "Día 1" — "Día 2" (con la sesión ya completada por
         // el alumno esta semana, en un caso real) no se toca para nada.
@@ -587,11 +574,8 @@ describe('AdminDashboard — NUEVO: Planes Activos (ver y editar un plan ya asig
     });
 
     it('cambiar "Semanas restantes" a mano SÍ se manda (el admin decide extender/acortar el plan al editar)', async () => {
-        getPlanesActivosMock.mockResolvedValue([planActivoDemo]);
-        render(<AdminDashboard />);
+        renderEditando();
         await esperarCargaInicial();
-        fireEvent.click(screen.getByText('Planes Activos'));
-        fireEvent.click(await screen.findByTitle('Editar plan'));
 
         fireEvent.change(screen.getByDisplayValue('2'), { target: { value: '6' } });
         fireEvent.click(screen.getByText('Guardar Cambios en el Plan'));
@@ -599,12 +583,9 @@ describe('AdminDashboard — NUEVO: Planes Activos (ver y editar un plan ya asig
         await waitFor(() => expect(actualizarPlanMock).toHaveBeenCalledWith('plan1', expect.objectContaining({ vencimiento: 6 }), 'tok'));
     });
 
-    it('"salir" del modo edición de un plan vuelve a mostrar "Publicar a Alumno" sin borrar lo tipeado', async () => {
-        getPlanesActivosMock.mockResolvedValue([planActivoDemo]);
-        render(<AdminDashboard />);
+    it('"salir" del modo edición vuelve a mostrar "Publicar a Alumno" sin borrar lo tipeado', async () => {
+        renderEditando();
         await esperarCargaInicial();
-        fireEvent.click(screen.getByText('Planes Activos'));
-        fireEvent.click(await screen.findByTitle('Editar plan'));
         fireEvent.click(screen.getByTitle('Salir del modo edición'));
 
         expect(screen.queryByText(/Editando el plan activo/i)).not.toBeInTheDocument();
@@ -613,21 +594,10 @@ describe('AdminDashboard — NUEVO: Planes Activos (ver y editar un plan ya asig
         expect(actualizarPlanMock).not.toHaveBeenCalled();
     });
 
-    it('sin ningún plan activo, el modal muestra un estado vacío', async () => {
-        getPlanesActivosMock.mockResolvedValue([]);
-        render(<AdminDashboard />);
-        await esperarCargaInicial();
-        fireEvent.click(screen.getByText('Planes Activos'));
-        expect(await screen.findByText(/Todavía no hay ningún plan activo/i)).toBeInTheDocument();
-    });
-
     it('si actualizarPlan falla, muestra el mensaje de error y no cierra el modo edición', async () => {
-        getPlanesActivosMock.mockResolvedValue([planActivoDemo]);
         actualizarPlanMock.mockRejectedValue(new Error('El servidor rechazó el cambio'));
-        render(<AdminDashboard />);
+        renderEditando();
         await esperarCargaInicial();
-        fireEvent.click(screen.getByText('Planes Activos'));
-        fireEvent.click(await screen.findByTitle('Editar plan'));
         fireEvent.click(screen.getByText('Guardar Cambios en el Plan'));
 
         expect(await screen.findByText('El servidor rechazó el cambio')).toBeInTheDocument();

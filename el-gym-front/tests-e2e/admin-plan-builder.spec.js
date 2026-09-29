@@ -86,8 +86,10 @@ test.describe('Constructor de planes (armado real, de punta a punta)', () => {
         await page.getByRole('link', { name: 'Alumnos' }).click();
         await expect(page).toHaveURL(/\/admin$/);
 
-        await page.getByRole('link', { name: 'Planes' }).click();
-        await expect(page).toHaveURL(/\/admin\/planes/);
+        // exact:true porque ahora también existe el link "Planes Activos"
+        // (que "contiene" el texto "Planes").
+        await page.getByRole('link', { name: 'Planes', exact: true }).click();
+        await expect(page).toHaveURL(/\/admin\/planes$/);
 
         await expect(page.getByPlaceholder('TÍTULO DE LA RUTINA')).toHaveValue('Plan Que No Se Debe Perder');
         await expect(page.getByPlaceholder('Ejercicio').first()).toHaveValue('Peso Muerto');
@@ -183,8 +185,8 @@ test.describe('NUEVO: Gestionar Plantillas (pedido de un cliente real — tenía
     });
 });
 
-test.describe('NUEVO: Planes Activos (ver y editar un plan ya asignado, desde la UI real del admin)', () => {
-    test('flujo completo: abrir la lista, ver el detalle, editar (pisa el mismo plan) y confirmar que la semana restante se conserva', async ({ page }) => {
+test.describe('NUEVO: Planes Activos (pestaña propia en la navegación, ver en grande y editar)', () => {
+    test('flujo completo: entrar desde el menú, buscar, ver el plan en grande, editar (pisa el mismo plan) y confirmar que la semana restante se conserva', async ({ page }) => {
         const admin = await crearAdmin({ email: 'admin-planesactivos1@x.com' });
         const alumno = await crearAlumno(admin.token, { nombre: 'Alumno Con Plan' });
         await publicarPlan(admin.token, alumno._id, {
@@ -195,22 +197,30 @@ test.describe('NUEVO: Planes Activos (ver y editar un plan ya asignado, desde la
             ],
         });
         await loguearComoAdmin(page, admin);
-        await page.goto('/admin/planes');
 
-        const modal = page.locator('.planes-activos-modal-card');
-        await page.getByRole('button', { name: 'Planes Activos' }).click();
+        // Se entra por su propia pestaña del menú lateral, no por un botón
+        // dentro del armador.
+        await page.getByRole('link', { name: 'Planes Activos' }).click();
+        await expect(page).toHaveURL(/\/admin\/planes-activos/);
         await expect(page.getByRole('heading', { name: 'Planes Activos' })).toBeVisible();
-        await expect(modal.getByText('Plan En Curso')).toBeVisible();
-        await expect(modal.getByText('Alumno Con Plan')).toBeVisible();
+        await expect(page.getByText('Plan En Curso')).toBeVisible();
+        await expect(page.getByText('Alumno Con Plan')).toBeVisible();
 
-        // Ver el detalle (solo lectura) expandiendo la fila.
-        await modal.getByText('Plan En Curso').click();
-        await expect(modal.getByText('Sentadilla')).toBeVisible();
+        // La búsqueda filtra por alumno o por título.
+        await page.getByPlaceholder(/Buscar por alumno o título/).fill('alumno con plan');
+        await expect(page.getByText('Plan En Curso')).toBeVisible();
+        await page.getByPlaceholder(/Buscar por alumno o título/).fill('');
 
-        // Editar: carga el plan real en el armador — mismo _id, no crea uno
-        // nuevo ni pide elegir alumno de nuevo.
-        await page.locator('.plan-activo-row', { hasText: 'Plan En Curso' }).getByTitle('Editar plan').click();
-        await expect(page.getByRole('heading', { name: 'Planes Activos' })).not.toBeVisible();
+        // Clickear la tarjeta lo muestra EN GRANDE (reemplaza la lista).
+        await page.getByText('Plan En Curso').click();
+        await expect(page.getByRole('heading', { name: 'Plan En Curso' })).toBeVisible();
+        await expect(page.getByText('Sentadilla')).toBeVisible();
+        await expect(page.getByText(/Sin bloques cargados/)).toBeVisible(); // Día 2
+
+        // El botón de editar es chico, discreto — clickearlo manda al
+        // armador de siempre con el plan ya cargado.
+        await page.getByRole('button', { name: /Editar/ }).click();
+        await expect(page).toHaveURL(/\/admin\/planes$/);
         await expect(page.getByPlaceholder('TÍTULO DE LA RUTINA')).toHaveValue('Plan En Curso');
         await expect(page.getByText(/Editando el plan activo de Alumno Con Plan/i)).toBeVisible();
         await expect(page.getByPlaceholder(/Buscar alumno para asignar/)).not.toBeVisible();
@@ -224,24 +234,42 @@ test.describe('NUEVO: Planes Activos (ver y editar un plan ya asignado, desde la
         await page.getByRole('button', { name: 'Guardar Cambios en el Plan' }).click();
         await expect(page.getByText(/actualizado con éxito/i)).toBeVisible();
 
-        // Reabrir la lista: sigue habiendo UN solo plan activo (no se
+        // Volviendo a la pestaña: sigue habiendo UN solo plan activo (no se
         // duplicó), con el nombre de sesión nuevo y la semana intacta.
-        await page.getByRole('button', { name: 'Planes Activos' }).click();
-        await expect(page.locator('.plan-activo-row')).toHaveCount(1);
-        await modal.getByText('Plan En Curso').click();
-        await expect(modal.getByText('Día 1 (editado)')).toBeVisible();
-        await expect(modal.getByText(/4 semanas restantes/)).toBeVisible();
+        await page.getByRole('link', { name: 'Planes Activos' }).click();
+        await expect(page.locator('.plan-activo-card')).toHaveCount(1);
+        await page.getByText('Plan En Curso').click();
+        await expect(page.getByText('Día 1 (editado)')).toBeVisible();
+        await expect(page.getByText(/4 semanas restantes/)).toBeVisible();
+    });
+
+    test('"Volver a la lista" desde el detalle grande regresa a la lista completa', async ({ page }) => {
+        const admin = await crearAdmin({ email: 'admin-planesactivos2@x.com' });
+        const alumno1 = await crearAlumno(admin.token, { nombre: 'Alumno Uno' });
+        const alumno2 = await crearAlumno(admin.token, { nombre: 'Alumno Dos' });
+        await publicarPlan(admin.token, alumno1._id, { titulo: 'Plan Uno' });
+        await publicarPlan(admin.token, alumno2._id, { titulo: 'Plan Dos' });
+        await loguearComoAdmin(page, admin);
+        await page.goto('/admin/planes-activos');
+
+        await page.getByText('Plan Uno').click();
+        await expect(page.getByRole('heading', { name: 'Plan Uno' })).toBeVisible();
+        await expect(page.getByText('Plan Dos')).not.toBeVisible();
+
+        await page.getByText(/Volver a la lista/).click();
+        await expect(page.getByText('Plan Uno')).toBeVisible();
+        await expect(page.getByText('Plan Dos')).toBeVisible();
     });
 
     test('"salir" del modo edición vuelve a "Publicar a Alumno" sin perder lo tipeado, y NO guarda nada', async ({ page }) => {
-        const admin = await crearAdmin({ email: 'admin-planesactivos2@x.com' });
+        const admin = await crearAdmin({ email: 'admin-planesactivos3@x.com' });
         const alumno = await crearAlumno(admin.token, { nombre: 'Alumno Salir' });
         await publicarPlan(admin.token, alumno._id, { titulo: 'Plan Para Salir' });
         await loguearComoAdmin(page, admin);
-        await page.goto('/admin/planes');
+        await page.goto('/admin/planes-activos');
 
-        await page.getByRole('button', { name: 'Planes Activos' }).click();
-        await page.locator('.plan-activo-row', { hasText: 'Plan Para Salir' }).getByTitle('Editar plan').click();
+        await page.getByText('Plan Para Salir').click();
+        await page.getByRole('button', { name: /Editar/ }).click();
         await page.getByTitle('Salir del modo edición').click();
 
         await expect(page.getByText(/Editando el plan activo/i)).not.toBeVisible();
@@ -249,11 +277,10 @@ test.describe('NUEVO: Planes Activos (ver y editar un plan ya asignado, desde la
         await expect(page.getByPlaceholder('TÍTULO DE LA RUTINA')).toHaveValue('Plan Para Salir');
     });
 
-    test('sin ningún plan activo, el modal muestra el estado vacío', async ({ page }) => {
-        const admin = await crearAdmin({ email: 'admin-planesactivos3@x.com' });
+    test('sin ningún plan activo, la pestaña muestra el estado vacío', async ({ page }) => {
+        const admin = await crearAdmin({ email: 'admin-planesactivos4@x.com' });
         await loguearComoAdmin(page, admin);
-        await page.goto('/admin/planes');
-        await page.getByRole('button', { name: 'Planes Activos' }).click();
+        await page.goto('/admin/planes-activos');
         await expect(page.getByText(/Todavía no hay ningún plan activo asignado/i)).toBeVisible();
     });
 });

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
     FaUsers, FaDumbbell, FaEdit, FaHome, FaSignOutAlt,
-    FaTimes, FaChartLine, FaUserPlus
+    FaTimes, FaChartLine, FaUserPlus, FaCalendarCheck
 } from 'react-icons/fa';
 import { useAuth } from '../../../contex/AuthContext';
 import { CreateAdminModal } from './CreateAdminModal';
@@ -60,6 +60,11 @@ export function AdminSidebar({ onClose, isOpen }) {
                     <NavLink to="/admin/planes" onClick={onClose} className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
                         <FaDumbbell className="nav-icon" />
                         <span className="nav-text">Planes</span>
+                    </NavLink>
+
+                    <NavLink to="/admin/planes-activos" onClick={onClose} className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+                        <FaCalendarCheck className="nav-icon" />
+                        <span className="nav-text">Planes Activos</span>
                     </NavLink>
 
                     <NavLink to="/admin/editor" onClick={onClose} className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>

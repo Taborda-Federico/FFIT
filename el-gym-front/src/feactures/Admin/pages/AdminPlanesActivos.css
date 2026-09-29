@@ -1,0 +1,301 @@
+/* AdminPlanesActivos.css — Los tokens se definen en styles/variables.css.
+   Mismo esqueleto de página que AdminUsers.css (header + buscador + lista),
+   para que la sección se sienta parte del mismo panel. */
+
+.admin-planes-activos-view {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px 15px 120px;
+    background-color: var(--black-pure);
+    min-height: 100vh;
+}
+
+.text-neon { color: var(--neon); }
+
+/* --- HEADER --- */
+.planes-activos-header-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    gap: 15px;
+}
+
+.planes-activos-header-main .title-stack h1 {
+    font-family: 'Oswald', sans-serif;
+    font-size: clamp(1.8rem, 5vw, 2.5rem);
+    margin: 0;
+    line-height: 1;
+    color: #fff;
+}
+
+.planes-activos-header-main .title-stack p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 8px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* --- BUSCADOR --- */
+.search-section-pro { margin-bottom: 25px; }
+
+.search-glass-box {
+    background: var(--black-card);
+    border: 1px solid var(--border-dark);
+    padding: 12px 18px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.search-glass-box svg { color: var(--text-dim); }
+.search-glass-box input {
+    background: transparent;
+    border: none;
+    color: white;
+    width: 100%;
+    outline: none;
+    font-size: 0.95rem;
+}
+
+/* --- ESTADOS DE CARGA / VACÍO --- */
+.loading-state, .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-dim);
+    background: var(--black-card);
+    border-radius: 25px;
+    border: 1px solid var(--border-dark);
+}
+
+.loading-state svg, .empty-state svg { opacity: 0.5; margin-bottom: 12px; }
+.loading-state p, .empty-state p { margin: 10px 0 0 0; font-size: 0.9rem; }
+.loading-state .spin { font-size: 1.6rem; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* --- LISTA DE TARJETAS --- */
+.planes-activos-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.plan-activo-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--black-card);
+    border: 1px solid var(--border-dark);
+    border-radius: 18px;
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: 0.2s;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+    width: 100%;
+}
+
+.plan-activo-card:hover {
+    border-color: var(--neon);
+    background: rgba(212, 240, 57, 0.03);
+}
+
+.plan-activo-card-icon {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    background: rgba(212, 240, 57, 0.06);
+    color: var(--neon);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+
+.plan-activo-card-texts {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    flex: 1;
+}
+
+.plan-activo-card-alumno {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.plan-activo-card-titulo {
+    font-weight: 700;
+    color: #eee;
+    font-size: 1.05rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.plan-activo-card-meta { font-size: 0.75rem; color: var(--text-dim); }
+
+.plan-activo-card-chevron { color: var(--text-dim); flex-shrink: 0; }
+
+/* --- VISTA "EN GRANDE" DE UN PLAN --- */
+.btn-volver-planes {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 10px 0;
+    margin-bottom: 15px;
+}
+
+.btn-volver-planes:hover { color: var(--neon); }
+
+.plan-detalle-grande {
+    background: var(--black-card);
+    border: 1px solid var(--border-dark);
+    border-radius: 25px;
+    padding: 30px;
+}
+
+.detalle-grande-header {
+    border-bottom: 1px solid var(--border-dark);
+    padding-bottom: 20px;
+    margin-bottom: 25px;
+}
+
+.detalle-grande-alumno {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.detalle-grande-titulo-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.detalle-grande-titulo-row h1 {
+    font-family: 'Oswald', sans-serif;
+    font-size: clamp(1.6rem, 4.5vw, 2.4rem);
+    color: #fff;
+    margin: 0;
+    line-height: 1.1;
+}
+
+/* Botón de editar CHICO, discreto — a propósito: la acción principal de
+   esta pantalla es VER el plan, no editarlo. */
+.btn-editar-chico {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: 1px solid var(--border-dark);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 7px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.2s;
+    flex-shrink: 0;
+}
+
+.btn-editar-chico:hover {
+    border-color: var(--neon);
+    color: var(--neon);
+}
+
+.detalle-grande-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-top: 12px;
+}
+
+.meta-separador { opacity: 0.5; }
+
+.detalle-grande-sesiones {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.detalle-grande-sesion h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.15rem;
+    color: #eee;
+    margin: 0 0 10px 0;
+}
+
+.detalle-grande-vacio {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    font-style: italic;
+}
+
+.detalle-grande-bloque {
+    background: #000;
+    border: 1px solid #111;
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+}
+
+.detalle-grande-bloque-tipo {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    font-weight: 800;
+}
+
+.detalle-grande-bloque ul {
+    margin: 8px 0 0 0;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.detalle-grande-bloque li { font-size: 0.9rem; color: #ccc; }
+.detalle-grande-ej-nombre { font-weight: 600; }
+.detalle-grande-ej-meta { color: var(--text-dim); }
+
+/* --- RESPONSIVIDAD (MÓVIL) --- */
+@media (max-width: 768px) {
+    .planes-activos-header-main { flex-direction: column; align-items: flex-start; }
+    .plan-detalle-grande { padding: 20px 16px; }
+    .detalle-grande-titulo-row { flex-direction: column; align-items: flex-start; }
+}

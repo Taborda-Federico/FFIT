@@ -257,6 +257,36 @@ describe('POST /api/student/workout (saveWorkoutLog)', () => {
             expect(guardado.ejercicios[0].pesoUsado).toBe(45);
         });
 
+        it('pesos con decimales: acepta número (42.5) y texto con coma ("42,5") o punto ("42.5") sin perder los decimales', async () => {
+            const { admin } = await createAdmin();
+            const { token } = await createStudentDirect(admin._id);
+            const res = await request(app).post('/api/student/workout').set('Authorization', `Bearer ${token}`).send({
+                nombreSesion: 'Día 1',
+                ejercicios: [
+                    { ejercicioId: 'e1', nombre: 'Press', series: [{ numero: 1, peso: 42.5, reps: 8 }, { numero: 2, peso: '42,5', reps: 8 }, { numero: 3, peso: '45.25', reps: 6 }] },
+                    // forma vieja con pesoUsado como texto con coma
+                    { ejercicioId: 'e2', nombre: 'Curl', pesoUsado: '12,5' }
+                ]
+            });
+            expect(res.status).toBe(201);
+            const guardado = await WorkoutLog.findById(res.body.log._id);
+            expect(guardado.ejercicios[0].series.map(s => s.peso)).toEqual([42.5, 42.5, 45.25]);
+            expect(guardado.ejercicios[0].pesoUsado).toBe(45.25);
+            expect(guardado.ejercicios[1].pesoUsado).toBe(12.5);
+        });
+
+        it('un peso que no es un número válido (texto basura, negativo) se guarda como 0, sin romper el guardado', async () => {
+            const { admin } = await createAdmin();
+            const { token } = await createStudentDirect(admin._id);
+            const res = await request(app).post('/api/student/workout').set('Authorization', `Bearer ${token}`).send({
+                nombreSesion: 'Día 1',
+                ejercicios: [{ ejercicioId: 'e1', nombre: 'Press', series: [{ numero: 1, peso: 'abc', reps: 8 }, { numero: 2, peso: -5, reps: 8 }] }]
+            });
+            expect(res.status).toBe(201);
+            const guardado = await WorkoutLog.findById(res.body.log._id);
+            expect(guardado.ejercicios[0].series.map(s => s.peso)).toEqual([0, 0]);
+        });
+
         it('sin `series` (forma vieja, con pesoUsado directo) sigue funcionando exactamente igual que antes', async () => {
             const { admin } = await createAdmin();
             const { student, token } = await createStudentDirect(admin._id);

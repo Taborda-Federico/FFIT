@@ -4,6 +4,16 @@ const Plan = require('../models/Plan');
 const Notification = require('../models/Notification');
 const WorkoutLog = require('../models/WorkoutLog');
 
+// Acepta un peso como número o como texto con coma ("42,5") o punto
+// ("42.5"). El frontend ya manda números, pero así un cliente viejo (o una
+// app en caché) que mande el texto tal cual se tipeó tampoco pierde los
+// decimales: `Number("42,5")` da NaN, y antes eso terminaba guardado como 0.
+const aPeso = (valor) => {
+    if (typeof valor === 'number') return Number.isFinite(valor) && valor > 0 ? valor : 0;
+    const n = Number(String(valor ?? '').trim().replace(',', '.'));
+    return Number.isFinite(n) && n > 0 ? n : 0;
+};
+
 const getStudentDashboard = async (req, res) => {
     try {
         const user = await User.findById(req.user._id);
@@ -86,14 +96,14 @@ const saveWorkoutLog = async (req, res) => {
                     .filter(s => s && typeof s.peso !== 'undefined')
                     .map((s, idx) => ({
                         numero: Number(s.numero) || idx + 1,
-                        peso: Number(s.peso) || 0,
+                        peso: aPeso(s.peso),
                         reps: s.reps !== undefined && s.reps !== null && s.reps !== '' ? Number(s.reps) : undefined
                     }))
                 : [];
 
             const pesoUsado = seriesValidas.length > 0
                 ? Math.max(...seriesValidas.map(s => s.peso))
-                : Number(ej?.pesoUsado) || 0;
+                : aPeso(ej?.pesoUsado);
 
             return {
                 ejercicioId: ej?.ejercicioId,

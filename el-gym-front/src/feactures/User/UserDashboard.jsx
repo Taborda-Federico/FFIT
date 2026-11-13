@@ -170,6 +170,7 @@ export function UserDashboard() {
             {activeWorkout && (
                 <WorkoutView
                     session={activeWorkout}
+                    history={history}
                     onExit={() => setActiveWorkout(null)}
                     onFinish={handleFinishWorkout}
                 />

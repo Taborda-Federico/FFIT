@@ -166,6 +166,16 @@ describe('UserDashboard — flujo completo de entrenamiento', () => {
         expect(screen.getByText('Día 1')).toBeInTheDocument();
     });
 
+    it('NUEVO: el entrenamiento recibe el historial del alumno, así "Ant:" muestra el peso real de la vez anterior', async () => {
+        getHistoryMock.mockResolvedValue([
+            { _id: 'h1', nombreSesion: 'Día 1', createdAt: '2026-01-05T10:00:00Z', ejercicios: [{ nombre: 'Press', pesoUsado: 42.5 }] }
+        ]);
+        render(<UserDashboard />);
+        await esperarCarga();
+        fireEvent.click(screen.getByText('Día 1').closest('.hub-session-card'));
+        expect(await screen.findByText('Ant: 42,5kg')).toBeInTheDocument();
+    });
+
     it('BUG: un entrenamiento activo abandonado en localStorage desde una sesión previa se RETOMA al volver a entrar, sin importar cuánto tiempo pasó', async () => {
         const haceTresDias = Date.now() - 3 * 24 * 60 * 60 * 1000;
         localStorage.setItem('ffit_active_workout', JSON.stringify({

@@ -1,0 +1,17 @@
+title = "FFIT — escaneo de secretos"
+
+[extend]
+useDefault = true
+
+# Valores FALSOS de fixtures de tests (JWT/mail/adminSecret de prueba). Se
+# permiten por archivo puntual, no por carpeta, para no aflojar el resto.
+[allowlist]
+description = "Fixtures de tests con valores falsos"
+paths = [
+  '''el-gym-back/tests/setup/env\.js''',
+  '''el-gym-back/tests/e2eServer\.js''',
+  '''el-gym-back/tests/routes/auth\.e2e\.test\.js''',
+  '''el-gym-back/tests/security/nosqlInjection\.e2e\.test\.js''',
+  '''el-gym-front/tests-e2e/fixtures\.js''',
+  '''el-gym-front/tests/services\.test\.js''',
+]

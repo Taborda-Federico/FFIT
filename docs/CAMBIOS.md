@@ -730,3 +730,23 @@ nuevo en navegador real: carga 42,5 en una sesión y, al hacer el mismo ejercici
 284 backend, 338 frontend, 42 e2e — todo en verde.
 
 ---
+
+## 15 — SEGURIDAD: se saca del repo la sesión de WhatsApp que estaba versionada
+
+**Qué pasó:** el 14/03 se commiteó `el-gym-back/.wwebjs_auth/` (el perfil de Chromium de whatsapp-web.js:
+cookies, `Local Storage`, `IndexedDB`, `Login Data`... 251 archivos). Después se agregó la carpeta al
+`.gitignore`, pero eso solo evita versionar archivos NUEVOS: los que ya estaban commiteados quedaron
+trackeados en `main`, y el repo es **público**. Además, `el-gym-back/.env` (con `MONGO_URI` y `JWT_SECRET`)
+se commiteó el 07/03 y, aunque ya no está en `main`, sigue en el historial.
+
+**Qué hace este PR:** `git rm --cached` de toda la carpeta (los archivos locales no se tocan, y el
+`.gitignore` ya la cubre). El backend no usa whatsapp-web.js en `src/`, así que no cambia el comportamiento.
+
+**Qué NO hace (y por qué importa):** sacar los archivos del árbol actual **no borra el historial** — cualquiera
+puede seguir clonando el repo y leer esos commits. La remediación real es: (1) cerrar la sesión de WhatsApp
+desde el celular (Dispositivos vinculados), que invalida lo expuesto; (2) rotar `MONGO_URI` (usuario/clave de
+Atlas) y `JWT_SECRET`; (3) recién después, y si se quiere, reescribir el historial (`git filter-repo` +
+force-push), sabiendo que GitHub puede seguir sirviendo los commits viejos por SHA hasta que se limpie del lado
+de GitHub — por eso la rotación es lo que realmente cierra el problema, no la limpieza.
+
+---

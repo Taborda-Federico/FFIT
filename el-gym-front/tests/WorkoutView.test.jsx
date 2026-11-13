@@ -123,7 +123,7 @@ describe('WorkoutView — timer de ejercicio (circuit) e input de peso', () => {
         render(<WorkoutView session={sesionEstandar()} onFinish={() => {}} onExit={() => {}} />);
         const input = screen.getByLabelText(/Peso serie 1/);
         fireEvent.change(input, { target: { value: '55' } });
-        expect(input).toHaveValue(55);
+        expect(input).toHaveValue('55');
     });
 
     it('el link "VER" del video solo aparece si el ejercicio tiene `video`, y abre en pestaña nueva de forma segura', () => {
@@ -184,7 +184,7 @@ describe('WorkoutView — persistencia en localStorage', () => {
         localStorage.setItem('ffit_workout_payload', JSON.stringify({ e1: '55' }));
         render(<WorkoutView session={sesionEstandar()} onFinish={() => {}} onExit={() => {}} />);
         // El peso viejo se recupera como punto de partida de la serie 1.
-        expect(screen.getByLabelText(/Peso serie 1/)).toHaveValue(55);
+        expect(screen.getByLabelText(/Peso serie 1/)).toHaveValue('55');
     });
 });
 
@@ -204,7 +204,7 @@ describe('WorkoutView — NUEVO: carga de peso y repeticiones por serie (pedido 
         fireEvent.change(screen.getByLabelText(/Repeticiones serie 1/), { target: { value: '10' } });
         fireEvent.click(screen.getByText(/FINALIZAR SERIE/));
 
-        expect(screen.getByLabelText(/Peso serie 2/)).toHaveValue(40);
+        expect(screen.getByLabelText(/Peso serie 2/)).toHaveValue('40');
         expect(screen.getByLabelText(/Repeticiones serie 2/)).toHaveValue(null);
     });
 
@@ -298,5 +298,113 @@ describe('WorkoutView — NUEVO: las repeticiones son obligatorias (al menos 1) 
         fireEvent.change(screen.getByLabelText(/Repeticiones serie 1 — A/), { target: { value: '12' } });
         // B se deja sin cargar.
         expect(screen.getByText(/FINALIZAR SERIE/)).toBeDisabled();
+    });
+});
+
+describe('WorkoutView — NUEVO: "Ant:" muestra el peso real de la vez anterior (antes siempre decía 0)', () => {
+    const logAnterior = (fecha, ejercicios) => ({ _id: fecha, createdAt: fecha, nombreSesion: 'Día 1', ejercicios });
+
+    it('sin historial del ejercicio, muestra "—" (no un 0 que parezca un dato real)', () => {
+        render(<WorkoutView session={sesionEstandar()} history={[]} onFinish={() => {}} onExit={() => {}} />);
+        expect(screen.getByText('Ant: —')).toBeInTheDocument();
+    });
+
+    it('sin la prop `history` (como antes de este cambio) tampoco crashea', () => {
+        render(<WorkoutView session={sesionEstandar()} onFinish={() => {}} onExit={() => {}} />);
+        expect(screen.getByText('Ant: —')).toBeInTheDocument();
+    });
+
+    it('toma el mejor peso de las series de la última vez que hizo ese ejercicio', () => {
+        const history = [logAnterior('2026-01-05T10:00:00Z', [{ nombre: 'Press banca', series: [{ numero: 1, peso: 40, reps: 10 }, { numero: 2, peso: 45, reps: 6 }] }])];
+        render(<WorkoutView session={sesionEstandar()} history={history} onFinish={() => {}} onExit={() => {}} />);
+        expect(screen.getByText('Ant: 45kg')).toBeInTheDocument();
+    });
+
+    it('usa el entrenamiento MÁS RECIENTE, sin importar el orden en que venga el historial', () => {
+        const history = [
+            logAnterior('2026-01-10T10:00:00Z', [{ nombre: 'Press banca', pesoUsado: 60 }]),
+            logAnterior('2026-01-03T10:00:00Z', [{ nombre: 'Press banca', pesoUsado: 50 }]),
+        ];
+        render(<WorkoutView session={sesionEstandar()} history={history} onFinish={() => {}} onExit={() => {}} />);
+        expect(screen.getByText('Ant: 60kg')).toBeInTheDocument();
+    });
+
+    it('matchea por NOMBRE ignorando mayúsculas/espacios (los _id cambian cada vez que se publica o edita un plan)', () => {
+        const history = [logAnterior('2026-01-05T10:00:00Z', [{ ejercicioId: 'otro-id-viejo', nombre: '  PRESS BANCA ', pesoUsado: 52 }])];
+        render(<WorkoutView session={sesionEstandar()} history={history} onFinish={() => {}} onExit={() => {}} />);
+        expect(screen.getByText('Ant: 52kg')).toBeInTheDocument();
+    });
+
+    it('un log viejo (sin `series`) usa `pesoUsado`, y un peso decimal se muestra con coma', () => {
+        const history = [logAnterior('2026-01-05T10:00:00Z', [{ nombre: 'Press banca', pesoUsado: 42.5 }])];
+        render(<WorkoutView session={sesionEstandar()} history={history} onFinish={() => {}} onExit={() => {}} />);
+        expect(screen.getByText('Ant: 42,5kg')).toBeInTheDocument();
+    });
+
+    it('si la última vez no cargó peso (0), cae al entrenamiento anterior donde sí lo cargó', () => {
+        const history = [
+            logAnterior('2026-01-10T10:00:00Z', [{ nombre: 'Press banca', pesoUsado: 0 }]),
+            logAnterior('2026-01-03T10:00:00Z', [{ nombre: 'Press banca', pesoUsado: 50 }]),
+        ];
+        render(<WorkoutView session={sesionEstandar()} history={history} onFinish={() => {}} onExit={() => {}} />);
+        expect(screen.getByText('Ant: 50kg')).toBeInTheDocument();
+    });
+
+    it('cada ejercicio muestra SU propio peso anterior (no se mezclan entre sí)', () => {
+        const session = sesionEstandar({
+            bloques: [{ tipo: 'superset', descanso: 30, series: 3, ejercicios: [{ id: 'e1', nombre: 'Press banca', series: 3, reps: '10' }, { id: 'e2', nombre: 'Remo', series: 3, reps: '10' }] }]
+        });
+        const history = [logAnterior('2026-01-05T10:00:00Z', [{ nombre: 'Press banca', pesoUsado: 60 }, { nombre: 'Remo', pesoUsado: 35 }])];
+        render(<WorkoutView session={session} history={history} onFinish={() => {}} onExit={() => {}} />);
+        expect(screen.getByText('Ant: 60kg')).toBeInTheDocument();
+        expect(screen.getByText('Ant: 35kg')).toBeInTheDocument();
+    });
+
+    it('si el plan tuviera un `pesoAnterior` cargado a mano y no hay historial, se usa como último recurso', () => {
+        const session = sesionEstandar({ bloques: [{ tipo: 'standard', descanso: 60, ejercicios: [{ id: 'e1', nombre: 'Press banca', series: 3, reps: '10', pesoAnterior: '30' }] }] });
+        render(<WorkoutView session={session} history={[]} onFinish={() => {}} onExit={() => {}} />);
+        expect(screen.getByText('Ant: 30kg')).toBeInTheDocument();
+    });
+});
+
+describe('WorkoutView — NUEVO: pesos con coma o decimales', () => {
+    function cargarYFinalizar(peso) {
+        fireEvent.change(screen.getByLabelText(/Peso serie 1/), { target: { value: peso } });
+        fireEvent.change(screen.getByLabelText(/Repeticiones serie 1/), { target: { value: '8' } });
+        fireEvent.click(screen.getByText(/FINALIZAR SERIE/));
+    }
+
+    it('acepta decimales con coma ("42,5"): se ve tal cual se tipeó y se guarda como 42.5', () => {
+        const onFinish = vi.fn();
+        render(<WorkoutView session={sesionEstandar()} onFinish={onFinish} onExit={() => {}} />);
+        fireEvent.change(screen.getByLabelText(/Peso serie 1/), { target: { value: '42,5' } });
+        expect(screen.getByLabelText(/Peso serie 1/)).toHaveValue('42,5');
+        cargarYFinalizar('42,5');
+        expect(screen.getByText('S1 · 42,5kg × 8')).toBeInTheDocument();
+        fireEvent.click(screen.getByText(/FINALIZAR ENTRENAMIENTO/));
+        expect(onFinish.mock.calls[0][0].e1.series[0].peso).toBe(42.5);
+    });
+
+    it('acepta decimales con punto ("42.5") igual que con coma', () => {
+        const onFinish = vi.fn();
+        render(<WorkoutView session={sesionEstandar()} onFinish={onFinish} onExit={() => {}} />);
+        cargarYFinalizar('42.5');
+        fireEvent.click(screen.getByText(/FINALIZAR ENTRENAMIENTO/));
+        expect(onFinish.mock.calls[0][0].e1.series[0].peso).toBe(42.5);
+    });
+
+    it('limpia lo que no sea un peso: letras y signos se descartan, un solo separador, hasta 2 decimales', () => {
+        render(<WorkoutView session={sesionEstandar()} onFinish={() => {}} onExit={() => {}} />);
+        const input = screen.getByLabelText(/Peso serie 1/);
+        fireEvent.change(input, { target: { value: '4a2,5,7-' } });
+        expect(input).toHaveValue('42,57');
+        fireEvent.change(input, { target: { value: '10,123' } });
+        expect(input).toHaveValue('10,12');
+    });
+
+    it('la serie siguiente queda precargada con el decimal tal cual (42,5)', () => {
+        render(<WorkoutView session={sesionEstandar()} onFinish={() => {}} onExit={() => {}} />);
+        cargarYFinalizar('42,5');
+        expect(screen.getByLabelText(/Peso serie 2/)).toHaveValue('42,5');
     });
 });

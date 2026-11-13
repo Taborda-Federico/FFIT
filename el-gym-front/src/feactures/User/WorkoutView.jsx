@@ -4,6 +4,7 @@ import {
     FaTrophy, FaClock, FaPlay
 } from 'react-icons/fa';
 import { Button } from '../../Utils/Button';
+import { parsePeso, formatPeso, sanitizarPesoInput, pesoAnteriorDe } from '../../Utils/pesos';
 import './WorkoutView.css';
 
 // Entrada "en blanco" para un ejercicio que todavía no tiene ninguna serie
@@ -32,7 +33,7 @@ function normalizarPayload(crudo) {
     return normalizado;
 }
 
-export function WorkoutView({ session, onFinish, onExit }) {
+export function WorkoutView({ session, history, onFinish, onExit }) {
 
     const [restTimer, setRestTimer] = useState(0);
     const [isRestActive, setIsRestActive] = useState(false);
@@ -97,6 +98,17 @@ export function WorkoutView({ session, onFinish, onExit }) {
 
     const entradaDe = (ejId) => workoutPayload[ejId] || entradaVacia();
 
+    // "Ant: Xkg" — el mejor peso que cargó la última vez que hizo este
+    // ejercicio (sale del historial del alumno, por nombre). Antes leía
+    // `ej.pesoAnterior` del plan, un campo que nada en la app completa, por
+    // eso siempre decía 0. Si nunca lo hizo, queda "—" en vez de un 0 que
+    // parecía un dato real; `pesoAnterior` del plan se mantiene como último
+    // recurso por si algún plan viejo lo tuviera cargado.
+    const pesoPrevioTexto = (ej) => {
+        const previo = pesoAnteriorDe(history, ej.nombre) ?? parsePeso(ej.pesoAnterior);
+        return previo > 0 ? `${formatPeso(previo)}kg` : '—';
+    };
+
     const actualizarCampoActual = (ejId, campo, valor) => {
         setWorkoutPayload(prev => ({
             ...prev,
@@ -122,7 +134,7 @@ export function WorkoutView({ session, onFinish, onExit }) {
                 const entrada = next[ejId] || entradaVacia();
                 const nuevaSerie = {
                     numero: numeroDeSerie,
-                    peso: Number(entrada.pesoActual) || 0,
+                    peso: parsePeso(entrada.pesoActual),
                     reps: (!esCircuito && entrada.repsActual !== '') ? Number(entrada.repsActual) : undefined
                 };
                 next[ejId] = {
@@ -258,14 +270,14 @@ export function WorkoutView({ session, onFinish, onExit }) {
                                                 ) : (
                                                     <span className="metric-tag">{ej.reps} reps</span>
                                                 )}
-                                                <span className="prev-weight-tag">Ant: {ej.pesoAnterior || 0}kg</span>
+                                                <span className="prev-weight-tag">Ant: {pesoPrevioTexto(ej)}</span>
                                             </div>
 
                                             {entrada.series.length > 0 && (
                                                 <div className="series-chips-row">
                                                     {entrada.series.map((s, i) => (
                                                         <span key={i} className="chip-serie">
-                                                            S{s.numero} · {s.peso}kg{s.reps !== undefined ? ` × ${s.reps}` : ''}
+                                                            S{s.numero} · {formatPeso(s.peso)}kg{s.reps !== undefined ? ` × ${s.reps}` : ''}
                                                         </span>
                                                     ))}
                                                 </div>
@@ -275,12 +287,12 @@ export function WorkoutView({ session, onFinish, onExit }) {
                                                 <span className="set-numero-badge">S{currentSet <= maxSets ? currentSet : maxSets}</span>
                                                 <div className="mini-field-pill">
                                                     <input
-                                                        type="number"
+                                                        type="text"
                                                         inputMode="decimal"
                                                         placeholder="0"
                                                         aria-label={`Peso serie ${currentSet} — ${ej.nombre}`}
                                                         value={entrada.pesoActual}
-                                                        onChange={(e) => actualizarCampoActual(ejId, 'pesoActual', e.target.value)}
+                                                        onChange={(e) => actualizarCampoActual(ejId, 'pesoActual', sanitizarPesoInput(e.target.value))}
                                                         disabled={isFinished}
                                                     />
                                                     <label>KG</label>

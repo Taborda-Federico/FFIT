@@ -195,6 +195,24 @@ describe('HistoryView — NUEVO: desglose de series en el detalle (pedido del cl
     });
 });
 
+describe('HistoryView — NUEVO: pesos con decimales (se muestran con coma, sin ruido de punto flotante)', () => {
+    it('el desglose por serie y la mejor marca muestran el decimal con coma', () => {
+        render(<HistoryView history={[log(HOY, {
+            ejercicios: [{ nombre: 'Press', series: [{ numero: 1, peso: 42.5, reps: 8 }, { numero: 2, peso: 45.25, reps: 6 }] }]
+        })]} />);
+        fireEvent.click(screen.getByText('Día 1'));
+        expect(screen.getByText('Mejor: 45,25kg')).toBeInTheDocument();
+        expect(screen.getByText('42,5')).toBeInTheDocument();
+    });
+
+    it('el tonelaje redondea el ruido de punto flotante (42,1 kg × 3 reps = 126,3, no 126,30000000000001)', () => {
+        render(<HistoryView history={[log(HOY, {
+            ejercicios: [{ nombre: 'Press', series: [{ numero: 1, peso: 42.1, reps: 3 }] }]
+        })]} />);
+        expect(screen.getByText('126,3')).toBeInTheDocument();
+    });
+});
+
 describe('HistoryView — lista y detalle', () => {
     it('muestra los logs del más nuevo al más viejo (reverse)', () => {
         render(<HistoryView history={[log(HACE_4, { nombreSesion: 'Viejo' }), log(HOY, { nombreSesion: 'Nuevo' })]} />);

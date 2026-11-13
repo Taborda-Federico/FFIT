@@ -690,3 +690,43 @@ confirmar que la semana restante se conserva.
 282 backend, 308 frontend, 41 e2e — todo en verde.
 
 ---
+
+## 14 — "Ant:" muestra el peso real de la vez anterior, y se pueden cargar pesos con coma/decimales
+
+**Pedido del cliente:** durante un entrenamiento, el campo "Ant: Xkg" de cada ejercicio siempre decía 0, y
+no se podían cargar pesos con coma o decimales (42,5 kg).
+
+**Por qué "Ant:" siempre decía 0:** leía `ej.pesoAnterior` del plan, un campo que existe en el esquema del
+plan pero que nada en la app completa (ni el armador del admin ni el backend) — entonces estaba siempre
+vacío y caía al `|| 0`. Ahora el peso anterior sale del **historial real del alumno**: `WorkoutView` recibe
+el historial (`UserDashboard` ya lo tenía cargado, no hay ningún pedido extra al servidor) y toma el mejor
+peso (el máximo de las series) del entrenamiento **más reciente** donde ese ejercicio tuvo algún peso
+cargado. Se matchea por **nombre** (ignorando mayúsculas/espacios), no por `_id`, por el mismo motivo que ya
+explica la sección 12: los `_id` de los ejercicios cambian cada vez que se publica o edita un plan. Si nunca
+lo hizo muestra "—" (un 0 parecía un dato real); `pesoAnterior` del plan queda como último recurso por si
+algún plan viejo lo tuviera cargado a mano.
+
+**Pesos con coma/decimales:** el input de peso era `type="number"`, que según el navegador/teclado del
+celular rechaza o vacía la coma. Pasa a ser un input de texto con teclado decimal (`inputMode="decimal"`)
+que acepta coma o punto (un solo separador, hasta 2 decimales, el resto de los caracteres se descarta) y
+convierte a número al confirmar la serie. En pantalla (entrenamiento e historial) los decimales se muestran
+con coma, y los enteros se ven exactamente igual que antes. De paso, el tonelaje se redondea para no mostrar
+ruido de punto flotante (42,1 × 3 = 126,3, no 126,30000000000001).
+
+**Backend:** `saveWorkoutLog` ahora también entiende un peso mandado como texto con coma ("42,5") — el
+frontend nuevo ya manda números, pero así una app en caché de un alumno que mande el texto tal cual no
+pierde los decimales (`Number("42,5")` es `NaN` y terminaba guardado como 0).
+
+**Por qué es seguro para los datos existentes:** no se migra ni se toca ningún `WorkoutLog` guardado; los
+logs viejos (sin `series`, o con `pesoUsado` entero) se leen igual que siempre. Un entrenamiento a mitad
+de camino guardado en `localStorage` con el peso como string sigue funcionando.
+
+**Tests:** 2 nuevos en el backend (decimales con número/coma/punto, y pesos inválidos → 0), 1 spec de
+utilidades (`pesos.test.js`), 12 en `WorkoutView` (peso anterior: sin historial, orden, nombre normalizado,
+fallback; decimales: coma, punto, limpieza, precarga), 2 en `HistoryView` y 1 en `UserDashboard`. Un e2e
+nuevo en navegador real: carga 42,5 en una sesión y, al hacer el mismo ejercicio en otra, "Ant:" muestra
+42,5kg.
+
+284 backend, 338 frontend, 42 e2e — todo en verde.
+
+---

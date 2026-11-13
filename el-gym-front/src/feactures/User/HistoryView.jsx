@@ -3,6 +3,7 @@ import {
     FaClock, FaWeightHanging, FaTrophy, FaFire,
     FaHistory, FaChevronRight, FaTimes, FaCheckDouble
 } from 'react-icons/fa';
+import { formatPeso } from '../../Utils/pesos';
 import './HistoryView.css';
 
 // Convierte cualquier fecha a "AAAA-MM-DD" en hora LOCAL (no UTC). Antes acá
@@ -154,7 +155,7 @@ export function HistoryView({ history = [] }) {
                             </div>
                             <div className="d-stat">
                                 <FaWeightHanging />
-                                <span>{calcularPesoSesion(selectedLog.ejercicios)} kg Movidos</span>
+                                <span>{formatPeso(calcularPesoSesion(selectedLog.ejercicios))} kg Movidos</span>
                             </div>
                         </div>
 
@@ -180,12 +181,12 @@ export function HistoryView({ history = [] }) {
                                             <div key={ex._id || idx} className="detail-ex-item con-series">
                                                 <div className="ex-info-top-row">
                                                     <h4>{ex.nombre}</h4>
-                                                    <span className="ex-best-chip">Mejor: {mejorSerie}kg</span>
+                                                    <span className="ex-best-chip">Mejor: {formatPeso(mejorSerie)}kg</span>
                                                 </div>
                                                 <div className="ex-series-breakdown">
                                                     {ex.series.map((s, i) => (
                                                         <span key={i} className="ex-set-tag">
-                                                            S{s.numero} <b>{s.peso}</b>{s.reps !== undefined && s.reps !== null ? ` × ${s.reps}` : ''}
+                                                            S{s.numero} <b>{formatPeso(s.peso)}</b>{s.reps !== undefined && s.reps !== null ? ` × ${s.reps}` : ''}
                                                         </span>
                                                     ))}
                                                 </div>
@@ -199,7 +200,7 @@ export function HistoryView({ history = [] }) {
                                                 <h4>{ex.nombre}</h4>
                                             </div>
                                             <div className="ex-final-weight">
-                                                <span>{ex.pesoUsado || ex.peso || 0}</span>
+                                                <span>{formatPeso(ex.pesoUsado || ex.peso || 0)}</span>
                                                 <small>KG</small>
                                             </div>
                                         </div>
@@ -244,7 +245,7 @@ export function HistoryView({ history = [] }) {
                 <div className="h-insight-item">
                     <div className="h-icon-box" style={{color: '#d4f039'}}><FaWeightHanging /></div>
                     <div className="h-data">
-                        <span className="h-val">{tonelajeTotal}</span>
+                        <span className="h-val">{formatPeso(tonelajeTotal)}</span>
                         <label>Tonelaje (KG)</label>
                     </div>
                 </div>
@@ -277,7 +278,7 @@ export function HistoryView({ history = [] }) {
                                             <div className="h-log-meta">
                                                 <span><FaClock /> {formatearDuracion(log.duracion)}</span>
                                                 {pesoTotal > 0 && (
-                                                    <span><FaWeightHanging /> {pesoTotal} kg</span>
+                                                    <span><FaWeightHanging /> {formatPeso(pesoTotal)} kg</span>
                                                 )}
                                             </div>
                                         </div>
